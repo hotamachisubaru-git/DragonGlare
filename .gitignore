@@ -5,6 +5,8 @@ obj/
 *.suo
 *.cache
 TestResults/
+.release/
+.codex-build/
 
 # Assets
 /Assets/*

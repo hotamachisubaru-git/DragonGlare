@@ -1,0 +1,90 @@
+namespace DragonGlareAlpha.Domain;
+
+public enum GameState
+{
+    ModeSelect,
+    LanguageSelection,
+    NameInput,
+    Field,
+    Battle,
+    ShopBuy
+}
+
+public enum ShopPhase
+{
+    Welcome,
+    BuyList
+}
+
+public enum UiLanguage
+{
+    Japanese,
+    English
+}
+
+public enum BgmTrack
+{
+    MainMenu,
+    Field,
+    Castle,
+    Battle,
+    Shop
+}
+
+public enum SoundEffect
+{
+    Dialog,
+    Collision
+}
+
+public enum BattleFlowState
+{
+    CommandSelection,
+    ItemSelection,
+    Resolving,
+    Victory,
+    Defeat,
+    Escaped
+}
+
+public enum BattleActionType
+{
+    Attack,
+    Spell,
+    Item,
+    Run
+}
+
+public enum BattleOutcome
+{
+    Ongoing,
+    Victory,
+    Defeat,
+    Escaped,
+    Invalid
+}
+
+public enum BattleVisualCue
+{
+    None,
+    EnemyHit,
+    PlayerHit,
+    SpellCast,
+    PlayerHeal,
+    MpRecover,
+    EnemyDefeat,
+    ItemUse
+}
+
+public enum ConsumableEffectType
+{
+    HealHp,
+    HealMp,
+    DamageEnemy
+}
+
+public enum FieldEventActionType
+{
+    Dialogue,
+    Recover
+}
