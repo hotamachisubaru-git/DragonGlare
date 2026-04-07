@@ -1,16 +1,19 @@
+using DragonGlareAlpha.Domain;
 using DragonGlareAlpha.Domain.Player;
 
 namespace DragonGlareAlpha.Persistence;
 
 public sealed class SaveData
 {
-    public int Version { get; set; } = 3;
+    public int Version { get; set; } = 4;
 
     public DateTime SavedAtUtc { get; set; } = DateTime.UtcNow;
 
     public string Language { get; set; } = "ja";
 
     public string Name { get; set; } = string.Empty;
+
+    public FieldMapId CurrentFieldMap { get; set; } = FieldMapId.Hub;
 
     public int PlayerX { get; set; }
 

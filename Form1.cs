@@ -18,6 +18,10 @@ public partial class Form1 : Form
     private const int TileSize = 32;
     private static readonly Point PlayerStartTile = new(3, 12);
     private static readonly Point NpcTile = new(12, 7);
+    private static readonly Point HubFromCastleTile = new(9, 2);
+    private static readonly Point CastleEntryTile = new(9, 12);
+    private static readonly Point HubFromFieldTile = new(15, 7);
+    private static readonly Point FieldEntryTile = new(2, 7);
 
     private readonly Timer gameTimer = new() { Interval = 16 };
     private readonly HashSet<Keys> heldKeys = [];
@@ -29,7 +33,6 @@ public partial class Form1 : Form
     private readonly Dictionary<BgmTrack, Uri> bgmUris = [];
     private readonly Dictionary<SoundEffect, Uri> seUris = [];
     private readonly Random random = new();
-    private readonly int[,] map = MapFactory.CreateDefaultMap();
     private readonly SaveService saveService = new();
     private readonly BattleService battleService = new();
     private readonly ProgressionService progressionService = new();
@@ -41,6 +44,8 @@ public partial class Form1 : Form
     private PlayerProgress player = PlayerProgress.CreateDefault(PlayerStartTile);
     private BattleEncounter? currentEncounter;
     private GameState gameState = GameState.ModeSelect;
+    private FieldMapId currentFieldMap = FieldMapId.Hub;
+    private int[,] map = MapFactory.CreateDefaultMap();
     private UiLanguage selectedLanguage = UiLanguage.Japanese;
     private int modeCursor;
     private int languageCursor;

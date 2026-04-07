@@ -143,7 +143,7 @@ public partial class Form1
         {
             GameState.Battle => BgmTrack.Battle,
             GameState.ShopBuy => BgmTrack.Shop,
-            GameState.Field when IsInsideCastleZone(player.TilePosition) => BgmTrack.Castle,
+            GameState.Field when IsCastleMap() => BgmTrack.Castle,
             GameState.Field => BgmTrack.Field,
             _ => BgmTrack.MainMenu
         };

@@ -208,7 +208,7 @@ public partial class Form1
             movementCooldown = 6;
         }
 
-        if (WasPressed(Keys.Enter) && IsAdjacent(player.TilePosition, NpcTile))
+        if (HasNpcOnCurrentMap() && WasPressed(Keys.Enter) && IsAdjacent(player.TilePosition, NpcTile))
         {
             isNpcDialogOpen = true;
             PlaySe(SoundEffect.Dialog);
@@ -277,6 +277,7 @@ public partial class Form1
                 break;
             case BattleOutcome.Defeat:
                 battleMessage = $"{resultMessage}\n{progressionService.ApplyDefeatPenalty(player, PlayerStartTile)}";
+                SetFieldMap(FieldMapId.Hub);
                 battleFlowState = BattleFlowState.Defeat;
                 PersistProgress();
                 break;

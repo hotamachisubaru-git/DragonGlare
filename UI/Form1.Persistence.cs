@@ -35,6 +35,7 @@ public partial class Form1
         nameCursorColumn = 0;
         playerName.Clear();
         player = progressionService.CreateNewPlayer(UiLanguage.Japanese, PlayerStartTile);
+        SetFieldMap(FieldMapId.Hub);
         currentEncounter = null;
         battleFlowState = BattleFlowState.CommandSelection;
         isNpcDialogOpen = false;
@@ -60,6 +61,8 @@ public partial class Form1
             : UiLanguage.Japanese;
 
         var loadedPlayer = PlayerProgress.CreateDefault(PlayerStartTile, selectedLanguage);
+        var loadedMapId = Enum.IsDefined(typeof(FieldMapId), save.CurrentFieldMap) ? save.CurrentFieldMap : FieldMapId.Hub;
+        SetFieldMap(loadedMapId);
         loadedPlayer.Name = TrimPlayerName(save.Name);
         loadedPlayer.TilePosition = new Point(save.PlayerX, save.PlayerY);
         loadedPlayer.Level = save.Level;
@@ -75,8 +78,9 @@ public partial class Form1
         loadedPlayer.Inventory = save.Inventory?.Select(entry => entry.Clone()).ToList() ?? [];
         loadedPlayer.Normalize();
 
-        if (!IsWalkableTile(loadedPlayer.TilePosition) || loadedPlayer.TilePosition == NpcTile)
+        if (!IsWalkableTile(loadedPlayer.TilePosition) || IsNpcTile(loadedPlayer.TilePosition))
         {
+            SetFieldMap(FieldMapId.Hub);
             loadedPlayer.TilePosition = PlayerStartTile;
         }
 
@@ -126,10 +130,11 @@ public partial class Form1
 
         var save = new SaveData
         {
-            Version = 2,
+            Version = 4,
             SavedAtUtc = DateTime.UtcNow,
             Language = selectedLanguage == UiLanguage.English ? "en" : "ja",
             Name = TrimPlayerName(player.Name),
+            CurrentFieldMap = currentFieldMap,
             PlayerX = player.TilePosition.X,
             PlayerY = player.TilePosition.Y,
             Level = player.Level,

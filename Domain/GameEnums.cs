@@ -22,6 +22,13 @@ public enum UiLanguage
     English
 }
 
+public enum FieldMapId
+{
+    Hub,
+    Castle,
+    Field
+}
+
 public enum BgmTrack
 {
     MainMenu,

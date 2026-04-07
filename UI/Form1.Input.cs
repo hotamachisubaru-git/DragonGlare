@@ -66,12 +66,17 @@ public partial class Form1
     private bool TryMovePlayer(Point movement)
     {
         var target = new Point(player.TilePosition.X + movement.X, player.TilePosition.Y + movement.Y);
-        if (!IsWalkableTile(target) || target == NpcTile)
+        if (!IsWalkableTile(target) || IsNpcTile(target))
         {
             return false;
         }
 
         player.TilePosition = target;
+        if (TryTransitionFromTile(target))
+        {
+            return true;
+        }
+
         PersistProgress();
         return true;
     }

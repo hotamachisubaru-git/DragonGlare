@@ -1,3 +1,4 @@
+using DragonGlareAlpha.Domain;
 using DragonGlareAlpha.Domain.Player;
 using DragonGlareAlpha.Persistence;
 
@@ -17,6 +18,7 @@ public sealed class SaveServiceTests
             {
                 Language = "ja",
                 Name = "テスター",
+                CurrentFieldMap = FieldMapId.Castle,
                 PlayerX = 7,
                 PlayerY = 8,
                 Level = 3,
@@ -44,6 +46,7 @@ public sealed class SaveServiceTests
 
             Assert.True(loaded);
             Assert.NotNull(roundTripped);
+            Assert.Equal(FieldMapId.Castle, roundTripped!.CurrentFieldMap);
             Assert.Equal(3, roundTripped!.Level);
             Assert.Equal("bronze_sword", roundTripped.EquippedWeaponId);
             Assert.Single(roundTripped.Inventory);

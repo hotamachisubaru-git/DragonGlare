@@ -1,6 +1,7 @@
 using System.Drawing.Drawing2D;
 using DragonGlareAlpha.Data;
 using DragonGlareAlpha.Domain;
+using DragonGlareAlpha.Services;
 
 namespace DragonGlareAlpha;
 
@@ -224,15 +225,40 @@ public partial class Form1
             for (var x = 0; x < map.GetLength(1); x++)
             {
                 var tileRect = new Rectangle(x * TileSize, y * TileSize, TileSize, TileSize);
-                if (map[y, x] == 1)
+                if (map[y, x] == MapFactory.WallTile)
                 {
                     using var wallBrush = new SolidBrush(Color.FromArgb(8, 30, 90));
                     g.FillRectangle(wallBrush, tileRect);
                 }
-                else if (map[y, x] == 2)
+                else if (map[y, x] == MapFactory.CastleBlockTile)
                 {
                     using var castleBrush = new SolidBrush(Color.FromArgb(80, 20, 20));
                     g.FillRectangle(castleBrush, tileRect);
+                }
+                else if (map[y, x] == MapFactory.CastleGateTile)
+                {
+                    using var castleGateBrush = new SolidBrush(Color.FromArgb(108, 46, 26));
+                    g.FillRectangle(castleGateBrush, tileRect);
+                }
+                else if (map[y, x] == MapFactory.FieldGateTile)
+                {
+                    using var fieldGateBrush = new SolidBrush(Color.FromArgb(24, 56, 40));
+                    g.FillRectangle(fieldGateBrush, tileRect);
+                }
+                else if (map[y, x] == MapFactory.CastleFloorTile)
+                {
+                    using var castleFloorBrush = new SolidBrush(Color.FromArgb(50, 50, 62));
+                    g.FillRectangle(castleFloorBrush, tileRect);
+                }
+                else if (map[y, x] == MapFactory.GrassTile)
+                {
+                    using var grassBrush = new SolidBrush(Color.FromArgb(24, 74, 36));
+                    g.FillRectangle(grassBrush, tileRect);
+                }
+                else if (map[y, x] == MapFactory.DecorationBlueTile)
+                {
+                    using var decorationBrush = new SolidBrush(Color.FromArgb(8, 30, 90));
+                    g.FillRectangle(decorationBrush, tileRect);
                 }
                 else
                 {
@@ -242,7 +268,11 @@ public partial class Form1
             }
         }
 
-        DrawTileEntity(g, NpcTile, Color.Cyan);
+        if (HasNpcOnCurrentMap())
+        {
+            DrawTileEntity(g, NpcTile, Color.Cyan);
+        }
+
         DrawTileEntity(g, player.TilePosition, Color.White);
     }
 
