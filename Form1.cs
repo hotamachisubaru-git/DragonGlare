@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using DragonGlareAlpha.Domain;
 using DragonGlareAlpha.Domain.Battle;
+using DragonGlareAlpha.Domain.Field;
 using DragonGlareAlpha.Domain.Player;
 using DragonGlareAlpha.Persistence;
 using DragonGlareAlpha.Security;
@@ -17,9 +18,14 @@ public partial class Form1 : Form
     private const int VirtualWidth = 640;
     private const int VirtualHeight = 480;
     private const int TileSize = 32;
+    private const int CompactFieldViewportWidthTiles = 13;
+    private const int ExpandedFieldViewportWidthTiles = 17;
+    private const int CompactFieldViewportHeightTiles = 9;
+    private const int ExpandedFieldViewportHeightTiles = 11;
+    private const int ExpandedFieldViewportVerticalTrim = 16;
+    private const int FieldMovementAnimationDuration = 6;
     private const int EncounterTransitionDuration = 26;
     private static readonly Point PlayerStartTile = new(3, 12);
-    private static readonly Point NpcTile = new(12, 7);
     private static readonly Point HubFromCastleTile = new(9, 2);
     private static readonly Point CastleEntryTile = new(9, 12);
     private static readonly Point HubFromFieldTile = new(15, 7);
@@ -41,6 +47,7 @@ public partial class Form1 : Form
     private readonly BattleService battleService = new();
     private readonly ProgressionService progressionService = new();
     private readonly ShopService shopService = new();
+    private readonly FieldEventService fieldEventService = new();
 
     private Font uiFont = new("Consolas", 20, GraphicsUnit.Pixel);
     private Font smallFont = new("Consolas", 16, GraphicsUnit.Pixel);
@@ -58,11 +65,13 @@ public partial class Form1 : Form
     private int saveSlotCursor;
     private int activeSaveSlot;
     private int movementCooldown;
-    private bool isNpcDialogOpen;
+    private bool isFieldDialogOpen;
     private bool isFieldStatusVisible;
     private bool fontLoaded;
     private int frameCounter;
     private int startupFadeFrames = 20;
+    private Point fieldMovementAnimationDirection = Point.Empty;
+    private int fieldMovementAnimationFramesRemaining;
     private int battleCursorRow;
     private int battleCursorColumn;
     private BattleFlowState battleFlowState = BattleFlowState.CommandSelection;
@@ -79,6 +88,8 @@ public partial class Form1 : Form
     private int encounterTransitionFrames;
     private int fieldEncounterStepsRemaining = 7;
     private BattleEncounter? pendingEncounter;
+    private IReadOnlyList<string> activeFieldDialogPages = [];
+    private int activeFieldDialogPageIndex;
     private IReadOnlyList<SaveSlotSummary> saveSlotSummaries = [];
 
     private string LegacySaveFilePath => Path.Combine(AppContext.BaseDirectory, "savegame.json");

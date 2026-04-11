@@ -65,12 +65,13 @@ public partial class Form1
     private bool TryMovePlayer(Point movement)
     {
         var target = new Point(player.TilePosition.X + movement.X, player.TilePosition.Y + movement.Y);
-        if (!IsWalkableTile(target) || IsNpcTile(target))
+        if (!IsWalkableTile(target) || IsBlockedByFieldEvent(target))
         {
             return false;
         }
 
         player.TilePosition = target;
+        StartFieldMovementAnimation(movement);
         if (TryTransitionFromTile(target))
         {
             return true;

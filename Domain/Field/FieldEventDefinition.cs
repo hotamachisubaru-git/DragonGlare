@@ -4,12 +4,14 @@ namespace DragonGlareAlpha.Domain.Field;
 
 public sealed record FieldEventDefinition(
     string Id,
+    FieldMapId MapId,
     Point TilePosition,
     Color DisplayColor,
     bool BlocksMovement,
     FieldEventActionType ActionType,
     string[] JapanesePages,
     string[] EnglishPages,
+    string? SpriteAssetName = null,
     int RecoverHp = 0,
     int RecoverMp = 0)
 {

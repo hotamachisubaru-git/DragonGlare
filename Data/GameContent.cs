@@ -64,6 +64,7 @@ public static class GameContent
     [
         new(
             "guide_npc",
+            FieldMapId.Hub,
             new Point(12, 7),
             Color.Cyan,
             true,
@@ -75,9 +76,59 @@ public static class GameContent
             [
                 "Welcome, {player}.\nSharpen your blade and prepare.",
                 "Herbs heal you.\nFire orbs can be thrown from ITEMS."
-            ]),
+            ],
+            SpriteAssetName: "guide_npc.png"),
+        new(
+            "town_child",
+            FieldMapId.Hub,
+            new Point(4, 4),
+            Color.FromArgb(120, 255, 180),
+            true,
+            FieldEventActionType.Dialogue,
+            [
+                "まちの こどもだ。\n「おしろの へいしって すごく まじめだよ！」",
+                "「フィールドの くさむらは\n　まものが でやすいから きをつけてね。」"
+            ],
+            [
+                "A village child grins.\n\"The castle guard is super serious!\"",
+                "\"Watch the tall grass out in the field.\nMonsters jump out fast there.\""
+            ],
+            SpriteAssetName: "town_child.png"),
+        new(
+            "castle_guard",
+            FieldMapId.Castle,
+            new Point(12, 11),
+            Color.FromArgb(255, 180, 120),
+            true,
+            FieldEventActionType.Dialogue,
+            [
+                "おしろの へいしだ。\n「りゅうの ひかりを おうものよ、あわてるな。」",
+                "「レベルが あがったら そうびも みなおせ。\n　ちからだけでは かてぬぞ。」"
+            ],
+            [
+                "A castle guard stands firm.\n\"Hunter of dragonlight, do not rush.\"",
+                "\"When you grow stronger, review your gear.\nPower alone will not carry you.\""
+            ],
+            SpriteAssetName: "castle_guard.png"),
+        new(
+            "field_scout",
+            FieldMapId.Field,
+            new Point(11, 11),
+            Color.FromArgb(255, 228, 120),
+            true,
+            FieldEventActionType.Dialogue,
+            [
+                "みはりの ぼうけんしゃだ。\n「このさきは ぬかるみが おおい。」",
+                "「HPが へったら いったん もどれ。\n　むりやり すすむと いたいめを みるぞ。」"
+            ],
+            [
+                "A field scout watches the road.\n\"The ground ahead gets rough.\"",
+                "\"If your HP drops, fall back first.\nPushing through carelessly will cost you.\""
+            ],
+            SpriteAssetName: "field_scout.png"),
         new(
             "field_sign",
+            FieldMapId.Hub,
             new Point(2, 12),
             Color.Gold,
             true,
@@ -92,6 +143,7 @@ public static class GameContent
             ]),
         new(
             "healing_spring",
+            FieldMapId.Hub,
             new Point(16, 12),
             Color.MediumSpringGreen,
             true,

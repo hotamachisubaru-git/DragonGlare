@@ -8,21 +8,28 @@ public partial class Form1
 {
     private string GetText(string key)
     {
-        var name = GetDisplayPlayerName();
         return (selectedLanguage, key) switch
         {
-            (UiLanguage.Japanese, "fieldHelpLine1") => "やじるし:いどう  ENTER:はなす",
-            (UiLanguage.English, "fieldHelpLine1") => "ARROWS: MOVE  ENTER: TALK",
-            (UiLanguage.Japanese, "fieldHelpLine2") => "B:バトル  V:ショップ  X:ステータス",
-            (UiLanguage.English, "fieldHelpLine2") => "B:BATTLE  V:SHOP  X:STATUS",
+            (UiLanguage.Japanese, "fieldHelpLine1") => "やじるし / WASD: いどう",
+            (UiLanguage.English, "fieldHelpLine1") => "ARROWS / WASD: MOVE",
+            (UiLanguage.Japanese, "fieldHelpLine2") => "ENTER: はなす・しらべる   X: ステータス",
+            (UiLanguage.English, "fieldHelpLine2") => "ENTER: TALK / CHECK   X: STATUS",
+            (UiLanguage.Japanese, "fieldHelpLine3") => currentFieldMap switch
+            {
+                FieldMapId.Castle => "B: バトル   V: ショップ   いま: しろ",
+                FieldMapId.Field => "B: バトル   V: ショップ   いま: フィールド",
+                _ => "B: バトル   V: ショップ   いま: ハブ"
+            },
+            (UiLanguage.English, "fieldHelpLine3") => currentFieldMap switch
+            {
+                FieldMapId.Castle => "B: BATTLE   V: SHOP   AREA: CASTLE",
+                FieldMapId.Field => "B: BATTLE   V: SHOP   AREA: FIELD",
+                _ => "B: BATTLE   V: SHOP   AREA: HUB"
+            },
             (UiLanguage.Japanese, "areaField") => "フィールドBGM: SFC_field",
             (UiLanguage.English, "areaField") => "FIELD BGM: SFC_field",
             (UiLanguage.Japanese, "areaCastle") => "おしろBGM: SFC_castle",
             (UiLanguage.English, "areaCastle") => "CASTLE BGM: SFC_castle",
-            (UiLanguage.Japanese, "npcLine1") => $"{name}、ようこそ。",
-            (UiLanguage.Japanese, "npcLine2") => "けんをみがき たびのしたくをしよう。",
-            (UiLanguage.English, "npcLine1") => $"Welcome, {name}.",
-            (UiLanguage.English, "npcLine2") => "Sharpen your blade and prepare.",
             _ => string.Empty
         };
     }
@@ -40,9 +47,10 @@ public partial class Form1
         SetFieldMap(FieldMapId.Hub);
         currentEncounter = null;
         battleFlowState = BattleFlowState.CommandSelection;
-        isNpcDialogOpen = false;
+        CloseFieldDialog();
         isFieldStatusVisible = false;
         movementCooldown = 0;
+        ResetFieldMovementAnimation();
         encounterTransitionFrames = 0;
         pendingEncounter = null;
         ResetEncounterCounter();
@@ -84,7 +92,7 @@ public partial class Form1
         loadedPlayer.Inventory = save.Inventory?.Select(entry => entry.Clone()).ToList() ?? [];
         loadedPlayer.Normalize();
 
-        if (!IsWalkableTile(loadedPlayer.TilePosition) || IsNpcTile(loadedPlayer.TilePosition))
+        if (!IsWalkableTile(loadedPlayer.TilePosition) || IsBlockedByFieldEvent(loadedPlayer.TilePosition))
         {
             SetFieldMap(FieldMapId.Hub);
             loadedPlayer.TilePosition = PlayerStartTile;
@@ -94,9 +102,10 @@ public partial class Form1
         SyncPlayerNameBuffer(player.Name);
         currentEncounter = null;
         battleFlowState = BattleFlowState.CommandSelection;
-        isNpcDialogOpen = false;
+        CloseFieldDialog();
         isFieldStatusVisible = false;
         movementCooldown = 0;
+        ResetFieldMovementAnimation();
         encounterTransitionFrames = 0;
         pendingEncounter = null;
         ResetEncounterCounter();

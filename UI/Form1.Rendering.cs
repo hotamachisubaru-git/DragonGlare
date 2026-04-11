@@ -146,9 +146,12 @@ public partial class Form1
     {
         DrawFieldScene(g);
 
-        DrawWindow(g, new Rectangle(8, 8, 430, 84));
-        DrawText(g, GetText("fieldHelpLine1"), 20, 26, smallFont);
-        DrawText(g, GetText("fieldHelpLine2"), 20, 56, smallFont);
+        var helpRect = GetFieldHelpWindow();
+        var helpInnerRect = Rectangle.Inflate(helpRect, -18, -14);
+        DrawWindow(g, helpRect);
+        DrawText(g, GetText("fieldHelpLine1"), new Rectangle(helpInnerRect.X, helpInnerRect.Y, helpInnerRect.Width, 18), smallFont);
+        DrawText(g, GetText("fieldHelpLine2"), new Rectangle(helpInnerRect.X, helpInnerRect.Y + 28, helpInnerRect.Width, 18), smallFont);
+        DrawText(g, GetText("fieldHelpLine3"), new Rectangle(helpInnerRect.X, helpInnerRect.Y + 56, helpInnerRect.Width, 18), smallFont);
 
         if (isFieldStatusVisible)
         {
@@ -165,11 +168,18 @@ public partial class Form1
             DrawText(g, GetEquippedWeaponName(), new Rectangle(458, 230, 160, 24), smallFont);
         }
 
-        if (isNpcDialogOpen)
+        if (isFieldDialogOpen)
         {
             DrawWindow(g, new Rectangle(46, 320, 548, 138));
-            DrawText(g, GetText("npcLine1"), 72, 354, smallFont);
-            DrawText(g, GetText("npcLine2"), 72, 392, smallFont);
+            DrawText(g, GetCurrentFieldDialogPage(), new Rectangle(72, 346, 494, 68), smallFont, wrap: true);
+            DrawText(
+                g,
+                activeFieldDialogPageIndex < activeFieldDialogPages.Count - 1
+                    ? (selectedLanguage == UiLanguage.Japanese ? "ENTER: つぎへ" : "ENTER: NEXT")
+                    : (selectedLanguage == UiLanguage.Japanese ? "ENTER / ESC: とじる" : "ENTER / ESC: CLOSE"),
+                new Rectangle(72, 414, 494, 20),
+                smallFont,
+                StringAlignment.Far);
         }
     }
 
@@ -347,22 +357,47 @@ public partial class Form1
 
     private void DrawFieldScene(Graphics g)
     {
-        for (var y = 0; y < map.GetLength(0); y++)
+        DrawMenuBackdrop(g);
+
+        var viewport = GetFieldViewport();
+        var centerTileRect = GetCenteredFieldTileRectangle(viewport);
+        var animationOffset = GetFieldMovementAnimationOffset();
+        var visibleWidthTiles = GetFieldViewportWidthTiles();
+        var visibleHeightTiles = GetFieldViewportHeightTiles();
+        var halfWidth = visibleWidthTiles / 2;
+        var halfHeight = visibleHeightTiles / 2;
+
+        var clipState = g.Save();
+        g.SetClip(viewport);
+
+        using (var voidBrush = new SolidBrush(GetTileColor(MapFactory.WallTile)))
         {
-            for (var x = 0; x < map.GetLength(1); x++)
+            g.FillRectangle(voidBrush, viewport);
+        }
+
+        for (var y = -halfHeight; y <= halfHeight; y++)
+        {
+            for (var x = -halfWidth; x <= halfWidth; x++)
             {
-                var tileRect = new Rectangle(x * TileSize, y * TileSize, TileSize, TileSize);
-                using var tileBrush = new SolidBrush(GetTileColor(map[y, x]));
+                var worldTile = new Point(player.TilePosition.X + x, player.TilePosition.Y + y);
+                var tileRect = new Rectangle(
+                    centerTileRect.X + (x * TileSize) + animationOffset.X,
+                    centerTileRect.Y + (y * TileSize) + animationOffset.Y,
+                    TileSize,
+                    TileSize);
+                using var tileBrush = new SolidBrush(GetTileColor(GetTileIdAtWorldPosition(worldTile)));
                 g.FillRectangle(tileBrush, tileRect);
             }
         }
 
-        if (HasNpcOnCurrentMap())
+        foreach (var fieldEvent in GetCurrentFieldEvents())
         {
-            DrawTileEntity(g, NpcTile, Color.Cyan);
+            DrawWorldTileEntity(g, fieldEvent.TilePosition, viewport, animationOffset, fieldEvent.DisplayColor);
         }
 
-        DrawTileEntity(g, player.TilePosition, Color.White);
+        g.Restore(clipState);
+        DrawFieldViewportFrame(g, viewport);
+        DrawCenteredTileEntity(g, viewport, Color.White);
     }
 
     private Color GetTileColor(int tileId)
@@ -407,11 +442,36 @@ public partial class Form1
         g.DrawLine(outlinePen, center.X - 12, center.Y + 18, center.X + 12, center.Y + 18);
     }
 
-    private void DrawTileEntity(Graphics g, Point tile, Color color)
+    private void DrawWorldTileEntity(Graphics g, Point tile, Rectangle viewport, Point animationOffset, Color color)
     {
-        var rect = new Rectangle(tile.X * TileSize + 4, tile.Y * TileSize + 4, TileSize - 8, TileSize - 8);
+        var centerTileRect = GetCenteredFieldTileRectangle(viewport);
+        var rect = new Rectangle(
+            centerTileRect.X + ((tile.X - player.TilePosition.X) * TileSize) + animationOffset.X + 4,
+            centerTileRect.Y + ((tile.Y - player.TilePosition.Y) * TileSize) + animationOffset.Y + 4,
+            TileSize - 8,
+            TileSize - 8);
         using var brush = new SolidBrush(color);
         g.FillRectangle(brush, rect);
+    }
+
+    private void DrawCenteredTileEntity(Graphics g, Rectangle viewport, Color color)
+    {
+        var rect = Rectangle.Inflate(GetCenteredFieldTileRectangle(viewport), -4, -4);
+        using var brush = new SolidBrush(color);
+        g.FillRectangle(brush, rect);
+    }
+
+    private void DrawFieldViewportFrame(Graphics g, Rectangle rect)
+    {
+        using var shadowPen = new Pen(Color.FromArgb(88, 0, 0, 0), 4);
+        using var glowPen = new Pen(Color.FromArgb(0, 72, 255), 4);
+        using var outerPen = new Pen(Color.FromArgb(0, 120, 255), 2);
+        using var innerPen = new Pen(Color.FromArgb(132, 206, 255), 1);
+
+        g.DrawRectangle(shadowPen, rect.X + 6, rect.Y + 6, rect.Width, rect.Height);
+        g.DrawRectangle(glowPen, rect);
+        g.DrawRectangle(outerPen, rect);
+        g.DrawRectangle(innerPen, Rectangle.Inflate(rect, -5, -5));
     }
 
     private void DrawWindow(Graphics g, Rectangle rect)

@@ -12,6 +12,7 @@ public partial class Form1
     private void UpdateGame()
     {
         frameCounter++;
+        UpdateFieldMovementAnimation();
         RunAntiCheatChecks();
 
         if (startupFadeFrames > 0)
@@ -223,11 +224,15 @@ public partial class Form1
 
     private void UpdateField()
     {
-        if (isNpcDialogOpen)
+        if (isFieldDialogOpen)
         {
-            if (WasPressed(Keys.Enter) || WasPressed(Keys.Escape))
+            if (WasPressed(Keys.Enter))
             {
-                isNpcDialogOpen = false;
+                AdvanceFieldDialog();
+            }
+            else if (WasPressed(Keys.Escape))
+            {
+                CloseFieldDialog();
             }
 
             return;
@@ -289,10 +294,13 @@ public partial class Form1
             }
         }
 
-        if (HasNpcOnCurrentMap() && WasPressed(Keys.Enter) && IsAdjacent(player.TilePosition, NpcTile))
+        if (WasPressed(Keys.Enter))
         {
-            isNpcDialogOpen = true;
-            PlaySe(SoundEffect.Dialog);
+            var fieldEvent = GetInteractableFieldEvent();
+            if (fieldEvent is not null)
+            {
+                OpenFieldDialog(fieldEvent);
+            }
         }
     }
 

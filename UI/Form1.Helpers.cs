@@ -1,5 +1,6 @@
 using DragonGlareAlpha.Data;
 using DragonGlareAlpha.Domain;
+using DragonGlareAlpha.Domain.Field;
 using DragonGlareAlpha.Domain.Player;
 using DragonGlareAlpha.Persistence;
 using DragonGlareAlpha.Services;
@@ -8,20 +9,29 @@ namespace DragonGlareAlpha;
 
 public partial class Form1
 {
-    private bool HasNpcOnCurrentMap()
+    private IEnumerable<FieldEventDefinition> GetCurrentFieldEvents()
     {
-        return currentFieldMap == FieldMapId.Hub;
+        return GameContent.FieldEvents.Where(fieldEvent => fieldEvent.MapId == currentFieldMap);
     }
 
-    private bool IsNpcTile(Point tile)
+    private bool IsBlockedByFieldEvent(Point tile)
     {
-        return HasNpcOnCurrentMap() && tile == NpcTile;
+        return GetCurrentFieldEvents().Any(fieldEvent => fieldEvent.BlocksMovement && fieldEvent.TilePosition == tile);
+    }
+
+    private FieldEventDefinition? GetInteractableFieldEvent()
+    {
+        return GetCurrentFieldEvents()
+            .FirstOrDefault(fieldEvent =>
+                fieldEvent.TilePosition == player.TilePosition ||
+                IsAdjacent(player.TilePosition, fieldEvent.TilePosition));
     }
 
     private void SetFieldMap(FieldMapId mapId)
     {
         currentFieldMap = mapId;
         map = MapFactory.CreateMap(mapId);
+        ResetFieldMovementAnimation();
         ResetEncounterCounter();
         UpdateBgm();
     }
@@ -62,7 +72,7 @@ public partial class Form1
     {
         SetFieldMap(mapId);
         player.TilePosition = destinationTile;
-        isNpcDialogOpen = false;
+        CloseFieldDialog();
         movementCooldown = 6;
 
         if (persistProgress)
@@ -74,6 +84,151 @@ public partial class Form1
     private void ResetEncounterCounter()
     {
         fieldEncounterStepsRemaining = random.Next(6, 12);
+    }
+
+    private void StartFieldMovementAnimation(Point movement)
+    {
+        fieldMovementAnimationDirection = movement;
+        fieldMovementAnimationFramesRemaining = FieldMovementAnimationDuration;
+    }
+
+    private void UpdateFieldMovementAnimation()
+    {
+        if (fieldMovementAnimationFramesRemaining <= 0)
+        {
+            fieldMovementAnimationDirection = Point.Empty;
+            return;
+        }
+
+        fieldMovementAnimationFramesRemaining--;
+        if (fieldMovementAnimationFramesRemaining == 0)
+        {
+            fieldMovementAnimationDirection = Point.Empty;
+        }
+    }
+
+    private void ResetFieldMovementAnimation()
+    {
+        fieldMovementAnimationDirection = Point.Empty;
+        fieldMovementAnimationFramesRemaining = 0;
+    }
+
+    private Point GetFieldMovementAnimationOffset()
+    {
+        if (fieldMovementAnimationFramesRemaining <= 0)
+        {
+            return Point.Empty;
+        }
+
+        var progress = fieldMovementAnimationFramesRemaining / (float)FieldMovementAnimationDuration;
+        return new Point(
+            (int)Math.Round(fieldMovementAnimationDirection.X * TileSize * progress),
+            (int)Math.Round(fieldMovementAnimationDirection.Y * TileSize * progress));
+    }
+
+    private int GetFieldViewportWidthTiles()
+    {
+        return isFieldStatusVisible ? CompactFieldViewportWidthTiles : ExpandedFieldViewportWidthTiles;
+    }
+
+    private int GetFieldViewportHeightTiles()
+    {
+        return isFieldStatusVisible ? CompactFieldViewportHeightTiles : ExpandedFieldViewportHeightTiles;
+    }
+
+    private Rectangle GetFieldViewport()
+    {
+        var widthTiles = GetFieldViewportWidthTiles();
+        var heightTiles = GetFieldViewportHeightTiles();
+        var width = widthTiles * TileSize;
+        var height = heightTiles * TileSize;
+        var x = isFieldStatusVisible ? 16 : (VirtualWidth - width) / 2;
+        var y = isFieldStatusVisible ? 112 : 114;
+
+        if (!isFieldStatusVisible)
+        {
+            y += ExpandedFieldViewportVerticalTrim / 2;
+            height -= ExpandedFieldViewportVerticalTrim;
+        }
+
+        return new Rectangle(x, y, width, height);
+    }
+
+    private Rectangle GetFieldHelpWindow()
+    {
+        return isFieldStatusVisible
+            ? new Rectangle(8, 8, 430, 96)
+            : new Rectangle(8, 8, 624, 96);
+    }
+
+    private Rectangle GetCenteredFieldTileRectangle(Rectangle viewport)
+    {
+        return new Rectangle(
+            viewport.X + (viewport.Width / 2) - (TileSize / 2),
+            viewport.Y + (viewport.Height / 2) - (TileSize / 2),
+            TileSize,
+            TileSize);
+    }
+
+    private int GetTileIdAtWorldPosition(Point tile)
+    {
+        if (tile.X < 0 || tile.Y < 0 || tile.X >= map.GetLength(1) || tile.Y >= map.GetLength(0))
+        {
+            return MapFactory.WallTile;
+        }
+
+        return map[tile.Y, tile.X];
+    }
+
+    private void OpenFieldDialog(FieldEventDefinition fieldEvent)
+    {
+        var result = fieldEventService.Interact(player, fieldEvent, selectedLanguage);
+        activeFieldDialogPages = result.Pages
+            .Where(page => !string.IsNullOrWhiteSpace(page))
+            .ToArray();
+        activeFieldDialogPageIndex = 0;
+        isFieldDialogOpen = activeFieldDialogPages.Count > 0;
+
+        if (fieldEvent.ActionType == FieldEventActionType.Recover)
+        {
+            PersistProgress();
+        }
+
+        PlaySe(SoundEffect.Dialog);
+    }
+
+    private void AdvanceFieldDialog()
+    {
+        if (!isFieldDialogOpen)
+        {
+            return;
+        }
+
+        if (activeFieldDialogPageIndex < activeFieldDialogPages.Count - 1)
+        {
+            activeFieldDialogPageIndex++;
+            PlaySe(SoundEffect.Dialog);
+            return;
+        }
+
+        CloseFieldDialog();
+    }
+
+    private void CloseFieldDialog()
+    {
+        isFieldDialogOpen = false;
+        activeFieldDialogPages = [];
+        activeFieldDialogPageIndex = 0;
+    }
+
+    private string GetCurrentFieldDialogPage()
+    {
+        if (!isFieldDialogOpen || activeFieldDialogPages.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        return activeFieldDialogPages[Math.Clamp(activeFieldDialogPageIndex, 0, activeFieldDialogPages.Count - 1)];
     }
 
     private bool TryTransitionFromTile(Point tile)
