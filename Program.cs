@@ -1,4 +1,5 @@
 using DragonGlareAlpha.Security;
+using DragonGlareAlpha.Services;
 
 namespace DragonGlareAlpha;
 
@@ -10,6 +11,13 @@ static class Program
     [STAThread]
     static void Main()
     {
+        var platformSupportService = new PlatformSupportService();
+        if (platformSupportService.TryDetectUnsupportedPlatform(out var platformMessage))
+        {
+            MessageBox.Show(platformMessage, "DragonGlare Alpha", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+            return;
+        }
+
         if (AntiCheatService.TryDetectStartupViolation(out var message))
         {
             MessageBox.Show(message, "DragonGlare Alpha", MessageBoxButtons.OK, MessageBoxIcon.Stop);
@@ -20,5 +28,5 @@ static class Program
         // see https://aka.ms/applicationconfiguration.
         ApplicationConfiguration.Initialize();
         Application.Run(new Form1());
-    }    
+    }
 }
