@@ -41,6 +41,7 @@ public partial class Form1 : Form
     private readonly Dictionary<SoundEffect, Uri> seUris = [];
     private readonly Dictionary<string, Image> npcSprites = [];
     private readonly Dictionary<string, Image> npcPortraits = [];
+    private readonly Dictionary<string, Image> uiImages = [];
     private readonly Dictionary<PlayerFacingDirection, Image> heroSprites = [];
     private readonly Random random = new();
     private readonly SaveService saveService = new();

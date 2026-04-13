@@ -295,9 +295,38 @@ public partial class Form1
 
     private void DrawBattleBackdrop(Graphics g)
     {
+        if (currentFieldMap == FieldMapId.Field)
+        {
+            var battlefieldBackdrop = GetUiImage("SFC_battlefieldFrame1.png");
+            if (battlefieldBackdrop is not null)
+            {
+                DrawBattleBackdropCover(g, battlefieldBackdrop, new Rectangle(0, 0, UiCanvas.VirtualWidth, UiCanvas.VirtualHeight));
+                return;
+            }
+        }
+
         DrawBattleStoneWall(g, new Rectangle(0, 0, UiCanvas.VirtualWidth, 244));
         DrawBattlePlatform(g, new Rectangle(0, 244, UiCanvas.VirtualWidth, 68));
         DrawBattleCarpet(g, new Rectangle(0, 312, UiCanvas.VirtualWidth, UiCanvas.VirtualHeight - 312));
+    }
+
+    private static void DrawBattleBackdropCover(Graphics g, Image backdrop, Rectangle bounds)
+    {
+        var scale = Math.Max(bounds.Width / (float)backdrop.Width, bounds.Height / (float)backdrop.Height);
+        var sourceWidth = Math.Max(1, (int)Math.Round(bounds.Width / scale));
+        var sourceHeight = Math.Max(1, (int)Math.Round(bounds.Height / scale));
+        var sourceRect = new Rectangle(
+            Math.Max(0, (backdrop.Width - sourceWidth) / 2),
+            Math.Max(0, (backdrop.Height - sourceHeight) / 2),
+            Math.Min(sourceWidth, backdrop.Width),
+            Math.Min(sourceHeight, backdrop.Height));
+
+        var state = g.Save();
+        g.SetClip(bounds);
+        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+        g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
+        g.DrawImage(backdrop, bounds, sourceRect, GraphicsUnit.Pixel);
+        g.Restore(state);
     }
 
     private static void DrawBattleStoneWall(Graphics g, Rectangle rect)

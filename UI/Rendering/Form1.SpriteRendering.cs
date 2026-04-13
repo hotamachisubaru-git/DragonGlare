@@ -66,6 +66,27 @@ public partial class Form1
         return portrait;
     }
 
+    private Image? GetUiImage(string? assetName)
+    {
+        if (string.IsNullOrWhiteSpace(assetName))
+        {
+            return null;
+        }
+
+        if (uiImages.TryGetValue(assetName, out var cachedImage))
+        {
+            return cachedImage;
+        }
+
+        var image = LoadSprite("UI", assetName);
+        if (image is not null)
+        {
+            uiImages[assetName] = image;
+        }
+
+        return image;
+    }
+
     private static Image? LoadSprite(string assetSubdirectory, string fileName)
     {
         var path = ResolveAssetPath(assetSubdirectory, fileName);
@@ -452,5 +473,12 @@ public partial class Form1
         }
 
         npcPortraits.Clear();
+
+        foreach (var image in uiImages.Values)
+        {
+            image.Dispose();
+        }
+
+        uiImages.Clear();
     }
 }
