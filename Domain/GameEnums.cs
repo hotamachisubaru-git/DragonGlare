@@ -63,6 +63,7 @@ public enum BattleFlowState
     Intro,
     CommandSelection,
     ItemSelection,
+    EquipmentSelection,
     Resolving,
     Victory,
     Defeat,
@@ -73,7 +74,9 @@ public enum BattleActionType
 {
     Attack,
     Spell,
+    Defend,
     Item,
+    Equip,
     Run
 }
 

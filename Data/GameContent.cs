@@ -25,16 +25,25 @@ public static class GameContent
         ["U", "V", "W", "X", "Y", "Z", "-", "'", "DEL", "END"]
     ];
 
-    public static readonly string[,] BattleCommandLabels =
+    public static readonly string[,] JapaneseBattleCommandLabels =
     {
         { "こうげき", "じゅもん" },
-        { "どうぐ", "にげる" }
+        { "ぼうぎょ", "どうぐ" },
+        { "そうび", "にげる" }
+    };
+
+    public static readonly string[,] EnglishBattleCommandLabels =
+    {
+        { "ATTACK", "SPELL" },
+        { "GUARD", "ITEM" },
+        { "EQUIP", "RUN" }
     };
 
     public static readonly BattleActionType[,] BattleCommandGrid =
     {
         { BattleActionType.Attack, BattleActionType.Spell },
-        { BattleActionType.Item, BattleActionType.Run }
+        { BattleActionType.Defend, BattleActionType.Item },
+        { BattleActionType.Equip, BattleActionType.Run }
     };
     public static readonly WeaponDefinition[] WeaponCatalog =
     [
@@ -132,7 +141,8 @@ public static class GameContent
                 "Welcome, {player}.\nSharpen your blade and prepare.",
                 "Herbs heal you.\nFire orbs can be thrown from ITEMS."
             ],
-            SpriteAssetName: "guide_npc.png"),
+            SpriteAssetName: "guide_npc.png",
+            PortraitAssetName: "guide-4.png"),
         new(
             "town_child",
             FieldMapId.Hub,
@@ -148,7 +158,8 @@ public static class GameContent
                 "A village child grins.\n\"The castle guard is super serious!\"",
                 "\"Watch the tall grass out in the field.\nMonsters jump out fast there.\""
             ],
-            SpriteAssetName: "town_child.png"),
+            SpriteAssetName: "town_child.png",
+            PortraitAssetName: "young-5.png"),
         new(
             "castle_guard",
             FieldMapId.Castle,
@@ -164,7 +175,8 @@ public static class GameContent
                 "A castle guard stands firm.\n\"Hunter of dragonlight, do not rush.\"",
                 "\"When you grow stronger, review your gear.\nPower alone will not carry you.\""
             ],
-            SpriteAssetName: "castle_guard.png"),
+            SpriteAssetName: "castle_guard.png",
+            PortraitAssetName: "castle-guard-4.png"),
         new(
             "field_scout",
             FieldMapId.Field,
@@ -180,7 +192,8 @@ public static class GameContent
                 "A field scout watches the road.\n\"The ground ahead gets rough.\"",
                 "\"If your HP drops, fall back first.\nPushing through carelessly will cost you.\""
             ],
-            SpriteAssetName: "field_scout.png"),
+            SpriteAssetName: "field_scout.png",
+            PortraitAssetName: "mihari-3.png"),
         new(
             "field_sign",
             FieldMapId.Hub,
@@ -218,6 +231,12 @@ public static class GameContent
     public static string[][] GetNameTable(UiLanguage language)
     {
         return language == UiLanguage.Japanese ? JapaneseNameTable : EnglishNameTable;
+    }
+
+    public static string GetBattleCommandLabel(UiLanguage language, int row, int column)
+    {
+        var labels = language == UiLanguage.English ? EnglishBattleCommandLabels : JapaneseBattleCommandLabels;
+        return labels[row, column];
     }
 
     public static WeaponDefinition? GetWeaponById(string? itemId)

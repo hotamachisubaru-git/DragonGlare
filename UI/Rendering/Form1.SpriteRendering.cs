@@ -7,15 +7,21 @@ public partial class Form1
 {
     private void LoadFieldSprites()
     {
-        if (LoadHeroSpriteSheet("hero_4.png"))
+        LoadHeroDirectionalSprites();
+        if (heroSprites.Count == 4)
         {
             return;
         }
 
-        LoadHeroSprite(PlayerFacingDirection.Left, "hero_left.png", "hero.png");
-        LoadHeroSprite(PlayerFacingDirection.Right, "hero_right.png", "hero_left.png", "hero.png");
-        LoadHeroSprite(PlayerFacingDirection.Up, "hero_up.png", "hero_left.png", "hero.png");
-        LoadHeroSprite(PlayerFacingDirection.Down, "hero_down.png", "hero_left.png", "hero.png");
+        if (heroSprites.Count == 0 && LoadHeroSpriteSheet("hero_4.png"))
+        {
+            return;
+        }
+
+        LoadHeroSpriteIfMissing(PlayerFacingDirection.Left, "hero_left.png", "hero.png");
+        LoadHeroSpriteIfMissing(PlayerFacingDirection.Right, "hero_right.png", "hero_left.png", "hero.png");
+        LoadHeroSpriteIfMissing(PlayerFacingDirection.Up, "hero_up.png", "hero_left.png", "hero.png");
+        LoadHeroSpriteIfMissing(PlayerFacingDirection.Down, "hero_down.png", "hero_left.png", "hero.png");
     }
 
     private Image? GetNpcSprite(string? spriteAssetName)
@@ -37,6 +43,27 @@ public partial class Form1
         }
 
         return sprite;
+    }
+
+    private Image? GetNpcPortrait(string? portraitAssetName)
+    {
+        if (string.IsNullOrWhiteSpace(portraitAssetName))
+        {
+            return null;
+        }
+
+        if (npcPortraits.TryGetValue(portraitAssetName, out var cachedPortrait))
+        {
+            return cachedPortrait;
+        }
+
+        var portrait = LoadSprite(Path.Combine("Portraits", "NPC"), portraitAssetName);
+        if (portrait is not null)
+        {
+            npcPortraits[portraitAssetName] = portrait;
+        }
+
+        return portrait;
     }
 
     private static Image? LoadSprite(string assetSubdirectory, string fileName)
@@ -66,6 +93,95 @@ public partial class Form1
         }
 
         heroSprites[direction] = sprite;
+    }
+
+    private void LoadHeroSpriteIfMissing(PlayerFacingDirection direction, params string[] fileNames)
+    {
+        if (heroSprites.ContainsKey(direction))
+        {
+            return;
+        }
+
+        LoadHeroSprite(direction, fileNames);
+    }
+
+    private void LoadHeroDirectionalSprites()
+    {
+        LoadHero3DirectionalSprites();
+        LoadHero4RightSprite();
+    }
+
+    private void LoadHero3DirectionalSprites()
+    {
+        if (heroSprites.ContainsKey(PlayerFacingDirection.Left)
+            && heroSprites.ContainsKey(PlayerFacingDirection.Up)
+            && heroSprites.ContainsKey(PlayerFacingDirection.Down))
+        {
+            return;
+        }
+
+        var source = LoadSprite(Path.Combine("Sprites", "Characters"), "hero_3.png");
+        if (source is not Bitmap spriteSheet)
+        {
+            source?.Dispose();
+            return;
+        }
+
+        try
+        {
+            var regions = FindOpaqueRegions(spriteSheet, alphaThreshold: 8, minimumPixelCount: 100)
+                .OrderByDescending(region => region.PixelCount)
+                .Take(3)
+                .OrderBy(region => region.Bounds.X)
+                .ToArray();
+            if (regions.Length < 3)
+            {
+                return;
+            }
+
+            LoadHeroSpriteFromBounds(spriteSheet, PlayerFacingDirection.Left, regions[0].Bounds);
+            LoadHeroSpriteFromBounds(spriteSheet, PlayerFacingDirection.Up, regions[1].Bounds);
+            LoadHeroSpriteFromBounds(spriteSheet, PlayerFacingDirection.Down, regions[2].Bounds);
+        }
+        finally
+        {
+            spriteSheet.Dispose();
+        }
+    }
+
+    private void LoadHero4RightSprite()
+    {
+        if (heroSprites.ContainsKey(PlayerFacingDirection.Right))
+        {
+            return;
+        }
+
+        var source = LoadSprite(Path.Combine("Sprites", "Characters"), "hero_4.png");
+        if (source is not Bitmap spriteSheet)
+        {
+            source?.Dispose();
+            return;
+        }
+
+        try
+        {
+            var regions = FindOpaqueRegions(spriteSheet, alphaThreshold: 8, minimumPixelCount: 100)
+                .OrderByDescending(region => region.PixelCount)
+                .Take(4)
+                .OrderBy(region => region.Bounds.Y)
+                .ThenBy(region => region.Bounds.X)
+                .ToArray();
+            if (regions.Length < 4)
+            {
+                return;
+            }
+
+            LoadHeroSpriteFromBounds(spriteSheet, PlayerFacingDirection.Right, regions[3].Bounds);
+        }
+        finally
+        {
+            spriteSheet.Dispose();
+        }
     }
 
     private bool LoadHeroSpriteSheet(string fileName)
@@ -111,6 +227,22 @@ public partial class Form1
         }
 
         using var cropped = cellBitmap.Clone(crop, cellBitmap.PixelFormat);
+        heroSprites[direction] = ResizeSprite(cropped, targetHeight: TileSize + 16);
+    }
+
+    private void LoadHeroSpriteFromBounds(Bitmap spriteSheet, PlayerFacingDirection direction, Rectangle sourceRegion)
+    {
+        if (heroSprites.ContainsKey(direction))
+        {
+            return;
+        }
+
+        if (sourceRegion.Width <= 0 || sourceRegion.Height <= 0)
+        {
+            return;
+        }
+
+        using var cropped = spriteSheet.Clone(sourceRegion, spriteSheet.PixelFormat);
         heroSprites[direction] = ResizeSprite(cropped, targetHeight: TileSize + 16);
     }
 
@@ -199,12 +331,19 @@ public partial class Form1
 
     private static Rectangle FindLargestOpaqueRegionBounds(Bitmap bitmap, byte alphaThreshold)
     {
+        return FindOpaqueRegions(bitmap, alphaThreshold, minimumPixelCount: 1)
+            .OrderByDescending(region => region.PixelCount)
+            .Select(region => region.Bounds)
+            .FirstOrDefault();
+    }
+
+    private static List<(Rectangle Bounds, int PixelCount)> FindOpaqueRegions(Bitmap bitmap, byte alphaThreshold, int minimumPixelCount)
+    {
         var width = bitmap.Width;
         var height = bitmap.Height;
         var visited = new bool[width * height];
         var queue = new Queue<Point>();
-        var bestBounds = Rectangle.Empty;
-        var bestPixelCount = 0;
+        var regions = new List<(Rectangle Bounds, int PixelCount)>();
 
         for (var y = 0; y < height; y++)
         {
@@ -262,17 +401,16 @@ public partial class Form1
                     }
                 }
 
-                if (pixelCount <= bestPixelCount)
+                if (pixelCount < minimumPixelCount)
                 {
                     continue;
                 }
 
-                bestPixelCount = pixelCount;
-                bestBounds = Rectangle.FromLTRB(minX, minY, maxX + 1, maxY + 1);
+                regions.Add((Rectangle.FromLTRB(minX, minY, maxX + 1, maxY + 1), pixelCount));
             }
         }
 
-        return bestBounds;
+        return regions;
     }
 
     private static Bitmap ResizeSprite(Image sprite, int targetHeight)
@@ -307,5 +445,12 @@ public partial class Form1
         }
 
         npcSprites.Clear();
+
+        foreach (var portrait in npcPortraits.Values)
+        {
+            portrait.Dispose();
+        }
+
+        npcPortraits.Clear();
     }
 }

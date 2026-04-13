@@ -116,68 +116,77 @@ public partial class Form1
 
     private void DrawBattleLowerUi(Graphics g)
     {
-        if (battleFlowState == BattleFlowState.CommandSelection)
-        {
-            var messageStripRect = new Rectangle(20, 296, 600, 84);
-            DrawWindow(g, messageStripRect);
-            DrawText(
-                g,
-                battleMessage,
-                new Rectangle(messageStripRect.X + 18, messageStripRect.Y + 10, messageStripRect.Width - 36, messageStripRect.Height - 20),
-                smallFont,
-                wrap: true);
+        var panelRect = new Rectangle(18, 286, 604, 176);
+        DrawWindow(g, panelRect);
 
-            var commandRect = new Rectangle(20, 384, 254, 78);
-            var enemyPanelRect = new Rectangle(282, 384, 338, 78);
-            DrawWindow(g, commandRect);
-            DrawWindow(g, enemyPanelRect);
-            DrawBattleCommandWindow(g, commandRect);
-            DrawBattleTargetWindow(g, enemyPanelRect);
+        var innerRect = Rectangle.Inflate(panelRect, -16, -12);
+        var headerRect = new Rectangle(innerRect.X, innerRect.Y, innerRect.Width, 24);
+        DrawBattleUnifiedHeader(g, headerRect);
+        DrawBattleWindowSeparator(g, innerRect.X, innerRect.Y + 28, innerRect.Width);
+
+        if (battleFlowState is BattleFlowState.CommandSelection or BattleFlowState.ItemSelection or BattleFlowState.EquipmentSelection)
+        {
+            var selectionRect = new Rectangle(innerRect.X, innerRect.Y + 38, 210, innerRect.Height - 38);
+            var separatorX = selectionRect.Right + 8;
+            var messageRect = new Rectangle(separatorX + 14, innerRect.Y + 38, innerRect.Right - (separatorX + 14), innerRect.Height - 38);
+            DrawBattleSelectionPane(g, selectionRect);
+            DrawBattleVerticalSeparator(g, separatorX, innerRect.Y + 38, innerRect.Height - 38);
+            DrawBattleMessagePane(g, messageRect, battleFlowState == BattleFlowState.CommandSelection
+                ? GetBattleCommandHelpMessage()
+                : GetBattleSubmenuHelpMessage());
             return;
         }
 
-        var messageRect = new Rectangle(20, 328, 600, 134);
-        DrawWindow(g, messageRect);
-        DrawText(
+        var resultRect = new Rectangle(innerRect.X, innerRect.Y + 38, innerRect.Width, innerRect.Height - 38);
+        DrawBattleMessagePane(
             g,
-            battleMessage,
-            new Rectangle(messageRect.X + 24, messageRect.Y + 18, messageRect.Width - 48, messageRect.Height - 52),
-            smallFont,
-            wrap: true);
-        DrawText(
-            g,
-            selectedLanguage == UiLanguage.English ? "ENTER / Z / X: NEXT" : "ENTER / Z / X: つぎへ",
-            new Rectangle(messageRect.X + 24, messageRect.Bottom - 30, messageRect.Width - 48, 20),
-            smallFont,
-            StringAlignment.Far);
+            resultRect,
+            selectedLanguage == UiLanguage.English ? "ENTER / Z / X: NEXT" : "ENTER / Z / X: つぎへ");
+    }
+
+    private void DrawBattleSelectionPane(Graphics g, Rectangle rect)
+    {
+        DrawText(g, GetBattleSelectionTitle(), new Rectangle(rect.X, rect.Y, rect.Width, 20), smallFont);
+        if (battleFlowState is BattleFlowState.ItemSelection or BattleFlowState.EquipmentSelection)
+        {
+            DrawText(g, GetBattleSelectionCounterText(), new Rectangle(rect.X, rect.Y, rect.Width, 20), smallFont, StringAlignment.Far);
+        }
+
+        DrawBattleWindowSeparator(g, rect.X, rect.Y + 22, rect.Width);
+        var contentRect = new Rectangle(rect.X, rect.Y + 32, rect.Width, rect.Height - 32);
+        if (battleFlowState == BattleFlowState.CommandSelection)
+        {
+            DrawBattleCommandWindow(g, contentRect);
+            return;
+        }
+
+        DrawBattleSelectionList(g, contentRect);
     }
 
     private void DrawBattleCommandWindow(Graphics g, Rectangle rect)
     {
-        var titleRect = new Rectangle(rect.X + 16, rect.Y + 8, rect.Width - 32, 20);
-        DrawText(g, GetDisplayPlayerName(), titleRect, smallFont, StringAlignment.Center);
-        DrawBattleWindowSeparator(g, rect.X + 16, rect.Y + 28, rect.Width - 32);
+        var commandCellWidth = rect.Width / GetBattleCommandColumnCount();
+        var commandCellHeight = rect.Height / GetBattleCommandRowCount();
+        using var highlightBrush = new SolidBrush(Color.FromArgb(44, 54, 116, 196));
 
-        var commandGridRect = new Rectangle(rect.X + 18, rect.Y + 34, rect.Width - 36, rect.Height - 40);
-        var commandCellWidth = commandGridRect.Width / 2;
-        var commandCellHeight = commandGridRect.Height / 2;
-        for (var row = 0; row < 2; row++)
+        for (var row = 0; row < GetBattleCommandRowCount(); row++)
         {
-            for (var column = 0; column < 2; column++)
+            for (var column = 0; column < GetBattleCommandColumnCount(); column++)
             {
                 var cellRect = new Rectangle(
-                    commandGridRect.X + (column * commandCellWidth),
-                    commandGridRect.Y + (row * commandCellHeight),
+                    rect.X + (column * commandCellWidth),
+                    rect.Y + (row * commandCellHeight),
                     commandCellWidth,
                     commandCellHeight);
                 if (battleCursorRow == row && battleCursorColumn == column)
                 {
+                    g.FillRectangle(highlightBrush, cellRect.X + 2, cellRect.Y + 2, cellRect.Width - 4, cellRect.Height - 4);
                     DrawBattleSelectionPointer(g, cellRect.X + 2, cellRect.Y + (cellRect.Height / 2) - 7);
                 }
 
                 DrawText(
                     g,
-                    GameContent.BattleCommandLabels[row, column],
+                    GetBattleCommandLabel(row, column),
                     new Rectangle(cellRect.X + 22, cellRect.Y - 1, cellRect.Width - 22, cellRect.Height),
                     smallFont,
                     StringAlignment.Near,
@@ -186,26 +195,70 @@ public partial class Form1
         }
     }
 
-    private void DrawBattleTargetWindow(Graphics g, Rectangle rect)
+    private void DrawBattleSelectionList(Graphics g, Rectangle rect)
     {
-        var targetName = currentEncounter?.Enemy.Name ?? "まもの";
+        var entries = GetActiveBattleSelectionEntries();
+        if (entries.Count == 0)
+        {
+            DrawText(
+                g,
+                battleFlowState == BattleFlowState.ItemSelection ? GetBattleNoItemsMessage() : GetBattleNoEquipmentMessage(),
+                rect,
+                smallFont,
+                wrap: true);
+            return;
+        }
+
+        using var highlightBrush = new SolidBrush(Color.FromArgb(40, 54, 116, 196));
+        const int rowHeight = 24;
+        var visibleEntries = entries.Skip(battleListScroll).Take(BattleSelectionVisibleRows).ToArray();
+        for (var index = 0; index < visibleEntries.Length; index++)
+        {
+            var entryIndex = battleListScroll + index;
+            var rowRect = new Rectangle(rect.X, rect.Y + (index * rowHeight), rect.Width, rowHeight);
+            if (entryIndex == battleListCursor)
+            {
+                g.FillRectangle(highlightBrush, rowRect.X + 2, rowRect.Y + 2, rowRect.Width - 4, rowRect.Height - 4);
+                DrawBattleSelectionPointer(g, rowRect.X + 2, rowRect.Y + 5);
+            }
+
+            DrawText(g, visibleEntries[index].Label, new Rectangle(rowRect.X + 22, rowRect.Y, 92, rowRect.Height), smallFont, StringAlignment.Near, StringAlignment.Center);
+            DrawText(g, visibleEntries[index].Detail, new Rectangle(rowRect.X + 116, rowRect.Y, rowRect.Width - 166, rowRect.Height), smallFont, StringAlignment.Far, StringAlignment.Center);
+            DrawText(g, visibleEntries[index].Badge, new Rectangle(rowRect.Right - 42, rowRect.Y, 42, rowRect.Height), smallFont, StringAlignment.Far, StringAlignment.Center);
+        }
+    }
+
+    private void DrawBattleUnifiedHeader(Graphics g, Rectangle rect)
+    {
+        var targetName = currentEncounter?.Enemy.Name ?? (selectedLanguage == UiLanguage.English ? "MONSTER" : "まもの");
         var countLabel = selectedLanguage == UiLanguage.English ? "x1" : "1匹";
-        var contentRect = Rectangle.Inflate(rect, -18, -12);
-
-        DrawText(g, targetName, new Rectangle(contentRect.X, contentRect.Y, contentRect.Width - 60, 20), smallFont);
-        DrawText(g, countLabel, new Rectangle(contentRect.Right - 64, contentRect.Y, 64, 20), smallFont, StringAlignment.Far);
-        DrawBattleWindowSeparator(g, contentRect.X, contentRect.Y + 20, contentRect.Width);
-
+        DrawText(g, targetName, new Rectangle(rect.X, rect.Y, rect.Width - 176, rect.Height), smallFont);
+        DrawText(g, countLabel, new Rectangle(rect.Right - 204, rect.Y, 44, rect.Height), smallFont, StringAlignment.Far);
         if (currentEncounter is null)
+        {
+            return;
+        }
+
+        DrawText(g, $"HP {currentEncounter.CurrentHp}/{currentEncounter.Enemy.MaxHp}", new Rectangle(rect.Right - 150, rect.Y, 150, rect.Height), smallFont, StringAlignment.Far);
+    }
+
+    private void DrawBattleMessagePane(Graphics g, Rectangle rect, string footer)
+    {
+        var footerHeight = footer.Contains('\n') ? 38 : 20;
+        var textRect = new Rectangle(rect.X, rect.Y, rect.Width, Math.Max(20, rect.Height - (footerHeight + 8)));
+        DrawText(g, battleMessage, textRect, smallFont, wrap: true);
+        if (string.IsNullOrWhiteSpace(footer))
         {
             return;
         }
 
         DrawText(
             g,
-            $"HP {currentEncounter.CurrentHp}/{currentEncounter.Enemy.MaxHp}",
-            new Rectangle(contentRect.X, contentRect.Y + 28, contentRect.Width, 20),
-            smallFont);
+            footer,
+            new Rectangle(rect.X, rect.Bottom - footerHeight, rect.Width, footerHeight),
+            smallFont,
+            StringAlignment.Far,
+            wrap: true);
     }
 
     private static void DrawBattleWindowSeparator(Graphics g, int x, int y, int width)
@@ -214,6 +267,14 @@ public partial class Form1
         using var linePen = new Pen(Color.FromArgb(132, 206, 255));
         g.DrawLine(shadowPen, x, y + 1, x + width, y + 1);
         g.DrawLine(linePen, x, y, x + width, y);
+    }
+
+    private static void DrawBattleVerticalSeparator(Graphics g, int x, int y, int height)
+    {
+        using var shadowPen = new Pen(Color.FromArgb(24, 24, 40));
+        using var linePen = new Pen(Color.FromArgb(132, 206, 255));
+        g.DrawLine(shadowPen, x + 1, y, x + 1, y + height);
+        g.DrawLine(linePen, x, y, x, y + height);
     }
 
     private void DrawBattleSelectionPointer(Graphics g, int x, int y)

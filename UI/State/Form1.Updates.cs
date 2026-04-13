@@ -326,6 +326,12 @@ public partial class Form1
             return;
         }
 
+        if (battleFlowState is BattleFlowState.ItemSelection or BattleFlowState.EquipmentSelection)
+        {
+            UpdateBattleSelectionMenu();
+            return;
+        }
+
         if (battleFlowState != BattleFlowState.CommandSelection)
         {
             if (WasConfirmPressed() || WasPressed(Keys.Escape))
@@ -336,22 +342,7 @@ public partial class Form1
             return;
         }
 
-        if (WasPressed(Keys.Up) || WasPressed(Keys.W))
-        {
-            battleCursorRow = Math.Max(0, battleCursorRow - 1);
-        }
-        else if (WasPressed(Keys.Down) || WasPressed(Keys.S))
-        {
-            battleCursorRow = Math.Min(1, battleCursorRow + 1);
-        }
-        else if (WasPressed(Keys.Left) || WasPressed(Keys.A))
-        {
-            battleCursorColumn = Math.Max(0, battleCursorColumn - 1);
-        }
-        else if (WasPressed(Keys.Right) || WasPressed(Keys.D))
-        {
-            battleCursorColumn = Math.Min(1, battleCursorColumn + 1);
-        }
+        UpdateBattleCommandCursor();
 
         if (WasPressed(Keys.Escape))
         {
@@ -367,14 +358,146 @@ public partial class Form1
         }
 
         var action = GameContent.BattleCommandGrid[battleCursorRow, battleCursorColumn];
-        var result = battleService.ResolveTurn(player, currentEncounter, action, GetEquippedWeapon(), GetEquippedArmor(), null, random);
+        switch (action)
+        {
+            case BattleActionType.Item:
+                OpenBattleSelectionMenu(BattleFlowState.ItemSelection);
+                return;
+            case BattleActionType.Equip:
+                OpenBattleSelectionMenu(BattleFlowState.EquipmentSelection);
+                return;
+        }
+
+        var result = battleService.ResolveTurn(player, currentEncounter, action, GetEquippedWeapon(), GetEquippedArmor(), null, null, random);
+        ApplyBattleResolution(result);
+    }
+
+    private void UpdateBattleCommandCursor()
+    {
+        if (WasPressed(Keys.Up) || WasPressed(Keys.W))
+        {
+            battleCursorRow = Math.Max(0, battleCursorRow - 1);
+        }
+        else if (WasPressed(Keys.Down) || WasPressed(Keys.S))
+        {
+            battleCursorRow = Math.Min(GetBattleCommandRowCount() - 1, battleCursorRow + 1);
+        }
+        else if (WasPressed(Keys.Left) || WasPressed(Keys.A))
+        {
+            battleCursorColumn = Math.Max(0, battleCursorColumn - 1);
+        }
+        else if (WasPressed(Keys.Right) || WasPressed(Keys.D))
+        {
+            battleCursorColumn = Math.Min(GetBattleCommandColumnCount() - 1, battleCursorColumn + 1);
+        }
+    }
+
+    private void UpdateBattleSelectionMenu()
+    {
+        var entries = GetActiveBattleSelectionEntries();
+        if (entries.Count == 0)
+        {
+            CloseBattleSelectionMenu(battleFlowState == BattleFlowState.ItemSelection
+                ? GetBattleNoItemsMessage()
+                : GetBattleNoEquipmentMessage());
+            return;
+        }
+
+        if (WasPressed(Keys.Up) || WasPressed(Keys.W))
+        {
+            MoveBattleSelectionCursor(-1, entries.Count);
+        }
+        else if (WasPressed(Keys.Down) || WasPressed(Keys.S))
+        {
+            MoveBattleSelectionCursor(1, entries.Count);
+        }
+
+        if (WasBattleSubmenuBackPressed())
+        {
+            CloseBattleSelectionMenu();
+            return;
+        }
+
+        if (!WasBattleSubmenuConfirmPressed() || currentEncounter is null)
+        {
+            return;
+        }
+
+        var selectedEntry = entries[battleListCursor];
+        var action = battleFlowState == BattleFlowState.ItemSelection
+            ? BattleActionType.Item
+            : BattleActionType.Equip;
+        var result = battleService.ResolveTurn(
+            player,
+            currentEncounter,
+            action,
+            GetEquippedWeapon(),
+            GetEquippedArmor(),
+            selectedEntry.Consumable,
+            selectedEntry.Equipment,
+            random);
+        ApplyBattleResolution(result);
+        if (result.Outcome == BattleOutcome.Ongoing)
+        {
+            battleFlowState = BattleFlowState.CommandSelection;
+        }
+    }
+
+    private void MoveBattleSelectionCursor(int delta, int itemCount)
+    {
+        battleListCursor = Math.Clamp(battleListCursor + delta, 0, itemCount - 1);
+        if (battleListCursor < battleListScroll)
+        {
+            battleListScroll = battleListCursor;
+            return;
+        }
+
+        if (battleListCursor >= battleListScroll + BattleSelectionVisibleRows)
+        {
+            battleListScroll = battleListCursor - BattleSelectionVisibleRows + 1;
+        }
+    }
+
+    private void OpenBattleSelectionMenu(BattleFlowState nextState)
+    {
+        battleFlowState = nextState;
+        battleListCursor = 0;
+        battleListScroll = 0;
+
+        var entries = GetActiveBattleSelectionEntries();
+        if (entries.Count == 0)
+        {
+            CloseBattleSelectionMenu(nextState == BattleFlowState.ItemSelection
+                ? GetBattleNoItemsMessage()
+                : GetBattleNoEquipmentMessage());
+            return;
+        }
+
+        battleMessage = nextState == BattleFlowState.ItemSelection
+            ? GetBattleItemPromptMessage()
+            : GetBattleEquipmentPromptMessage();
+    }
+
+    private void CloseBattleSelectionMenu(string? message = null)
+    {
+        battleFlowState = BattleFlowState.CommandSelection;
+        battleListCursor = 0;
+        battleListScroll = 0;
+        battleMessage = message ?? GetBattleCommandPromptMessage();
+    }
+
+    private void ApplyBattleResolution(BattleTurnResolution result)
+    {
         ApplyBattleVisualEffects(result);
         var resultMessage = FormatBattleResolutionMessage(result.Steps);
+        var encounterEnemy = currentEncounter?.Enemy;
 
         switch (result.Outcome)
         {
             case BattleOutcome.Victory:
-                battleMessage = $"{resultMessage}\n{progressionService.ApplyBattleRewards(player, currentEncounter.Enemy, random)}";
+                battleMessage = encounterEnemy is null
+                    ? resultMessage
+                    : $"{resultMessage}\n{progressionService.ApplyBattleRewards(player, encounterEnemy, random)}";
                 battleFlowState = BattleFlowState.Victory;
                 PersistProgress();
                 break;
@@ -394,6 +517,7 @@ public partial class Form1
                 break;
             default:
                 battleMessage = resultMessage;
+                battleFlowState = BattleFlowState.CommandSelection;
                 PersistProgress();
                 break;
         }
@@ -496,7 +620,12 @@ public partial class Form1
             return;
         }
 
-        var result = shopService.PurchaseEquipment(player, selectedEntry.Item!, GetEquippedWeapon(), GetEquippedArmor());
+        if (selectedEntry.Item is null)
+        {
+            return;
+        }
+
+        var result = shopService.PurchaseEquipment(player, selectedEntry.Item, GetEquippedWeapon(), GetEquippedArmor());
         shopMessage = result.Message;
         if (result.Success)
         {

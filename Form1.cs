@@ -5,6 +5,7 @@ using System.Text;
 using DragonGlareAlpha.Domain;
 using DragonGlareAlpha.Domain.Battle;
 using DragonGlareAlpha.Domain.Field;
+using DragonGlareAlpha.Domain.Items;
 using DragonGlareAlpha.Domain.Player;
 using DragonGlareAlpha.Domain.Startup;
 using DragonGlareAlpha.Persistence;
@@ -25,6 +26,7 @@ public partial class Form1 : Form
     private const int ExpandedFieldViewportVerticalTrim = 16;
     private const int FieldMovementAnimationDuration = 6;
     private const int EncounterTransitionDuration = 26;
+    private const int BattleSelectionVisibleRows = 4;
     private static readonly Point PlayerStartTile = new(3, 12);
     private static readonly TimeSpan BgmLoopLeadTime = TimeSpan.FromMilliseconds(120);
 
@@ -38,6 +40,7 @@ public partial class Form1 : Form
     private readonly Dictionary<BgmTrack, Uri> bgmUris = [];
     private readonly Dictionary<SoundEffect, Uri> seUris = [];
     private readonly Dictionary<string, Image> npcSprites = [];
+    private readonly Dictionary<string, Image> npcPortraits = [];
     private readonly Dictionary<PlayerFacingDirection, Image> heroSprites = [];
     private readonly Random random = new();
     private readonly SaveService saveService = new();
@@ -74,6 +77,8 @@ public partial class Form1 : Form
     private int fieldMovementAnimationFramesRemaining;
     private int battleCursorRow;
     private int battleCursorColumn;
+    private int battleListCursor;
+    private int battleListScroll;
     private BattleFlowState battleFlowState = BattleFlowState.CommandSelection;
     private int shopPromptCursor;
     private int shopItemCursor;
@@ -92,7 +97,10 @@ public partial class Form1 : Form
     private BattleEncounter? pendingEncounter;
     private IReadOnlyList<string> activeFieldDialogPages = [];
     private int activeFieldDialogPageIndex;
+    private string? activeFieldDialogPortraitAssetName;
     private IReadOnlyList<SaveSlotSummary> saveSlotSummaries = [];
+    private LaunchDisplayMode activeDisplayMode;
+    private LaunchDisplayMode lastWindowedDisplayMode = LaunchDisplayMode.Window640x480;
 
     private enum ShopMenuEntryType
     {
@@ -110,6 +118,13 @@ public partial class Form1 : Form
         Down
     }
 
+    private readonly record struct BattleSelectionEntry(
+        string Label,
+        string Detail,
+        string Badge,
+        ConsumableDefinition? Consumable = null,
+        IEquipmentDefinition? Equipment = null);
+
     private readonly record struct ShopMenuEntry(ShopMenuEntryType Type, string Label, IEquipmentDefinition? Item = null);
 
     private string LegacySaveFilePath => Path.Combine(AppContext.BaseDirectory, "savegame.json");
@@ -117,6 +132,12 @@ public partial class Form1 : Form
     public Form1(LaunchSettings? launchSettings = null)
     {
         this.launchSettings = launchSettings ?? new LaunchSettings();
+        activeDisplayMode = this.launchSettings.DisplayMode;
+        if (activeDisplayMode != LaunchDisplayMode.Fullscreen)
+        {
+            lastWindowedDisplayMode = activeDisplayMode;
+        }
+
         InitializeComponent();
         ConfigureWindow();
         LoadCustomFont();
@@ -240,8 +261,10 @@ public partial class Form1 : Form
 
     private void ApplyDisplayMode()
     {
-        var activeScreen = Screen.FromPoint(Cursor.Position);
-        if (launchSettings.DisplayMode == LaunchDisplayMode.Fullscreen)
+        var activeScreen = GetCurrentDisplayScreen();
+        WindowState = FormWindowState.Normal;
+
+        if (activeDisplayMode == LaunchDisplayMode.Fullscreen)
         {
             StartPosition = FormStartPosition.Manual;
             FormBorderStyle = FormBorderStyle.None;
@@ -250,15 +273,37 @@ public partial class Form1 : Form
             return;
         }
 
+        lastWindowedDisplayMode = activeDisplayMode;
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
         StartPosition = FormStartPosition.Manual;
         var workingArea = activeScreen.WorkingArea;
-        ClientSize = ConstrainWindowedClientSize(GetWindowedClientSize(launchSettings.DisplayMode), workingArea);
+        ClientSize = ConstrainWindowedClientSize(GetWindowedClientSize(activeDisplayMode), workingArea);
 
         Location = new Point(
             workingArea.X + Math.Max(0, (workingArea.Width - Width) / 2),
             workingArea.Y + Math.Max(0, (workingArea.Height - Height) / 2));
+    }
+
+    private Screen GetCurrentDisplayScreen()
+    {
+        return IsHandleCreated ? Screen.FromHandle(Handle) : Screen.FromPoint(Cursor.Position);
+    }
+
+    private void ToggleFullscreen()
+    {
+        if (activeDisplayMode == LaunchDisplayMode.Fullscreen)
+        {
+            activeDisplayMode = lastWindowedDisplayMode;
+        }
+        else
+        {
+            lastWindowedDisplayMode = activeDisplayMode;
+            activeDisplayMode = LaunchDisplayMode.Fullscreen;
+        }
+
+        ApplyDisplayMode();
+        Invalidate();
     }
 
     private static Size GetWindowedClientSize(LaunchDisplayMode displayMode)

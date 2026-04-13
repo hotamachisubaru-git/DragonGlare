@@ -42,13 +42,16 @@ public sealed class BattleService
         WeaponDefinition? equippedWeapon,
         ArmorDefinition? equippedArmor,
         ConsumableDefinition? selectedConsumable,
+        IEquipmentDefinition? selectedEquipment,
         Random random)
     {
         return action switch
         {
             BattleActionType.Attack => ResolveAttack(player, encounter, equippedWeapon, equippedArmor, random),
             BattleActionType.Spell => ResolveSpell(player, encounter, equippedArmor, random),
+            BattleActionType.Defend => ResolveDefend(player, encounter, equippedArmor, random),
             BattleActionType.Item => ResolveItem(player, encounter, selectedConsumable, equippedWeapon, equippedArmor, random),
+            BattleActionType.Equip => ResolveEquip(player, encounter, selectedEquipment, equippedArmor, random),
             BattleActionType.Run => ResolveEscape(),
             _ => Reject("こうどうできない。")
         };
@@ -159,6 +162,24 @@ public sealed class BattleService
         return BuildResolution(player, steps);
     }
 
+    private BattleTurnResolution ResolveDefend(
+        PlayerProgress player,
+        BattleEncounter encounter,
+        ArmorDefinition? equippedArmor,
+        Random random)
+    {
+        var steps = new List<BattleSequenceStep>
+        {
+            new()
+            {
+                Message = $"{GetPlayerName(player)}は みをまもっている！"
+            }
+        };
+
+        AppendEnemyCounter(player, encounter, equippedArmor, steps, random, isDefending: true);
+        return BuildResolution(player, steps);
+    }
+
     private BattleTurnResolution ResolveItem(
         PlayerProgress player,
         BattleEncounter encounter,
@@ -263,6 +284,54 @@ public sealed class BattleService
         }
     }
 
+    private BattleTurnResolution ResolveEquip(
+        PlayerProgress player,
+        BattleEncounter encounter,
+        IEquipmentDefinition? selectedEquipment,
+        ArmorDefinition? equippedArmor,
+        Random random)
+    {
+        if (selectedEquipment is null)
+        {
+            return Reject("そうびできる ものがない。");
+        }
+
+        if (player.GetItemCount(selectedEquipment.Id) <= 0)
+        {
+            return Reject("その そうびは もっていない。");
+        }
+
+        switch (selectedEquipment.Slot)
+        {
+            case EquipmentSlot.Weapon when string.Equals(player.EquippedWeaponId, selectedEquipment.Id, StringComparison.Ordinal):
+            case EquipmentSlot.Armor when string.Equals(player.EquippedArmorId, selectedEquipment.Id, StringComparison.Ordinal):
+                return Reject($"{selectedEquipment.Name}は もう そうびしている。");
+        }
+
+        var nextArmor = equippedArmor;
+        switch (selectedEquipment.Slot)
+        {
+            case EquipmentSlot.Weapon:
+                player.EquippedWeaponId = selectedEquipment.Id;
+                break;
+            case EquipmentSlot.Armor:
+                player.EquippedArmorId = selectedEquipment.Id;
+                nextArmor = selectedEquipment as ArmorDefinition;
+                break;
+        }
+
+        var steps = new List<BattleSequenceStep>
+        {
+            new()
+            {
+                Message = $"{GetPlayerName(player)}は {selectedEquipment.Name}を そうびした！"
+            }
+        };
+
+        AppendEnemyCounter(player, encounter, nextArmor, steps, random);
+        return BuildResolution(player, steps);
+    }
+
     private static BattleTurnResolution ResolveEscape()
     {
         return new BattleTurnResolution
@@ -285,7 +354,8 @@ public sealed class BattleService
         BattleEncounter encounter,
         ArmorDefinition? equippedArmor,
         List<BattleSequenceStep> steps,
-        Random random)
+        Random random,
+        bool isDefending = false)
     {
         steps.Add(new BattleSequenceStep
         {
@@ -293,10 +363,17 @@ public sealed class BattleService
         });
 
         var enemyDamage = Math.Max(1, encounter.Enemy.Attack + random.Next(1, 5) - GetPlayerDefense(player, equippedArmor));
+        if (isDefending)
+        {
+            enemyDamage = Math.Max(1, (int)Math.Ceiling(enemyDamage / 2f));
+        }
+
         player.CurrentHp = Math.Max(0, player.CurrentHp - enemyDamage);
         steps.Add(new BattleSequenceStep
         {
-            Message = $"{enemyDamage}ダメージを うけた！",
+            Message = isDefending
+                ? $"{enemyDamage}ダメージに おさえた！"
+                : $"{enemyDamage}ダメージを うけた！",
             VisualCue = BattleVisualCue.PlayerHit,
             AnimationFrames = 10
         });

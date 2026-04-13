@@ -6,18 +6,24 @@ public partial class Form1
 {
     private void DrawWindow(Graphics g, Rectangle rect)
     {
-        using var background = new SolidBrush(Color.Black);
-        using var shadowBrush = new SolidBrush(Color.FromArgb(96, 0, 0, 0));
-        using var glowPen = new Pen(Color.FromArgb(0, 72, 255), 6);
-        using var outerPen = new Pen(Color.FromArgb(0, 120, 255), 3);
-        using var innerPen = new Pen(Color.FromArgb(132, 206, 255), 1);
+        using var shadowBrush = new SolidBrush(Color.FromArgb(112, 0, 0, 0));
+        using var outerDarkBrush = new SolidBrush(Color.FromArgb(16, 30, 52));
+        using var outerFrameBrush = new SolidBrush(Color.FromArgb(24, 84, 156));
+        using var innerFrameBrush = new SolidBrush(Color.FromArgb(144, 214, 255));
+        using var innerShadeBrush = new SolidBrush(Color.FromArgb(46, 76, 120));
+        using var backgroundBrush = new SolidBrush(Color.FromArgb(26, 24, 38));
+        using var backgroundGlowBrush = new SolidBrush(Color.FromArgb(42, 36, 58));
 
         g.FillRectangle(shadowBrush, rect.X + 6, rect.Y + 6, rect.Width, rect.Height);
-        g.FillRectangle(background, rect);
-        g.DrawRectangle(glowPen, rect);
-        g.DrawRectangle(outerPen, rect);
-        var innerRect = Rectangle.Inflate(rect, -7, -7);
-        g.DrawRectangle(innerPen, innerRect);
+        g.FillRectangle(outerDarkBrush, rect);
+        g.FillRectangle(outerFrameBrush, rect.X + 1, rect.Y + 1, rect.Width - 2, rect.Height - 2);
+        g.FillRectangle(innerShadeBrush, rect.X + 3, rect.Y + 3, rect.Width - 6, rect.Height - 6);
+        g.FillRectangle(backgroundBrush, rect.X + 4, rect.Y + 4, rect.Width - 8, rect.Height - 8);
+        g.FillRectangle(backgroundGlowBrush, rect.X + 4, rect.Y + 4, rect.Width - 8, Math.Max(2, (rect.Height - 8) / 4));
+        g.FillRectangle(innerFrameBrush, rect.X + 3, rect.Y + 3, rect.Width - 6, 1);
+        g.FillRectangle(innerFrameBrush, rect.X + 3, rect.Y + 3, 1, rect.Height - 6);
+        g.FillRectangle(innerShadeBrush, rect.Right - 4, rect.Y + 3, 1, rect.Height - 6);
+        g.FillRectangle(innerShadeBrush, rect.X + 3, rect.Bottom - 4, rect.Width - 6, 1);
     }
 
     private void DrawOption(Graphics g, bool selected, int x, int y, string text)

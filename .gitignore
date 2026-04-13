@@ -24,8 +24,11 @@ TestResults/
 /Assets/*
 !/Assets/README.md
 !/Assets/Sprites/
+!/Assets/Portraits/
 /Assets/Sprites/*
 !/Assets/Sprites/NPC/
 !/Assets/Sprites/NPC/**
+!/Assets/Portraits/NPC/
+!/Assets/Portraits/NPC/**
 /アセット/
 /JF-Dot-ShinonomeMin14.ttf

@@ -1,6 +1,7 @@
 using DragonGlareAlpha.Data;
 using DragonGlareAlpha.Domain;
 using DragonGlareAlpha.Domain.Field;
+using DragonGlareAlpha.Domain.Items;
 using DragonGlareAlpha.Domain.Player;
 using DragonGlareAlpha.Persistence;
 using DragonGlareAlpha.Services;
@@ -224,6 +225,7 @@ public partial class Form1
             .Where(page => !string.IsNullOrWhiteSpace(page))
             .ToArray();
         activeFieldDialogPageIndex = 0;
+        activeFieldDialogPortraitAssetName = fieldEvent.PortraitAssetName;
         isFieldDialogOpen = activeFieldDialogPages.Count > 0;
 
         if (fieldEvent.ActionType == FieldEventActionType.Recover)
@@ -256,6 +258,7 @@ public partial class Form1
         isFieldDialogOpen = false;
         activeFieldDialogPages = [];
         activeFieldDialogPageIndex = 0;
+        activeFieldDialogPortraitAssetName = null;
     }
 
     private string GetCurrentFieldDialogPage()
@@ -408,5 +411,166 @@ public partial class Form1
         return selectedLanguage == UiLanguage.English
             ? $"What will {playerName} do?"
             : $"{playerName}は どうする？";
+    }
+
+    private string GetBattleItemPromptMessage()
+    {
+        return selectedLanguage == UiLanguage.English
+            ? "Choose an item."
+            : "なにを つかう？";
+    }
+
+    private string GetBattleEquipmentPromptMessage()
+    {
+        return selectedLanguage == UiLanguage.English
+            ? "Choose gear."
+            : "なにを そうびする？";
+    }
+
+    private string GetBattleNoItemsMessage()
+    {
+        return selectedLanguage == UiLanguage.English
+            ? "You have no usable items."
+            : "つかえる どうぐがない。";
+    }
+
+    private string GetBattleNoEquipmentMessage()
+    {
+        return selectedLanguage == UiLanguage.English
+            ? "No gear to switch."
+            : "つけかえられる そうびがない。";
+    }
+
+    private string GetBattleCommandHelpMessage()
+    {
+        return selectedLanguage == UiLanguage.English
+            ? "ARROWS/WASD: CHOOSE\nENTER/Z: OK  ESC: RUN"
+            : "やじるし/WASD: せんたく\nENTER/Z: けってい  ESC: にげる";
+    }
+
+    private string GetBattleSubmenuHelpMessage()
+    {
+        return selectedLanguage == UiLanguage.English
+            ? "ARROWS/WASD: CHOOSE\nENTER/Z: OK  ESC/X: BACK"
+            : "やじるし/WASD: せんたく\nENTER/Z: けってい  ESC/X: もどる";
+    }
+
+    private string GetBattleSelectionTitle()
+    {
+        return battleFlowState switch
+        {
+            BattleFlowState.ItemSelection => selectedLanguage == UiLanguage.English ? "ITEM" : "どうぐ",
+            BattleFlowState.EquipmentSelection => selectedLanguage == UiLanguage.English ? "EQUIP" : "そうび",
+            _ => selectedLanguage == UiLanguage.English ? "COMMAND" : "こうどう"
+        };
+    }
+
+    private int GetBattleCommandRowCount()
+    {
+        return GameContent.BattleCommandGrid.GetLength(0);
+    }
+
+    private int GetBattleCommandColumnCount()
+    {
+        return GameContent.BattleCommandGrid.GetLength(1);
+    }
+
+    private string GetBattleCommandLabel(int row, int column)
+    {
+        return GameContent.GetBattleCommandLabel(selectedLanguage, row, column);
+    }
+
+    private IReadOnlyList<BattleSelectionEntry> GetBattleItemEntries()
+    {
+        return GameContent.ConsumableCatalog
+            .Where(item => player.GetItemCount(item.Id) > 0)
+            .Select(item => new BattleSelectionEntry(
+                item.Name,
+                GetBattleConsumableDetail(item),
+                GetBattleCountBadge(player.GetItemCount(item.Id)),
+                Consumable: item))
+            .ToArray();
+    }
+
+    private IReadOnlyList<BattleSelectionEntry> GetBattleEquipmentEntries()
+    {
+        var weaponEntries = GameContent.WeaponCatalog
+            .Where(item => player.GetItemCount(item.Id) > 0 &&
+                !string.Equals(player.EquippedWeaponId, item.Id, StringComparison.Ordinal))
+            .Select(item => new BattleSelectionEntry(
+                item.Name,
+                GetBattleEquipmentDetail(item),
+                GetBattleCountBadge(player.GetItemCount(item.Id)),
+                Equipment: item));
+
+        var armorEntries = GameContent.ArmorCatalog
+            .Where(item => player.GetItemCount(item.Id) > 0 &&
+                !string.Equals(player.EquippedArmorId, item.Id, StringComparison.Ordinal))
+            .Select(item => new BattleSelectionEntry(
+                item.Name,
+                GetBattleEquipmentDetail(item),
+                GetBattleCountBadge(player.GetItemCount(item.Id)),
+                Equipment: item));
+
+        return weaponEntries.Concat(armorEntries).ToArray();
+    }
+
+    private IReadOnlyList<BattleSelectionEntry> GetActiveBattleSelectionEntries()
+    {
+        return battleFlowState switch
+        {
+            BattleFlowState.ItemSelection => GetBattleItemEntries(),
+            BattleFlowState.EquipmentSelection => GetBattleEquipmentEntries(),
+            _ => []
+        };
+    }
+
+    private string GetBattleSelectionCounterText()
+    {
+        var entries = GetActiveBattleSelectionEntries();
+        if (entries.Count == 0)
+        {
+            return "0/0";
+        }
+
+        return $"{battleListCursor + 1}/{entries.Count}";
+    }
+
+    private string GetBattleConsumableDetail(ConsumableDefinition item)
+    {
+        return item.EffectType switch
+        {
+            ConsumableEffectType.HealHp => $"HP+{item.Amount}",
+            ConsumableEffectType.HealMp => $"MP+{item.Amount}",
+            ConsumableEffectType.DamageEnemy => selectedLanguage == UiLanguage.English ? $"DMG {item.Amount}" : $"与D {item.Amount}",
+            _ => item.Description
+        };
+    }
+
+    private string GetBattleEquipmentDetail(IEquipmentDefinition equipment)
+    {
+        return equipment.Slot switch
+        {
+            EquipmentSlot.Weapon => $"ATK {equipment.AttackBonus}{FormatSignedStat(equipment.AttackBonus - (GetEquippedWeapon()?.AttackBonus ?? 0))}",
+            EquipmentSlot.Armor => $"DEF {equipment.DefenseBonus}{FormatSignedStat(equipment.DefenseBonus - (GetEquippedArmor()?.DefenseBonus ?? 0))}",
+            _ => equipment.Name
+        };
+    }
+
+    private static string FormatSignedStat(int value)
+    {
+        return value switch
+        {
+            > 0 => $" (+{value})",
+            < 0 => $" ({value})",
+            _ => string.Empty
+        };
+    }
+
+    private string GetBattleCountBadge(int count)
+    {
+        return selectedLanguage == UiLanguage.English
+            ? $"x{count}"
+            : $"×{count}";
     }
 }

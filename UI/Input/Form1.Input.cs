@@ -141,6 +141,16 @@ public partial class Form1
         return WasPressed(Keys.Escape) || WasPressed(Keys.X);
     }
 
+    private bool WasBattleSubmenuConfirmPressed()
+    {
+        return WasPressed(Keys.Enter) || WasPressed(Keys.Z);
+    }
+
+    private bool WasBattleSubmenuBackPressed()
+    {
+        return WasPressed(Keys.Escape) || WasPressed(Keys.X);
+    }
+
     private bool WasFieldInteractPressed()
     {
         return WasPressed(Keys.Enter) || WasPressed(Keys.Z);
@@ -148,6 +158,19 @@ public partial class Form1
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
+        if (e.KeyCode == Keys.F11)
+        {
+            if (!heldKeys.Contains(e.KeyCode))
+            {
+                ToggleFullscreen();
+            }
+
+            heldKeys.Add(e.KeyCode);
+            e.Handled = true;
+            e.SuppressKeyPress = true;
+            return;
+        }
+
         if (!heldKeys.Contains(e.KeyCode))
         {
             pressedKeys.Add(e.KeyCode);

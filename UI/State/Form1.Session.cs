@@ -35,6 +35,8 @@ public partial class Form1
         battleFlowState = BattleFlowState.CommandSelection;
         battleCursorRow = 0;
         battleCursorColumn = 0;
+        battleListCursor = 0;
+        battleListScroll = 0;
         ResetBattleVisualEffects();
     }
 

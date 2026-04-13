@@ -34,13 +34,28 @@ public partial class Form1
         if (isFieldDialogOpen)
         {
             DrawWindow(g, FieldLayout.DialogWindow);
-            DrawText(g, GetCurrentFieldDialogPage(), new Rectangle(72, 346, 494, 68), smallFont, wrap: true);
+            var portrait = GetNpcPortrait(activeFieldDialogPortraitAssetName);
+            var portraitFrameRect = new Rectangle(FieldLayout.DialogWindow.X + 16, FieldLayout.DialogWindow.Y + 16, 96, 96);
+            var textRect = portrait is null
+                ? new Rectangle(72, 346, 494, 68)
+                : new Rectangle(portraitFrameRect.Right + 18, 346, 566 - (portraitFrameRect.Right + 18), 68);
+            var footerRect = portrait is null
+                ? new Rectangle(72, 414, 494, 20)
+                : new Rectangle(portraitFrameRect.Right + 18, 414, 566 - (portraitFrameRect.Right + 18), 20);
+
+            if (portrait is not null)
+            {
+                DrawWindow(g, portraitFrameRect);
+                DrawPortraitCover(g, portrait, Rectangle.Inflate(portraitFrameRect, -6, -6));
+            }
+
+            DrawText(g, GetCurrentFieldDialogPage(), textRect, smallFont, wrap: true);
             DrawText(
                 g,
                 activeFieldDialogPageIndex < activeFieldDialogPages.Count - 1
                     ? (selectedLanguage == UiLanguage.Japanese ? "Z: つぎへ" : "Z: NEXT")
                     : (selectedLanguage == UiLanguage.Japanese ? "Z / ESC: とじる" : "Z / ESC: CLOSE"),
-                new Rectangle(72, 414, 494, 20),
+                footerRect,
                 smallFont,
                 StringAlignment.Far);
         }
@@ -162,5 +177,23 @@ public partial class Form1
         g.DrawRectangle(glowPen, rect);
         g.DrawRectangle(outerPen, rect);
         g.DrawRectangle(innerPen, Rectangle.Inflate(rect, -5, -5));
+    }
+
+    private static void DrawPortraitCover(Graphics g, Image portrait, Rectangle bounds)
+    {
+        var scale = Math.Max(bounds.Width / (float)portrait.Width, bounds.Height / (float)portrait.Height);
+        var sourceWidth = Math.Max(1, (int)Math.Round(bounds.Width / scale));
+        var sourceHeight = Math.Max(1, (int)Math.Round(bounds.Height / scale));
+        var sourceRect = new Rectangle(
+            Math.Max(0, (portrait.Width - sourceWidth) / 2),
+            Math.Max(0, (portrait.Height - sourceHeight) / 2),
+            Math.Min(sourceWidth, portrait.Width),
+            Math.Min(sourceHeight, portrait.Height));
+
+        var state = g.Save();
+        g.SetClip(bounds);
+        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+        g.DrawImage(portrait, bounds, sourceRect, GraphicsUnit.Pixel);
+        g.Restore(state);
     }
 }

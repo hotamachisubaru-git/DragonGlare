@@ -12,6 +12,7 @@ public sealed record FieldEventDefinition(
     string[] JapanesePages,
     string[] EnglishPages,
     string? SpriteAssetName = null,
+    string? PortraitAssetName = null,
     int RecoverHp = 0,
     int RecoverMp = 0)
 {
