@@ -220,6 +220,12 @@ public partial class Form1
 
     private void OpenFieldDialog(FieldEventDefinition fieldEvent)
     {
+        if (fieldEvent.ActionType == FieldEventActionType.Bank)
+        {
+            EnterBank();
+            return;
+        }
+
         var result = fieldEventService.Interact(player, fieldEvent, selectedLanguage);
         activeFieldDialogPages = result.Pages
             .Where(page => !string.IsNullOrWhiteSpace(page))
@@ -312,19 +318,99 @@ public partial class Form1
         return GetEquippedArmor()?.Name ?? "なし";
     }
 
+    private IReadOnlyList<ShopInventoryEntry> GetSellableInventoryEntries()
+    {
+        return player.Inventory
+            .Where(entry => entry.Quantity > 0)
+            .Select(entry => TryCreateShopInventoryEntry(entry.ItemId, entry.Quantity))
+            .Where(entry => entry.HasValue)
+            .Select(entry => entry!.Value)
+            .OrderBy(entry => entry.Price)
+            .ThenBy(entry => entry.Name, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private ShopInventoryEntry? TryCreateShopInventoryEntry(string itemId, int count)
+    {
+        var sellPrice = GameContent.GetSellPrice(itemId);
+        if (sellPrice <= 0)
+        {
+            return null;
+        }
+
+        var consumable = GameContent.GetConsumableById(itemId);
+        if (consumable is not null)
+        {
+            return new ShopInventoryEntry(
+                itemId,
+                consumable.Name,
+                sellPrice,
+                0,
+                0,
+                count,
+                consumable.Description);
+        }
+
+        var weapon = GameContent.GetWeaponById(itemId);
+        if (weapon is not null)
+        {
+            return new ShopInventoryEntry(
+                itemId,
+                weapon.Name,
+                sellPrice,
+                weapon.AttackBonus,
+                weapon.DefenseBonus,
+                count,
+                $"ATK+{weapon.AttackBonus}");
+        }
+
+        var armor = GameContent.GetArmorById(itemId);
+        if (armor is not null)
+        {
+            return new ShopInventoryEntry(
+                itemId,
+                armor.Name,
+                sellPrice,
+                armor.AttackBonus,
+                armor.DefenseBonus,
+                count,
+                $"DEF+{armor.DefenseBonus}");
+        }
+
+        return null;
+    }
+
+    private int GetShopListItemCount()
+    {
+        return shopPhase switch
+        {
+            ShopPhase.BuyList => GameContent.ShopCatalog.Length,
+            ShopPhase.SellList => GetSellableInventoryEntries().Count,
+            _ => 0
+        };
+    }
+
     private int GetShopPageCount()
     {
-        return Math.Max(1, (GameContent.ShopCatalog.Length + ShopItemsPerPage - 1) / ShopItemsPerPage);
+        return Math.Max(1, (GetShopListItemCount() + ShopItemsPerPage - 1) / ShopItemsPerPage);
     }
 
     private IReadOnlyList<ShopMenuEntry> GetShopVisibleEntries()
     {
         var pageStartIndex = shopPageIndex * ShopItemsPerPage;
-        var entries = GameContent.ShopCatalog
-            .Skip(pageStartIndex)
-            .Take(ShopItemsPerPage)
-            .Select(item => new ShopMenuEntry(ShopMenuEntryType.Item, item.Name, item))
-            .ToList();
+        var entries = shopPhase switch
+        {
+            ShopPhase.SellList => GetSellableInventoryEntries()
+                .Skip(pageStartIndex)
+                .Take(ShopItemsPerPage)
+                .Select(item => new ShopMenuEntry(ShopMenuEntryType.InventoryItem, item.Name, InventoryItem: item))
+                .ToList(),
+            _ => GameContent.ShopCatalog
+                .Skip(pageStartIndex)
+                .Take(ShopItemsPerPage)
+                .Select(item => new ShopMenuEntry(ShopMenuEntryType.Product, item.Name, Product: item))
+                .ToList()
+        };
 
         if (shopPageIndex > 0)
         {
@@ -344,6 +430,61 @@ public partial class Form1
     {
         shopPageIndex = Math.Clamp(pageIndex, 0, Math.Max(0, GetShopPageCount() - 1));
         shopItemCursor = 0;
+    }
+
+    private ShopMenuEntry? GetSelectedShopEntry()
+    {
+        if (shopPhase == ShopPhase.Welcome)
+        {
+            return null;
+        }
+
+        var visibleEntries = GetShopVisibleEntries();
+        if (visibleEntries.Count == 0)
+        {
+            return null;
+        }
+
+        return visibleEntries[Math.Clamp(shopItemCursor, 0, visibleEntries.Count - 1)];
+    }
+
+    private IReadOnlyList<BankAmountOption> GetBankAmountOptions()
+    {
+        var options = new List<BankAmountOption>
+        {
+            new("10G", 10),
+            new("50G", 50),
+            new("100G", 100),
+            new("300G", 300),
+            new("500G", 500),
+            new("1000G", 1000)
+        };
+
+        options.Add(bankPhase switch
+        {
+            BankPhase.DepositList => new BankAmountOption("ぜんぶ", 0, UseMaximum: true),
+            BankPhase.WithdrawList => new BankAmountOption("できるだけ", 0, UseMaximum: true),
+            BankPhase.BorrowList => new BankAmountOption("かのうなだけ", 0, UseMaximum: true),
+            _ => new BankAmountOption("やめる", 0, Quit: true)
+        });
+        options.Add(new BankAmountOption("やめる", 0, Quit: true));
+        return options;
+    }
+
+    private int ResolveBankTransactionAmount(BankAmountOption option)
+    {
+        if (!option.UseMaximum)
+        {
+            return option.Amount;
+        }
+
+        return bankPhase switch
+        {
+            BankPhase.DepositList => player.Gold,
+            BankPhase.WithdrawList => player.BankGold,
+            BankPhase.BorrowList => bankService.GetAvailableCredit(player),
+            _ => 0
+        };
     }
 
     private int GetTotalAttack()

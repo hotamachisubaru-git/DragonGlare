@@ -5,7 +5,7 @@ namespace DragonGlareAlpha.Persistence;
 
 public sealed class SaveData
 {
-    public const int CurrentVersion = 7;
+    public const int CurrentVersion = 8;
 
     public int Version { get; set; } = CurrentVersion;
 
@@ -40,6 +40,12 @@ public sealed class SaveData
     public int BaseDefense { get; set; }
 
     public int Gold { get; set; }
+
+    public int BankGold { get; set; }
+
+    public int LoanBalance { get; set; }
+
+    public int LoanStepCounter { get; set; }
 
     public string? EquippedWeaponId { get; set; }
 

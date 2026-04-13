@@ -1,5 +1,6 @@
 using DragonGlareAlpha.Domain;
 using DragonGlareAlpha.Domain.Battle;
+using DragonGlareAlpha.Domain.Commerce;
 using DragonGlareAlpha.Domain.Field;
 using DragonGlareAlpha.Domain.Items;
 using DragonGlareAlpha.Domain.Player;
@@ -71,26 +72,36 @@ public static class GameContent
         new("dragon_mail", "りゅうよろい", 492, 16)
     ];
 
-    public static readonly IEquipmentDefinition[] ShopCatalog =
+    public static readonly ConsumableDefinition[] ConsumableCatalog =
     [
-        WeaponCatalog[0],
-        ArmorCatalog[0],
-        WeaponCatalog[1],
-        ArmorCatalog[1],
-        WeaponCatalog[2],
-        WeaponCatalog[3],
-        ArmorCatalog[2],
-        WeaponCatalog[4],
-        ArmorCatalog[3],
-        WeaponCatalog[5],
-        ArmorCatalog[4],
-        WeaponCatalog[6],
-        ArmorCatalog[5],
-        WeaponCatalog[7],
-        ArmorCatalog[6],
-        WeaponCatalog[8],
-        ArmorCatalog[7],
-        WeaponCatalog[9]
+        new("healing_herb", "やくそう", "HPを 12かいふく", ConsumableEffectType.HealHp, 12, 10),
+        new("mana_seed", "まりょくのたね", "MPを 3かいふく", ConsumableEffectType.HealMp, 3, 24),
+        new("fire_orb", "ひのたま", "てきに 18ダメージ", ConsumableEffectType.DamageEnemy, 18, 36)
+    ];
+
+    public static readonly ShopProductDefinition[] ShopCatalog =
+    [
+        new(Consumable: ConsumableCatalog[0]),
+        new(Equipment: WeaponCatalog[0]),
+        new(Equipment: ArmorCatalog[0]),
+        new(Consumable: ConsumableCatalog[1]),
+        new(Equipment: WeaponCatalog[1]),
+        new(Consumable: ConsumableCatalog[2]),
+        new(Equipment: ArmorCatalog[1]),
+        new(Equipment: WeaponCatalog[2]),
+        new(Equipment: WeaponCatalog[3]),
+        new(Equipment: ArmorCatalog[2]),
+        new(Equipment: WeaponCatalog[4]),
+        new(Equipment: ArmorCatalog[3]),
+        new(Equipment: WeaponCatalog[5]),
+        new(Equipment: ArmorCatalog[4]),
+        new(Equipment: WeaponCatalog[6]),
+        new(Equipment: ArmorCatalog[5]),
+        new(Equipment: WeaponCatalog[7]),
+        new(Equipment: ArmorCatalog[6]),
+        new(Equipment: WeaponCatalog[8]),
+        new(Equipment: ArmorCatalog[7]),
+        new(Equipment: WeaponCatalog[9])
     ];
 
     public static readonly EnemyDefinition[] EnemyCatalog =
@@ -107,13 +118,6 @@ public static class GameContent
         new("wyvern_scout", "ワイバーンスカウト", FieldMapId.Field, 9, 15, 3, 72, 21, 11, 66, 96, new EnemyDropDefinition("mana_seed", 10)),
         new("lava_drake", "ラヴァドレイク", FieldMapId.Field, 13, 99, 2, 90, 25, 13, 88, 132, new EnemyDropDefinition("fire_orb", 15)),
         new("ancient_wyrm", "エンシェントワーム", FieldMapId.Field, 18, 99, 1, 112, 29, 15, 120, 180, new EnemyDropDefinition("mana_seed", 12))
-    ];
-
-    public static readonly ConsumableDefinition[] ConsumableCatalog =
-    [
-        new("healing_herb", "やくそう", "HPを 12かいふく", ConsumableEffectType.HealHp, 12),
-        new("mana_seed", "まりょくのたね", "MPを 3かいふく", ConsumableEffectType.HealMp, 3),
-        new("fire_orb", "ひのたま", "てきに 18ダメージ", ConsumableEffectType.DamageEnemy, 18)
     ];
 
     public static readonly FieldTransitionDefinition[] FieldTransitions =
@@ -194,6 +198,19 @@ public static class GameContent
             ],
             SpriteAssetName: "field_scout.png",
             PortraitAssetName: "mihari-3.png"),
+        new(
+            "banker_npc",
+            FieldMapId.Hub,
+            new Point(7, 12),
+            Color.Gold,
+            true,
+            FieldEventActionType.Bank,
+            [
+                "ぎんこういんだ。\n「あずける・ひきだす・かりるを あつかうよ。」"
+            ],
+            [
+                "A banker nods.\n\"Deposit, withdraw, or borrow here.\""
+            ]),
         new(
             "field_sign",
             FieldMapId.Hub,
@@ -277,5 +294,37 @@ public static class GameContent
         }
 
         return FieldEvents.FirstOrDefault(fieldEvent => string.Equals(fieldEvent.Id, eventId, StringComparison.Ordinal));
+    }
+
+    public static ShopProductDefinition? GetShopProductById(string? itemId)
+    {
+        if (string.IsNullOrWhiteSpace(itemId))
+        {
+            return null;
+        }
+
+        return ShopCatalog.FirstOrDefault(item => string.Equals(item.Id, itemId, StringComparison.Ordinal));
+    }
+
+    public static string GetItemName(string? itemId)
+    {
+        return GetConsumableById(itemId)?.Name
+            ?? GetWeaponById(itemId)?.Name
+            ?? GetArmorById(itemId)?.Name
+            ?? string.Empty;
+    }
+
+    public static int GetItemPrice(string? itemId)
+    {
+        return GetConsumableById(itemId)?.Price
+            ?? GetWeaponById(itemId)?.Price
+            ?? GetArmorById(itemId)?.Price
+            ?? 0;
+    }
+
+    public static int GetSellPrice(string? itemId)
+    {
+        var itemPrice = GetItemPrice(itemId);
+        return itemPrice <= 0 ? 0 : Math.Max(1, itemPrice / 2);
     }
 }

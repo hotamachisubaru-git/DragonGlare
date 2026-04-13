@@ -56,6 +56,9 @@ public partial class Form1
             case GameState.ShopBuy:
                 UpdateShopBuy();
                 break;
+            case GameState.Bank:
+                UpdateBank();
+                break;
         }
 
         UpdateBgm();
@@ -498,17 +501,20 @@ public partial class Form1
                 battleMessage = encounterEnemy is null
                     ? resultMessage
                     : $"{resultMessage}\n{progressionService.ApplyBattleRewards(player, encounterEnemy, random)}";
+                AppendBattleInterest(ref battleMessage);
                 battleFlowState = BattleFlowState.Victory;
                 PersistProgress();
                 break;
             case BattleOutcome.Defeat:
                 battleMessage = $"{resultMessage}\n{progressionService.ApplyDefeatPenalty(player, PlayerStartTile)}";
+                AppendBattleInterest(ref battleMessage);
                 SetFieldMap(FieldMapId.Hub);
                 battleFlowState = BattleFlowState.Defeat;
                 PersistProgress();
                 break;
             case BattleOutcome.Escaped:
                 battleMessage = resultMessage;
+                AppendBattleInterest(ref battleMessage);
                 battleFlowState = BattleFlowState.Escaped;
                 PersistProgress();
                 break;
@@ -521,6 +527,17 @@ public partial class Form1
                 PersistProgress();
                 break;
         }
+    }
+
+    private void AppendBattleInterest(ref string message)
+    {
+        var addedInterest = bankService.AccrueBattleInterest(player);
+        if (addedInterest <= 0)
+        {
+            return;
+        }
+
+        message += $"\nかしつけの りそくが {addedInterest}G ふえた。";
     }
 
     private void UpdateEncounterTransition()
@@ -553,9 +570,13 @@ public partial class Form1
     {
         if (shopPhase == ShopPhase.Welcome)
         {
-            if (WasPressed(Keys.Up) || WasPressed(Keys.W) || WasPressed(Keys.Down) || WasPressed(Keys.S))
+            if (WasPressed(Keys.Up) || WasPressed(Keys.W))
             {
-                shopPromptCursor = 1 - shopPromptCursor;
+                shopPromptCursor = Math.Max(0, shopPromptCursor - 1);
+            }
+            else if (WasPressed(Keys.Down) || WasPressed(Keys.S))
+            {
+                shopPromptCursor = Math.Min(2, shopPromptCursor + 1);
             }
 
             if (WasShopBackPressed())
@@ -571,7 +592,13 @@ public partial class Form1
 
             if (shopPromptCursor == 0)
             {
-                OpenShopCatalog();
+                OpenShopBuyCatalog();
+                return;
+            }
+
+            if (shopPromptCursor == 1)
+            {
+                OpenShopSellCatalog();
                 return;
             }
 
@@ -620,14 +647,32 @@ public partial class Form1
             return;
         }
 
-        if (selectedEntry.Item is null)
+        if (shopPhase == ShopPhase.SellList)
+        {
+            if (selectedEntry.InventoryItem is null)
+            {
+                return;
+            }
+
+            var sellResult = shopService.SellItem(player, selectedEntry.InventoryItem.Value.ItemId);
+            shopMessage = sellResult.Message;
+            if (sellResult.Success)
+            {
+                ResetShopListSelection(Math.Min(shopPageIndex, Math.Max(0, GetShopPageCount() - 1)));
+                PersistProgress();
+            }
+
+            return;
+        }
+
+        if (selectedEntry.Product is null)
         {
             return;
         }
 
-        var result = shopService.PurchaseEquipment(player, selectedEntry.Item, GetEquippedWeapon(), GetEquippedArmor());
-        shopMessage = result.Message;
-        if (result.Success)
+        var purchaseResult = shopService.PurchaseProduct(player, selectedEntry.Product, GetEquippedWeapon(), GetEquippedArmor());
+        shopMessage = purchaseResult.Message;
+        if (purchaseResult.Success)
         {
             PersistProgress();
         }
@@ -643,6 +688,98 @@ public partial class Form1
         ResetShopState();
         ChangeGameState(GameState.ShopBuy);
         PlaySe(SoundEffect.Dialog);
+    }
+
+    private void EnterBank()
+    {
+        ResetBankState();
+        ChangeGameState(GameState.Bank);
+        PlaySe(SoundEffect.Dialog);
+    }
+
+    private void UpdateBank()
+    {
+        if (bankPhase == BankPhase.Welcome)
+        {
+            if (WasPressed(Keys.Up) || WasPressed(Keys.W))
+            {
+                bankPromptCursor = Math.Max(0, bankPromptCursor - 1);
+            }
+            else if (WasPressed(Keys.Down) || WasPressed(Keys.S))
+            {
+                bankPromptCursor = Math.Min(3, bankPromptCursor + 1);
+            }
+
+            if (WasShopBackPressed())
+            {
+                ChangeGameState(GameState.Field);
+                return;
+            }
+
+            if (!WasShopConfirmPressed())
+            {
+                return;
+            }
+
+            switch (bankPromptCursor)
+            {
+                case 0:
+                    OpenBankList(BankPhase.DepositList);
+                    return;
+                case 1:
+                    OpenBankList(BankPhase.WithdrawList);
+                    return;
+                case 2:
+                    OpenBankList(BankPhase.BorrowList);
+                    return;
+                default:
+                    ChangeGameState(GameState.Field);
+                    return;
+            }
+        }
+
+        var options = GetBankAmountOptions();
+        if (WasPressed(Keys.Up) || WasPressed(Keys.W))
+        {
+            bankItemCursor = Math.Max(0, bankItemCursor - 1);
+        }
+        else if (WasPressed(Keys.Down) || WasPressed(Keys.S))
+        {
+            bankItemCursor = Math.Min(options.Count - 1, bankItemCursor + 1);
+        }
+
+        if (WasShopBackPressed())
+        {
+            ReturnToBankPrompt(BankReturnMessage);
+            return;
+        }
+
+        if (!WasShopConfirmPressed())
+        {
+            return;
+        }
+
+        var selectedOption = options[bankItemCursor];
+        if (selectedOption.Quit)
+        {
+            ReturnToBankPrompt(BankReturnMessage);
+            return;
+        }
+
+        var amount = ResolveBankTransactionAmount(selectedOption);
+        var result = bankPhase switch
+        {
+            BankPhase.DepositList => bankService.Deposit(player, amount),
+            BankPhase.WithdrawList => bankService.Withdraw(player, amount),
+            BankPhase.BorrowList => bankService.Borrow(player, amount),
+            _ => new BankTransactionResult(false, 0, 0, BankReturnMessage)
+        };
+
+        bankMessage = result.Message;
+        if (result.Success)
+        {
+            PersistProgress();
+        }
     }
 
     private void FinishBattle()

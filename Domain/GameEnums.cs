@@ -9,7 +9,8 @@ public enum GameState
     Field,
     EncounterTransition,
     Battle,
-    ShopBuy
+    ShopBuy,
+    Bank
 }
 
 public enum SaveSlotSelectionMode
@@ -21,7 +22,16 @@ public enum SaveSlotSelectionMode
 public enum ShopPhase
 {
     Welcome,
-    BuyList
+    BuyList,
+    SellList
+}
+
+public enum BankPhase
+{
+    Welcome,
+    DepositList,
+    WithdrawList,
+    BorrowList
 }
 
 public enum EquipmentSlot
@@ -111,5 +121,6 @@ public enum ConsumableEffectType
 public enum FieldEventActionType
 {
     Dialogue,
-    Recover
+    Recover,
+    Bank
 }

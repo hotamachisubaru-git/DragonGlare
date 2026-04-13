@@ -76,14 +76,19 @@ public sealed class ProgressionService
         player.TilePosition = respawnTile;
         player.CurrentHp = player.MaxHp;
         player.CurrentMp = player.MaxMp;
+        var debtPenaltyMessage = ApplyLoanPenalty(player);
         player.Normalize();
 
         if (goldLoss == 0)
         {
-            return "HPとMPを とりもどし\nスタートちてんに もどった。";
+            return string.IsNullOrWhiteSpace(debtPenaltyMessage)
+                ? "HPとMPを とりもどし\nスタートちてんに もどった。"
+                : $"HPとMPを とりもどし\nスタートちてんに もどった。\n{debtPenaltyMessage}";
         }
 
-        return $"{goldLoss}Gを おとして\nスタートちてんに もどった。";
+        return string.IsNullOrWhiteSpace(debtPenaltyMessage)
+            ? $"{goldLoss}Gを おとして\nスタートちてんに もどった。"
+            : $"{goldLoss}Gを おとして\nスタートちてんに もどった。\n{debtPenaltyMessage}";
     }
 
     public int GetExperienceIntoCurrentLevel(PlayerProgress player)
@@ -167,5 +172,57 @@ public sealed class ProgressionService
             ? $"{enemy.Name}は {itemName} x{enemy.Drop.Quantity}を おとした！"
             : $"{enemy.Name}は {itemName}を おとした！";
         return true;
+    }
+
+    private static string ApplyLoanPenalty(PlayerProgress player)
+    {
+        if (player.LoanBalance <= 0)
+        {
+            return string.Empty;
+        }
+
+        var seizedItems = new List<string>();
+        foreach (var itemId in GetSeizableEquipmentIds(player))
+        {
+            var sellPrice = GameContent.GetSellPrice(itemId);
+            if (sellPrice <= 0 || !player.RemoveItem(itemId))
+            {
+                continue;
+            }
+
+            player.LoanBalance = Math.Max(0, player.LoanBalance - sellPrice);
+            var itemName = GameContent.GetItemName(itemId);
+            if (!string.IsNullOrWhiteSpace(itemName))
+            {
+                seizedItems.Add(itemName);
+            }
+
+            if (player.LoanBalance == 0)
+            {
+                player.LoanStepCounter = 0;
+                break;
+            }
+        }
+
+        if (seizedItems.Count == 0)
+        {
+            return $"しゃっきん {player.LoanBalance}Gが のこったままだ。";
+        }
+
+        var seizedList = string.Join(" と ", seizedItems);
+        return $"しゃっきんの かたに\n{seizedList}を さしおさえられた。";
+    }
+
+    private static IEnumerable<string> GetSeizableEquipmentIds(PlayerProgress player)
+    {
+        if (!string.IsNullOrWhiteSpace(player.EquippedWeaponId))
+        {
+            yield return player.EquippedWeaponId;
+        }
+
+        if (!string.IsNullOrWhiteSpace(player.EquippedArmorId))
+        {
+            yield return player.EquippedArmorId;
+        }
     }
 }

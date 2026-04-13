@@ -20,18 +20,19 @@ public partial class Form1
         DrawWindow(g, shopHelpRect);
         if (shopPhase == ShopPhase.Welcome)
         {
-            DrawOption(g, shopPromptCursor == 0, 94, 58, "はい");
-            DrawOption(g, shopPromptCursor == 1, 94, 94, "いいえ");
+            DrawOption(g, shopPromptCursor == 0, 84, 48, "かう");
+            DrawOption(g, shopPromptCursor == 1, 84, 82, "うる");
+            DrawOption(g, shopPromptCursor == 2, 84, 116, "やめる");
         }
         else
         {
             DrawText(g, "↑↓: せんたく", new Rectangle(54, 50, 188, 24), smallFont);
-            DrawText(g, "Z: こうにゅう", new Rectangle(54, 78, 188, 24), smallFont);
+            DrawText(g, shopPhase == ShopPhase.BuyList ? "Z: こうにゅう" : "Z: ばいきゃく", new Rectangle(54, 78, 188, 24), smallFont);
             DrawText(g, "ESC(X): もどる", new Rectangle(54, 106, 188, 24), smallFont);
         }
 
         DrawWindow(g, shopListRect);
-        DrawText(g, "いちらん", new Rectangle(shopListRect.X + 20, 34, 120, 24), smallFont);
+        DrawText(g, shopPhase == ShopPhase.SellList ? "うるもの" : "いちらん", new Rectangle(shopListRect.X + 20, 34, 120, 24), smallFont);
         DrawText(g, "ATK", new Rectangle(shopListRect.X + 142, 34, 38, 24), smallFont, StringAlignment.Center);
         DrawText(g, "DEF", new Rectangle(shopListRect.X + 180, 34, 38, 24), smallFont, StringAlignment.Center);
         DrawText(g, "G", new Rectangle(shopListRect.X + 220, 34, 44, 24), smallFont, StringAlignment.Center);
@@ -41,19 +42,30 @@ public partial class Form1
         {
             var entry = visibleEntries[i];
             var rowY = listStartY + (i * itemRowHeight);
-            if (shopPhase == ShopPhase.BuyList && shopItemCursor == i)
+            if (shopPhase != ShopPhase.Welcome && shopItemCursor == i)
             {
                 DrawSelectionMarker(g, shopListRect.X + 12, rowY + 7);
             }
 
-            if (entry.Type == ShopMenuEntryType.Item && entry.Item is not null)
+            if (entry.Type == ShopMenuEntryType.Product && entry.Product is not null)
             {
-                var item = entry.Item;
+                var item = entry.Product;
                 DrawText(g, item.Name, new Rectangle(shopListRect.X + 36, rowY, 106, 20), smallFont);
                 DrawText(g, item.AttackBonus > 0 ? $"+{item.AttackBonus}" : "-", new Rectangle(shopListRect.X + 142, rowY, 38, 20), smallFont, StringAlignment.Center);
                 DrawText(g, item.DefenseBonus > 0 ? $"+{item.DefenseBonus}" : "-", new Rectangle(shopListRect.X + 180, rowY, 38, 20), smallFont, StringAlignment.Center);
                 DrawText(g, item.Price.ToString(), new Rectangle(shopListRect.X + 220, rowY, 44, 20), smallFont, StringAlignment.Center);
                 DrawText(g, player.GetItemCount(item.Id).ToString(), new Rectangle(shopListRect.X + 266, rowY, 34, 20), smallFont, StringAlignment.Center);
+                continue;
+            }
+
+            if (entry.Type == ShopMenuEntryType.InventoryItem && entry.InventoryItem is not null)
+            {
+                var item = entry.InventoryItem.Value;
+                DrawText(g, item.Name, new Rectangle(shopListRect.X + 36, rowY, 106, 20), smallFont);
+                DrawText(g, item.AttackBonus > 0 ? $"+{item.AttackBonus}" : "-", new Rectangle(shopListRect.X + 142, rowY, 38, 20), smallFont, StringAlignment.Center);
+                DrawText(g, item.DefenseBonus > 0 ? $"+{item.DefenseBonus}" : "-", new Rectangle(shopListRect.X + 180, rowY, 38, 20), smallFont, StringAlignment.Center);
+                DrawText(g, item.Price.ToString(), new Rectangle(shopListRect.X + 220, rowY, 44, 20), smallFont, StringAlignment.Center);
+                DrawText(g, item.Count.ToString(), new Rectangle(shopListRect.X + 266, rowY, 34, 20), smallFont, StringAlignment.Center);
                 continue;
             }
 
@@ -63,14 +75,31 @@ public partial class Form1
         DrawText(g, $"{shopPageIndex + 1}/{GetShopPageCount()}", new Rectangle(shopListRect.X + 20, shopListRect.Bottom - 28, 60, 24), smallFont);
         DrawText(g, $"G {player.Gold}", new Rectangle(shopListRect.X + 176, shopListRect.Bottom - 28, 122, 24), smallFont, StringAlignment.Far);
 
+        var selectedEntry = GetSelectedShopEntry();
+        var detailLine1 = selectedEntry is null
+            ? $"LV {player.Level}"
+            : selectedEntry.Value.Type == ShopMenuEntryType.InventoryItem && selectedEntry.Value.InventoryItem is not null
+                ? selectedEntry.Value.InventoryItem.Value.Detail
+                : selectedEntry.Value.Product?.Consumable?.Description ?? $"LV {player.Level}";
+        var detailLine2 = $"EXP {GetExperienceSummary()}";
+        if (selectedEntry is not null &&
+            selectedEntry.Value.Type == ShopMenuEntryType.Product &&
+            selectedEntry.Value.Product is not null &&
+            selectedEntry.Value.Product.IsEquipment)
+        {
+            detailLine2 = selectedEntry.Value.Product.Equipment?.Slot == EquipmentSlot.Weapon
+                ? $"そうびで ATK {GetTotalAttack() - (GetEquippedWeapon()?.AttackBonus ?? 0) + selectedEntry.Value.Product.AttackBonus}"
+                : $"そうびで DEF {GetTotalDefense() - (GetEquippedArmor()?.DefenseBonus ?? 0) + selectedEntry.Value.Product.DefenseBonus}";
+        }
+
         DrawWindow(g, shopInfoRect);
         DrawText(g, "ぶき:", shopInfoRect.X + 20, shopInfoRect.Y + 14, smallFont);
         DrawText(g, GetEquippedWeaponName(), new Rectangle(shopInfoRect.X + 94, shopInfoRect.Y + 14, 126, 20), smallFont, StringAlignment.Far);
         DrawText(g, "ぼうぐ:", shopInfoRect.X + 20, shopInfoRect.Y + 36, smallFont);
         DrawText(g, GetEquippedArmorName(), new Rectangle(shopInfoRect.X + 94, shopInfoRect.Y + 36, 126, 20), smallFont, StringAlignment.Far);
         DrawText(g, $"ATK {GetTotalAttack()}  DEF {GetTotalDefense()}", new Rectangle(shopInfoRect.X + 20, shopInfoRect.Y + 58, 196, 20), smallFont);
-        DrawText(g, $"LV {player.Level}", new Rectangle(shopInfoRect.X + 20, shopInfoRect.Y + 80, 58, 20), smallFont);
-        DrawText(g, $"EXP {GetExperienceSummary()}", new Rectangle(shopInfoRect.X + 84, shopInfoRect.Y + 80, 136, 20), smallFont, StringAlignment.Far);
+        DrawText(g, detailLine1, new Rectangle(shopInfoRect.X + 20, shopInfoRect.Y + 80, 196, 20), smallFont);
+        DrawText(g, detailLine2, new Rectangle(shopInfoRect.X + 20, shopInfoRect.Y + 92, 196, 20), smallFont);
 
         DrawWindow(g, shopMessageRect);
         DrawText(g, shopMessage, Rectangle.Inflate(shopMessageRect, -24, -24), smallFont, wrap: true);

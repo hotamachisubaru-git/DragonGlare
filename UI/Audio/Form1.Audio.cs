@@ -280,6 +280,7 @@ public partial class Form1
         {
             GameState.Battle => BgmTrack.Battle,
             GameState.ShopBuy => BgmTrack.Shop,
+            GameState.Bank => BgmTrack.Shop,
             GameState.EncounterTransition => GetFieldBgmTrack(currentFieldMap),
             GameState.Field => GetFieldBgmTrack(currentFieldMap),
             _ => BgmTrack.MainMenu

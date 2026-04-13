@@ -17,6 +17,9 @@ public sealed class PlayerProgress
     private readonly ProtectedInt baseAttack = new(5);
     private readonly ProtectedInt baseDefense = new(3);
     private readonly ProtectedInt gold = new(220);
+    private readonly ProtectedInt bankGold = new();
+    private readonly ProtectedInt loanBalance = new();
+    private readonly ProtectedInt loanStepCounter = new();
 
     public string Name { get; set; } = string.Empty;
 
@@ -76,6 +79,24 @@ public sealed class PlayerProgress
     {
         get => gold.Value;
         set => gold.Value = value;
+    }
+
+    public int BankGold
+    {
+        get => bankGold.Value;
+        set => bankGold.Value = value;
+    }
+
+    public int LoanBalance
+    {
+        get => loanBalance.Value;
+        set => loanBalance.Value = value;
+    }
+
+    public int LoanStepCounter
+    {
+        get => loanStepCounter.Value;
+        set => loanStepCounter.Value = value;
     }
 
     public string? EquippedWeaponId { get; set; }
@@ -169,6 +190,13 @@ public sealed class PlayerProgress
         BaseAttack = BaseAttack <= 0 ? 5 : BaseAttack;
         BaseDefense = BaseDefense <= 0 ? 3 : BaseDefense;
         Gold = Math.Clamp(Gold, 0, MaxGoldValue);
+        BankGold = Math.Clamp(BankGold, 0, MaxGoldValue);
+        LoanBalance = Math.Clamp(LoanBalance, 0, MaxGoldValue);
+        LoanStepCounter = Math.Clamp(LoanStepCounter, 0, 100000);
+        if (LoanBalance == 0)
+        {
+            LoanStepCounter = 0;
+        }
 
         if (Level == MaxLevelValue)
         {
@@ -210,6 +238,9 @@ public sealed class PlayerProgress
         baseAttack.Validate();
         baseDefense.Validate();
         gold.Validate();
+        bankGold.Validate();
+        loanBalance.Validate();
+        loanStepCounter.Validate();
 
         foreach (var entry in Inventory)
         {
@@ -228,6 +259,9 @@ public sealed class PlayerProgress
         baseAttack.Rekey();
         baseDefense.Rekey();
         gold.Rekey();
+        bankGold.Rekey();
+        loanBalance.Rekey();
+        loanStepCounter.Rekey();
 
         foreach (var entry in Inventory)
         {

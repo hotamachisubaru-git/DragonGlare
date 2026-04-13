@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using DragonGlareAlpha.Domain;
 using DragonGlareAlpha.Domain.Battle;
+using DragonGlareAlpha.Domain.Commerce;
 using DragonGlareAlpha.Domain.Field;
 using DragonGlareAlpha.Domain.Items;
 using DragonGlareAlpha.Domain.Player;
@@ -49,6 +50,7 @@ public partial class Form1 : Form
     private readonly BattleService battleService = new();
     private readonly ProgressionService progressionService = new();
     private readonly ShopService shopService = new();
+    private readonly BankService bankService = new();
     private readonly FieldEventService fieldEventService = new();
     private readonly FieldTransitionService fieldTransitionService = new();
     private readonly LaunchSettings launchSettings;
@@ -85,9 +87,13 @@ public partial class Form1 : Form
     private int shopItemCursor;
     private int shopPageIndex;
     private ShopPhase shopPhase = ShopPhase.Welcome;
+    private int bankPromptCursor;
+    private int bankItemCursor;
+    private BankPhase bankPhase = BankPhase.Welcome;
     private SaveSlotSelectionMode saveSlotSelectionMode = SaveSlotSelectionMode.Save;
     private string battleMessage = DefaultBattleMessage;
     private string shopMessage = ShopWelcomeMessage;
+    private string bankMessage = BankWelcomeMessage;
     private BgmTrack? currentBgmTrack;
     private string menuNotice = string.Empty;
     private int menuNoticeFrames;
@@ -105,7 +111,8 @@ public partial class Form1 : Form
 
     private enum ShopMenuEntryType
     {
-        Item,
+        Product,
+        InventoryItem,
         PreviousPage,
         NextPage,
         Quit
@@ -126,7 +133,26 @@ public partial class Form1 : Form
         ConsumableDefinition? Consumable = null,
         IEquipmentDefinition? Equipment = null);
 
-    private readonly record struct ShopMenuEntry(ShopMenuEntryType Type, string Label, IEquipmentDefinition? Item = null);
+    private readonly record struct ShopInventoryEntry(
+        string ItemId,
+        string Name,
+        int Price,
+        int AttackBonus,
+        int DefenseBonus,
+        int Count,
+        string Detail);
+
+    private readonly record struct ShopMenuEntry(
+        ShopMenuEntryType Type,
+        string Label,
+        ShopProductDefinition? Product = null,
+        ShopInventoryEntry? InventoryItem = null);
+
+    private readonly record struct BankAmountOption(
+        string Label,
+        int Amount,
+        bool UseMaximum = false,
+        bool Quit = false);
 
     private string LegacySaveFilePath => Path.Combine(AppContext.BaseDirectory, "savegame.json");
 
@@ -216,6 +242,9 @@ public partial class Form1 : Form
                     break;
                 case GameState.ShopBuy:
                     DrawShopBuy(e.Graphics);
+                    break;
+                case GameState.Bank:
+                    DrawBank(e.Graphics);
                     break;
             }
 

@@ -77,6 +77,7 @@ public partial class Form1
         }
 
         player.TilePosition = target;
+        bankService.AccrueStepInterest(player);
         StartFieldMovementAnimation(movement);
         if (TryTransitionFromTile(target))
         {

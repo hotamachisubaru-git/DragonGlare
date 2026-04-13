@@ -14,6 +14,7 @@ public sealed class SaveService
     private const int SignedSaveVersion = 5;
     private const int SlotBoundSignatureVersion = 6;
     private const int ArmorEquipmentVersion = 7;
+    private const int BankSystemVersion = 8;
     private const string SignatureSecret = "DragonGlareAlpha::SaveSeal::2026-04-09";
     private const string DpapiEntropySecret = "DragonGlareAlpha::Dpapi::2026-04-09";
 
@@ -296,6 +297,13 @@ public sealed class SaveService
         writer.WriteNumber("BaseAttack", saveData.BaseAttack);
         writer.WriteNumber("BaseDefense", saveData.BaseDefense);
         writer.WriteNumber("Gold", saveData.Gold);
+        if (effectiveVersion >= BankSystemVersion)
+        {
+            writer.WriteNumber("BankGold", saveData.BankGold);
+            writer.WriteNumber("LoanBalance", saveData.LoanBalance);
+            writer.WriteNumber("LoanStepCounter", saveData.LoanStepCounter);
+        }
+
         writer.WriteString("EquippedWeaponId", saveData.EquippedWeaponId ?? string.Empty);
         if (effectiveVersion >= ArmorEquipmentVersion)
         {

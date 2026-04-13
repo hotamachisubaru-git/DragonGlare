@@ -26,6 +26,9 @@ public static class SaveDataMapper
         player.BaseAttack = saveData.BaseAttack;
         player.BaseDefense = saveData.BaseDefense;
         player.Gold = saveData.Gold;
+        player.BankGold = saveData.BankGold;
+        player.LoanBalance = saveData.LoanBalance;
+        player.LoanStepCounter = saveData.LoanStepCounter;
         player.EquippedWeaponId = saveData.EquippedWeaponId;
         player.EquippedArmorId = saveData.EquippedArmorId;
         player.Inventory = saveData.Inventory?.Select(entry => entry.Clone()).ToList() ?? [];
@@ -54,6 +57,9 @@ public static class SaveDataMapper
             BaseAttack = player.BaseAttack,
             BaseDefense = player.BaseDefense,
             Gold = player.Gold,
+            BankGold = player.BankGold,
+            LoanBalance = player.LoanBalance,
+            LoanStepCounter = player.LoanStepCounter,
             EquippedWeaponId = player.EquippedWeaponId,
             EquippedArmorId = player.EquippedArmorId,
             Inventory = player.Inventory.Select(entry => entry.Clone()).ToList()

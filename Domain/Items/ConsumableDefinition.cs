@@ -7,4 +7,5 @@ public sealed record ConsumableDefinition(
     string Name,
     string Description,
     ConsumableEffectType EffectType,
-    int Amount);
+    int Amount,
+    int Price);
