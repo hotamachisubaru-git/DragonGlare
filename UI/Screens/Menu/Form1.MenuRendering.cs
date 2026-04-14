@@ -251,7 +251,7 @@ public partial class Form1
             ]);
     }
 
-    private void DrawLanguageOpeningBackdrop(Graphics g)
+       private void DrawLanguageOpeningBackdrop(Graphics g)
     {
         var openingImage = GetUiImage("SFC_opening.png");
         if (openingImage is null)
@@ -261,22 +261,27 @@ public partial class Form1
         }
 
         g.Clear(Color.Black);
-
-        var sourceWidth = Math.Min(OpeningSourceViewportWidth, openingImage.Width);
-        var sourceHeight = Math.Min(OpeningSourceViewportHeight, openingImage.Height);
+        g.InterpolationMode = InterpolationMode.NearestNeighbor;
+        const int sourceWidth = 170;
+        const int sourceHeight = 140;
         var maxSourceX = Math.Max(0, openingImage.Width - sourceWidth);
-        var progress = Math.Clamp(languageOpeningElapsedFrames / (float)Math.Max(1, LanguageOpeningTotalFrames), 0f, 1f);
-        var sourceX = maxSourceX == 0 ? 0 : (int)Math.Round(maxSourceX * progress);
-        var destinationRect = new Rectangle(64, 0, sourceWidth * 2, sourceHeight * 2);
+        var progress = Math.Clamp(
+            languageOpeningElapsedFrames / (float)Math.Max(1, LanguageOpeningTotalFrames),
+            0f,
+            1f);
+
+        var sourceX = (int)Math.Round(maxSourceX * progress);
+        var sourceY = Math.Max(0, openingImage.Height - sourceHeight - 20);
+
+        var destinationRect = new Rectangle(0, 0, UiCanvas.VirtualWidth, UiCanvas.VirtualHeight);
 
         g.DrawImage(
             openingImage,
             destinationRect,
-            new Rectangle(sourceX, 0, sourceWidth, sourceHeight),
+            new Rectangle(sourceX, sourceY, sourceWidth, sourceHeight),
             GraphicsUnit.Pixel);
     }
-
-    private void DrawLanguageOpeningNarration(Graphics g)
+        private void DrawLanguageOpeningNarration(Graphics g)
     {
         var narration = GetCurrentLanguageOpeningText();
         var alpha = GetLanguageOpeningNarrationAlpha();
@@ -285,27 +290,19 @@ public partial class Form1
             return;
         }
 
-        var textArea = new Rectangle(96, 232, 448, 72);
+        using var font = new Font("JF-Dot-ShinonomeMin14", 20, FontStyle.Regular, GraphicsUnit.Pixel);
+        var textArea = new Rectangle(80, 220, 480, 48);
         var lines = NormalizeTextLines(narration);
         var totalHeight = lines.Count * UiTypography.LineHeight;
         var startY = textArea.Y + Math.Max(0, (textArea.Height - totalHeight) / 2);
-        var textOffsetY = Math.Max(0f, (UiTypography.LineHeight - uiFont.Height) / 2f);
+        var textOffsetY = Math.Max(0f, (UiTypography.LineHeight - font.Height) / 2f);
 
-        using var shadowBrush = new SolidBrush(Color.FromArgb((int)(alpha * 160f), 24, 24, 24));
-        using var textBrush = new SolidBrush(Color.FromArgb((int)(alpha * 255f), 255, 255, 255));
-
-        for (var index = 0; index < lines.Count; index++)
+        using (var sf = new StringFormat { Alignment = StringAlignment.Center })
         {
-            var line = lines[index];
-            var lineWidth = MeasureTextWidth(g, line, uiFont);
-            var x = textArea.X + Math.Max(0, (textArea.Width - lineWidth) / 2);
-            var y = startY + (index * UiTypography.LineHeight) + textOffsetY;
-
-            DrawTextLine(g, line, uiFont, shadowBrush, x + 2, y + 2);
-            DrawTextLine(g, line, uiFont, textBrush, x, y);
+            g.DrawString(narration, font, Brushes.Black, textArea, sf);
+            g.DrawString(narration, font, Brushes.White, textArea, sf);
         }
     }
-
     private string GetCurrentLanguageOpeningText()
     {
         if (languageOpeningFinished || languageOpeningLineIndex >= LanguageOpeningScript.Length)
