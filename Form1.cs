@@ -184,7 +184,7 @@ public partial class Form1 : Form
         int DisplayFrames,
         int GapFrames);
 
-    private string LegacySaveFilePath => Path.Combine(AppContext.BaseDirectory, "savegame.json");
+    private string LegacySaveFilePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DragonGlareAlpha", "save1.sav");
 
     public Form1(LaunchSettings? launchSettings = null)
     {
