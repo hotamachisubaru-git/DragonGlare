@@ -87,7 +87,16 @@ public partial class Form1
             {
                 var worldTile = new Point(cameraOrigin.X + x, cameraOrigin.Y + y);
                 var tileRect = GetFieldTileRectangle(viewport, cameraOrigin, worldTile, cameraAnimationOffset);
-                using var tileBrush = new SolidBrush(GetTileColor(GetTileIdAtWorldPosition(worldTile)));
+                var tileId = GetTileIdAtWorldPosition(worldTile);
+                var tileSprite = GetFieldTileSprite(tileId);
+
+                if (tileSprite is not null)
+                {
+                    g.DrawImage(tileSprite, tileRect);
+                    continue;
+                }
+
+                using var tileBrush = new SolidBrush(GetTileColor(tileId));
                 g.FillRectangle(tileBrush, tileRect);
             }
         }

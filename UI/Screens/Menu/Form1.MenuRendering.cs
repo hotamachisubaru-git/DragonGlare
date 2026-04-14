@@ -1,3 +1,4 @@
+using System.Drawing.Drawing2D;
 using DragonGlareAlpha.Data;
 using DragonGlareAlpha.Domain;
 using DragonGlareAlpha.Persistence;
@@ -10,20 +11,80 @@ public partial class Form1
     {
         DrawMenuBackdrop(g);
 
-        DrawWindow(g, new Rectangle(118, 236, 408, 172));
-        DrawText(g, "モードをせんたくしてください", 154, 268, smallFont);
-        DrawOption(g, modeCursor == 0, 154, 307, "はじめから NEW GAME");
-        DrawOption(g, modeCursor == 1, 154, 342, "つづきから LOAD GAME");
+        var layoutRect = new Rectangle(64, 0, 512, 480);
+        var layoutImage = GetUiImage("window21.png");
 
-        if (!string.IsNullOrWhiteSpace(menuNotice))
+        if (layoutImage is not null)
         {
-            DrawWindow(g, new Rectangle(84, 24, 472, 72));
-            DrawText(g, menuNotice, 104, 48, smallFont);
+            g.DrawImage(layoutImage, layoutRect);
         }
+        else
+        {
+            DrawWindow(g, new Rectangle(96, 32, 184, 192));
+            DrawWindow(g, new Rectangle(288, 32, 256, 192));
+            DrawWindow(g, new Rectangle(96, 232, 448, 176));
+        }
+
+        var menuItems = new[]
+        {
+            "はじめから",
+            "つづきから",
+            "データうつす",
+            "データけす"
+        };
+
+        var menuStartX = ScaleModeSelectX(layoutRect, 24);
+        var menuStartY = ScaleModeSelectY(layoutRect, 24);
+        var menuLineHeight = ScaleModeSelectHeight(layoutRect, 24);
+        var menuCursorX = ScaleModeSelectX(layoutRect, 8);
+
+        for (var index = 0; index < menuItems.Length; index++)
+        {
+            var lineY = menuStartY + (index * menuLineHeight);
+            if (modeCursor == index)
+            {
+                DrawModeSelectCursor(g, menuCursorX, lineY + 4);
+            }
+
+            DrawText(g, menuItems[index], menuStartX, lineY, uiFont);
+        }
+
+        DrawText(
+            g,
+            GetModeSelectDescription(modeCursor),
+            new Rectangle(
+                ScaleModeSelectX(layoutRect, 128),
+                ScaleModeSelectY(layoutRect, 24),
+                ScaleModeSelectWidth(layoutRect, 96),
+                ScaleModeSelectHeight(layoutRect, 64)),
+            uiFont,
+            wrap: true);
+
+        DrawText(
+            g,
+            string.IsNullOrWhiteSpace(menuNotice) ? "モードを選んでください。" : menuNotice,
+            new Rectangle(
+                ScaleModeSelectX(layoutRect, 24),
+                ScaleModeSelectY(layoutRect, 136),
+                ScaleModeSelectWidth(layoutRect, 200),
+                ScaleModeSelectHeight(layoutRect, 64)),
+            uiFont,
+            wrap: true);
     }
 
     private void DrawLanguageSelection(Graphics g)
     {
+        DrawLanguageOpeningBackdrop(g);
+
+        if (!languageOpeningFinished)
+        {
+            DrawLanguageOpeningNarration(g);
+            return;
+        }
+
+        using var overlayBrush = new SolidBrush(Color.FromArgb(96, 0, 0, 0));
+        g.FillRectangle(overlayBrush, new Rectangle(0, 0, UiCanvas.VirtualWidth, UiCanvas.VirtualHeight));
+
         DrawWindow(g, new Rectangle(84, 64, 260, 128));
         DrawOption(g, languageCursor == 0, 104, 94, "にほんご");
         DrawOption(g, languageCursor == 1, 104, 134, "ENGLISH");
@@ -31,6 +92,7 @@ public partial class Form1
         DrawWindow(g, new Rectangle(116, 270, 410, 180));
         DrawText(g, "げんごをえらんでください", 140, 310);
         DrawText(g, "CHOOSE A LANGUAGE", 140, 350);
+        DrawText(g, "ENTER/Z: けってい  ESC: もどる", 140, 390, smallFont);
     }
 
     private void DrawNameInput(Graphics g)
@@ -138,5 +200,150 @@ public partial class Form1
             DrawWindow(g, noticeRect);
             DrawText(g, menuNotice, Rectangle.Inflate(noticeRect, -18, -10), smallFont);
         }
+    }
+
+    private static int ScaleModeSelectX(Rectangle layoutRect, int sourceX)
+    {
+        return layoutRect.X + (int)Math.Round(sourceX * (layoutRect.Width / 256f));
+    }
+
+    private static int ScaleModeSelectY(Rectangle layoutRect, int sourceY)
+    {
+        return layoutRect.Y + (int)Math.Round(sourceY * (layoutRect.Height / 240f));
+    }
+
+    private static int ScaleModeSelectWidth(Rectangle layoutRect, int sourceWidth)
+    {
+        return (int)Math.Round(sourceWidth * (layoutRect.Width / 256f));
+    }
+
+    private static int ScaleModeSelectHeight(Rectangle layoutRect, int sourceHeight)
+    {
+        return (int)Math.Round(sourceHeight * (layoutRect.Height / 240f));
+    }
+
+    private static string GetModeSelectDescription(int cursor)
+    {
+        return cursor switch
+        {
+            0 => "ゲームを最初から\nはじめる。",
+            1 => "前回のつづきから\nはじめる。",
+            2 => "データを別の枠へ\nうつす。",
+            3 => "いらないデータを\nけす。",
+            _ => string.Empty
+        };
+    }
+
+    private void DrawModeSelectCursor(Graphics g, int x, int y)
+    {
+        if ((frameCounter / 18) % 2 == 1)
+        {
+            return;
+        }
+
+        using var brush = new SolidBrush(Color.White);
+        g.FillPolygon(
+            brush,
+            [
+                new Point(x, y),
+                new Point(x, y + 14),
+                new Point(x + 12, y + 7)
+            ]);
+    }
+
+    private void DrawLanguageOpeningBackdrop(Graphics g)
+    {
+        var openingImage = GetUiImage("SFC_opening.png");
+        if (openingImage is null)
+        {
+            DrawMenuBackdrop(g);
+            return;
+        }
+
+        g.Clear(Color.Black);
+
+        var sourceWidth = Math.Min(OpeningSourceViewportWidth, openingImage.Width);
+        var sourceHeight = Math.Min(OpeningSourceViewportHeight, openingImage.Height);
+        var maxSourceX = Math.Max(0, openingImage.Width - sourceWidth);
+        var progress = Math.Clamp(languageOpeningElapsedFrames / (float)Math.Max(1, LanguageOpeningTotalFrames), 0f, 1f);
+        var sourceX = maxSourceX == 0 ? 0 : (int)Math.Round(maxSourceX * progress);
+        var destinationRect = new Rectangle(64, 0, sourceWidth * 2, sourceHeight * 2);
+
+        g.DrawImage(
+            openingImage,
+            destinationRect,
+            new Rectangle(sourceX, 0, sourceWidth, sourceHeight),
+            GraphicsUnit.Pixel);
+    }
+
+    private void DrawLanguageOpeningNarration(Graphics g)
+    {
+        var narration = GetCurrentLanguageOpeningText();
+        var alpha = GetLanguageOpeningNarrationAlpha();
+        if (string.IsNullOrWhiteSpace(narration) || alpha <= 0f)
+        {
+            return;
+        }
+
+        var textArea = new Rectangle(96, 232, 448, 72);
+        var lines = NormalizeTextLines(narration);
+        var totalHeight = lines.Count * UiTypography.LineHeight;
+        var startY = textArea.Y + Math.Max(0, (textArea.Height - totalHeight) / 2);
+        var textOffsetY = Math.Max(0f, (UiTypography.LineHeight - uiFont.Height) / 2f);
+
+        using var shadowBrush = new SolidBrush(Color.FromArgb((int)(alpha * 160f), 24, 24, 24));
+        using var textBrush = new SolidBrush(Color.FromArgb((int)(alpha * 255f), 255, 255, 255));
+
+        for (var index = 0; index < lines.Count; index++)
+        {
+            var line = lines[index];
+            var lineWidth = MeasureTextWidth(g, line, uiFont);
+            var x = textArea.X + Math.Max(0, (textArea.Width - lineWidth) / 2);
+            var y = startY + (index * UiTypography.LineHeight) + textOffsetY;
+
+            DrawTextLine(g, line, uiFont, shadowBrush, x + 2, y + 2);
+            DrawTextLine(g, line, uiFont, textBrush, x, y);
+        }
+    }
+
+    private string GetCurrentLanguageOpeningText()
+    {
+        if (languageOpeningFinished || languageOpeningLineIndex >= LanguageOpeningScript.Length)
+        {
+            return string.Empty;
+        }
+
+        var currentLine = LanguageOpeningScript[languageOpeningLineIndex];
+        return languageOpeningLineFrame < currentLine.DisplayFrames
+            ? currentLine.Text
+            : string.Empty;
+    }
+
+    private float GetLanguageOpeningNarrationAlpha()
+    {
+        if (languageOpeningFinished || languageOpeningLineIndex >= LanguageOpeningScript.Length)
+        {
+            return 0f;
+        }
+
+        var currentLine = LanguageOpeningScript[languageOpeningLineIndex];
+        if (languageOpeningLineFrame >= currentLine.DisplayFrames)
+        {
+            return 0f;
+        }
+
+        var fadeFrames = Math.Min(24, Math.Max(12, currentLine.DisplayFrames / 4));
+        if (languageOpeningLineFrame < fadeFrames)
+        {
+            return languageOpeningLineFrame / (float)fadeFrames;
+        }
+
+        var fadeOutStart = currentLine.DisplayFrames - fadeFrames;
+        if (languageOpeningLineFrame > fadeOutStart)
+        {
+            return (currentLine.DisplayFrames - languageOpeningLineFrame) / (float)fadeFrames;
+        }
+
+        return 1f;
     }
 }

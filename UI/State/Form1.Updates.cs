@@ -92,11 +92,11 @@ public partial class Form1
     {
         if (WasPressed(Keys.Up) || WasPressed(Keys.W))
         {
-            modeCursor = 0;
+            modeCursor = Math.Max(0, modeCursor - 1);
         }
         else if (WasPressed(Keys.Down) || WasPressed(Keys.S))
         {
-            modeCursor = 1;
+            modeCursor = Math.Min(3, modeCursor + 1);
         }
 
         if (!WasPressed(Keys.Enter))
@@ -110,11 +110,25 @@ public partial class Form1
             return;
         }
 
-        OpenSaveSlotSelection(SaveSlotSelectionMode.Load);
+        if (modeCursor == 1)
+        {
+            OpenSaveSlotSelection(SaveSlotSelectionMode.Load);
+            return;
+        }
+
+        ShowTransientNotice(modeCursor == 2
+            ? "データうつしは まだ未実装です。"
+            : "データけしは まだ未実装です。");
     }
 
     private void UpdateLanguageSelection()
     {
+        if (!languageOpeningFinished)
+        {
+            UpdateLanguageOpening();
+            return;
+        }
+
         if (WasPressed(Keys.Up) || WasPressed(Keys.W))
         {
             languageCursor = 0;
@@ -137,6 +151,37 @@ public partial class Form1
         if (WasPressed(Keys.Escape))
         {
             ChangeGameState(GameState.ModeSelect);
+        }
+    }
+
+    private void UpdateLanguageOpening()
+    {
+        if (WasPressed(Keys.Escape))
+        {
+            ChangeGameState(GameState.ModeSelect);
+            return;
+        }
+
+        if (languageOpeningFinished || languageOpeningLineIndex >= LanguageOpeningScript.Length)
+        {
+            languageOpeningFinished = true;
+            return;
+        }
+
+        languageOpeningElapsedFrames = Math.Min(LanguageOpeningTotalFrames, languageOpeningElapsedFrames + 1);
+        languageOpeningLineFrame++;
+
+        var currentLine = LanguageOpeningScript[languageOpeningLineIndex];
+        if (languageOpeningLineFrame < currentLine.DisplayFrames + currentLine.GapFrames)
+        {
+            return;
+        }
+
+        languageOpeningLineIndex++;
+        languageOpeningLineFrame = 0;
+        if (languageOpeningLineIndex >= LanguageOpeningScript.Length)
+        {
+            languageOpeningFinished = true;
         }
     }
 

@@ -4,6 +4,7 @@ obj/
 *.user
 *.suo
 *.cache
+*.png
 TestResults/
 .release/
 .codex-build/

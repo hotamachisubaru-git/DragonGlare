@@ -147,17 +147,24 @@ public partial class Form1
         return isFieldStatusVisible ? CompactFieldViewportHeightTiles : ExpandedFieldViewportHeightTiles;
     }
 
+    private int GetExpandedFieldViewportHorizontalPadding()
+    {
+        var expandedFieldViewportWidth = UiCanvas.VirtualWidth - (ExpandedFieldViewportHorizontalMargin * 2);
+        return Math.Max(0, (expandedFieldViewportWidth - (ExpandedFieldViewportWidthTiles * TileSize)) / 2);
+    }
+
     private Rectangle GetFieldViewport()
     {
         var widthTiles = GetFieldViewportWidthTiles();
         var heightTiles = GetFieldViewportHeightTiles();
         var width = widthTiles * TileSize;
         var height = heightTiles * TileSize;
-        var x = isFieldStatusVisible ? 16 : (UiCanvas.VirtualWidth - width) / 2;
+        var x = isFieldStatusVisible ? 16 : ExpandedFieldViewportHorizontalMargin;
         var y = isFieldStatusVisible ? 112 : 114;
 
         if (!isFieldStatusVisible)
         {
+            width = UiCanvas.VirtualWidth - (ExpandedFieldViewportHorizontalMargin * 2);
             y += ExpandedFieldViewportVerticalTrim / 2;
             height -= ExpandedFieldViewportVerticalTrim;
         }
@@ -202,7 +209,8 @@ public partial class Form1
 
     private Rectangle GetFieldTileRectangle(Rectangle viewport, Point cameraOrigin, Point tile, Point offset)
     {
-        var x = viewport.X + ((tile.X - cameraOrigin.X) * TileSize) + offset.X;
+        var horizontalPadding = isFieldStatusVisible ? 0 : GetExpandedFieldViewportHorizontalPadding();
+        var x = viewport.X + horizontalPadding + ((tile.X - cameraOrigin.X) * TileSize) + offset.X;
         var y = viewport.Y + ((tile.Y - cameraOrigin.Y) * TileSize) + offset.Y;
 
         return new Rectangle(x, y, TileSize, TileSize);

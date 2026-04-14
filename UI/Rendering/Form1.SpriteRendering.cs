@@ -1,5 +1,7 @@
 using System.IO;
 using System.Drawing.Drawing2D;
+using DragonGlareAlpha.Domain;
+using DragonGlareAlpha.Services;
 
 namespace DragonGlareAlpha;
 
@@ -22,6 +24,47 @@ public partial class Form1
         LoadHeroSpriteIfMissing(PlayerFacingDirection.Right, "hero_right.png", "hero_left.png", "hero.png");
         LoadHeroSpriteIfMissing(PlayerFacingDirection.Up, "hero_up.png", "hero_left.png", "hero.png");
         LoadHeroSpriteIfMissing(PlayerFacingDirection.Down, "hero_down.png", "hero_left.png", "hero.png");
+    }
+
+    private Image? GetFieldTileSprite(int tileId)
+    {
+        if (!UsesCastleTileSprite(tileId))
+        {
+            return null;
+        }
+
+        if (castleTileSprite is not null)
+        {
+            return castleTileSprite;
+        }
+
+        var path = ResolveAssetPath("Tiles", "mapTile_Assets_SFCFrame1.png");
+        if (path is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            using var source = new Bitmap(path);
+            var sourceRect = new Rectangle(0, 64, 32, 32);
+            if (source.Width < sourceRect.Right || source.Height < sourceRect.Bottom)
+            {
+                return null;
+            }
+
+            castleTileSprite = source.Clone(sourceRect, source.PixelFormat);
+            return castleTileSprite;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private bool UsesCastleTileSprite(int tileId)
+    {
+        return currentFieldMap == FieldMapId.Castle;
     }
 
     private Image? GetNpcSprite(string? spriteAssetName)
@@ -453,6 +496,9 @@ public partial class Form1
 
     private void DisposeFieldSprites()
     {
+        castleTileSprite?.Dispose();
+        castleTileSprite = null;
+
         foreach (var sprite in heroSprites.Values)
         {
             sprite.Dispose();

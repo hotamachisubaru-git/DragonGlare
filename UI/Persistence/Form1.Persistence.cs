@@ -39,10 +39,16 @@ public partial class Form1
     {
         selectedLanguage = UiLanguage.Japanese;
         languageCursor = 0;
+        languageOpeningElapsedFrames = 0;
+        languageOpeningLineIndex = 0;
+        languageOpeningLineFrame = 0;
+        languageOpeningFinished = false;
         nameCursorRow = 0;
         nameCursorColumn = 0;
         activeSaveSlot = 0;
         saveSlotCursor = 0;
+        menuNotice = string.Empty;
+        menuNoticeFrames = 0;
         playerName.Clear();
         ApplyExplorationSession(progressionService.CreateNewPlayer(UiLanguage.Japanese, PlayerStartTile), FieldMapId.Hub);
         ChangeGameState(GameState.LanguageSelection);
