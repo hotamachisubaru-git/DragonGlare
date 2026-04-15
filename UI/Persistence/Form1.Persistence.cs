@@ -43,6 +43,9 @@ public partial class Form1
         languageOpeningLineIndex = 0;
         languageOpeningLineFrame = 0;
         languageOpeningFinished = false;
+        // When starting a new game from the title, skip the language-selection
+        // prompt and proceed automatically to name input after the opening.
+        skipLanguageSelectionPrompt = true;
         nameCursorRow = 0;
         nameCursorColumn = 0;
         activeSaveSlot = 0;

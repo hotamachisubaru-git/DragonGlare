@@ -36,7 +36,7 @@ public partial class Form1
         var menuStartX = ScaleModeSelectX(layoutRect, 24);
         var menuStartY = ScaleModeSelectY(layoutRect, 24);
         var menuLineHeight = ScaleModeSelectHeight(layoutRect, 24);
-        var menuCursorX = ScaleModeSelectX(layoutRect, 8);
+        var menuCursorX = ScaleModeSelectX(layoutRect, 16);
 
         for (var index = 0; index < menuItems.Length; index++)
         {
@@ -262,24 +262,85 @@ public partial class Form1
 
         g.Clear(Color.Black);
         g.InterpolationMode = InterpolationMode.NearestNeighbor;
-        const int sourceWidth = 170;
-        const int sourceHeight = 140;
+
+        // Choose a source rectangle sized to approximate the virtual canvas aspect,
+        // but bounded by the source image. This gives a nicer centered crop
+        // and lets us pan around a visually-interesting point.
+        var destW = UiCanvas.VirtualWidth;
+        var destH = UiCanvas.VirtualHeight;
+
+        // Compute a source size that preserves destination aspect ratio.
+        var srcAspect = openingImage.Width / (float)openingImage.Height;
+        var destAspect = destW / (float)destH;
+
+        int sourceWidth, sourceHeight;
+        if (srcAspect > destAspect)
+        {
+            // source is wider: limit width
+            sourceHeight = Math.Min(openingImage.Height, Math.Max(1, (int)Math.Round(openingImage.Height * 0.9)));
+            sourceWidth = Math.Min(openingImage.Width, (int)Math.Round(sourceHeight * destAspect));
+        }
+        else
+        {
+            // source is taller: limit height
+            sourceWidth = Math.Min(openingImage.Width, Math.Max(1, (int)Math.Round(openingImage.Width * 0.9)));
+            sourceHeight = Math.Min(openingImage.Height, (int)Math.Round(sourceWidth / destAspect));
+        }
+
+
         var maxSourceX = Math.Max(0, openingImage.Width - sourceWidth);
+        var maxSourceY = Math.Max(0, openingImage.Height - sourceHeight);
+
         var progress = Math.Clamp(
             languageOpeningElapsedFrames / (float)Math.Max(1, LanguageOpeningTotalFrames),
             0f,
             1f);
 
-        var sourceX = (int)Math.Round(maxSourceX * progress);
-        var sourceY = Math.Max(0, openingImage.Height - sourceHeight - 20);
+        // Favor a slightly right-of-center focus so important sprites (heart, characters)
+        // are more likely to be visible. Then pan smoothly with progress.
+        var focusNormX = 0.6f;
+        var focusX = (int)Math.Round(openingImage.Width * focusNormX);
+        var centerSourceX = Math.Clamp(focusX - sourceWidth / 2, 0, maxSourceX);
 
-        var destinationRect = new Rectangle(0, 0, UiCanvas.VirtualWidth, UiCanvas.VirtualHeight);
+        // Apply a larger pan based on overall progress to give motion.
+        var panRange = Math.Max(0, maxSourceX);
+        // slower animation (reduced speed by 40%)
+        var eased = (float)(0.6 * progress * progress * (3 - 2 * progress));
+        var targetSourceX = Math.Clamp((int)Math.Round(centerSourceX + (panRange * (eased - 0.5f) * 0.9f)), 0, maxSourceX);
 
+        // Prefer a source Y that shows upper sprites; move slightly up from bottom.
+        var preferredY = Math.Max(0, openingImage.Height - sourceHeight - 40);
+        var targetSourceY = Math.Clamp(preferredY - (int)Math.Round((maxSourceY) * (progress * 0.2f)), 0, maxSourceY);
+
+        // Smooth small integer jumps by interpolating from last drawn source coords.
+        var lerp = 0.35f; // fraction to move toward target each frame (higher = smoother)
+        if (languageOpeningLastSourceX < 0)
+        {
+            languageOpeningLastSourceX = targetSourceX;
+        }
+
+        if (languageOpeningLastSourceY < 0)
+        {
+            languageOpeningLastSourceY = targetSourceY;
+        }
+
+        var sourceX = (int)Math.Round(languageOpeningLastSourceX + (targetSourceX - languageOpeningLastSourceX) * lerp);
+        var sourceY = (int)Math.Round(languageOpeningLastSourceY + (targetSourceY - languageOpeningLastSourceY) * lerp);
+
+        languageOpeningLastSourceX = sourceX;
+        languageOpeningLastSourceY = sourceY;
+
+        var destinationRect = new Rectangle(0, 0, destW, destH);
+
+        // When panning, use a higher-quality interpolation to reduce perceived stepping.
+        var prevMode = g.InterpolationMode;
+        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
         g.DrawImage(
             openingImage,
             destinationRect,
             new Rectangle(sourceX, sourceY, sourceWidth, sourceHeight),
             GraphicsUnit.Pixel);
+        g.InterpolationMode = prevMode;
     }
         private void DrawLanguageOpeningNarration(Graphics g)
     {
@@ -290,18 +351,46 @@ public partial class Form1
             return;
         }
 
-        using var font = new Font("JF-Dot-ShinonomeMin14", 20, FontStyle.Regular, GraphicsUnit.Pixel);
-        var textArea = new Rectangle(80, 220, 480, 48);
-        var lines = NormalizeTextLines(narration);
-        var totalHeight = lines.Count * UiTypography.LineHeight;
-        var startY = textArea.Y + Math.Max(0, (textArea.Height - totalHeight) / 2);
-        var textOffsetY = Math.Max(0f, (UiTypography.LineHeight - font.Height) / 2f);
+            using var font = new Font("JF-Dot-ShinonomeMin14", 20, FontStyle.Regular, GraphicsUnit.Pixel);
+            var textArea = new Rectangle(80, 220, 480, 48);
+            var lines = NormalizeTextLines(narration);
+            var totalHeight = lines.Count * UiTypography.LineHeight;
+            var startY = textArea.Y + Math.Max(0, (textArea.Height - totalHeight) / 2);
+            var textOffsetY = Math.Max(0f, (UiTypography.LineHeight - font.Height) / 2f);
 
-        using (var sf = new StringFormat { Alignment = StringAlignment.Center })
-        {
-            g.DrawString(narration, font, Brushes.Black, textArea, sf);
-            g.DrawString(narration, font, Brushes.White, textArea, sf);
-        }
+            // Strong outline: draw multiple offsets (including diagonals) then main fill.
+            var shadowColor = Color.FromArgb((int)Math.Round(200f * alpha), 0, 0, 0);
+            using var shadowBrush = new SolidBrush(shadowColor);
+            using var mainBrush = new SolidBrush(Color.FromArgb((int)Math.Round(255f * alpha), 255, 255, 255));
+
+            using (var sf = new StringFormat { Alignment = StringAlignment.Center })
+            {
+                var offsets = new[]
+                {
+                    new Point(-2, -2), new Point(-2, -1), new Point(-2, 0), new Point(-2, 1), new Point(-2, 2),
+                    new Point(-1, -2), new Point(-1, -1), new Point(-1, 0), new Point(-1, 1), new Point(-1, 2),
+                    new Point(0, -2), new Point(0, -1), new Point(0, 1), new Point(0, 2),
+                    new Point(1, -2), new Point(1, -1), new Point(1, 0), new Point(1, 1), new Point(1, 2),
+                    new Point(2, -2), new Point(2, -1), new Point(2, 0), new Point(2, 1), new Point(2, 2)
+                };
+
+                for (var i = 0; i < lines.Count; i++)
+                {
+                    var line = lines[i];
+                    var y = startY + (i * UiTypography.LineHeight);
+                    var lineRect = new Rectangle(textArea.X, y, textArea.Width, UiTypography.LineHeight);
+
+                    // Draw heavy outline
+                    foreach (var off in offsets)
+                    {
+                        var r = new Rectangle(lineRect.X + off.X, lineRect.Y + off.Y, lineRect.Width, lineRect.Height);
+                        g.DrawString(line, font, shadowBrush, r, sf);
+                    }
+
+                    // Main fill
+                    g.DrawString(line, font, mainBrush, lineRect, sf);
+                }
+            }
     }
     private string GetCurrentLanguageOpeningText()
     {

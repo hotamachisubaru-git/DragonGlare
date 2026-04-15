@@ -49,8 +49,16 @@ public partial class Form1
 
     private void ChangeGameState(GameState nextState)
     {
-        gameState = nextState;
-        UpdateBgm();
+        if (gameState == nextState)
+        {
+            return;
+        }
+
+        // Start a fade-out before actually switching state. This sets a pending
+        // state and sceneFadeOutFramesRemaining; the Update loop will complete
+        // the fade then perform the state change and trigger a fade-in.
+        pendingGameState = nextState;
+        sceneFadeOutFramesRemaining = SceneFadeOutDuration;
     }
 
     private void OpenSaveSlotSelection(SaveSlotSelectionMode mode)

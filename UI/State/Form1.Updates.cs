@@ -15,6 +15,25 @@ public partial class Form1
         UpdateFieldMovementAnimation();
         UpdateBattleVisualEffects();
         RunAntiCheatChecks();
+        // If a scene change is pending, process fade-out and delay other updates
+        if (pendingGameState is not null)
+        {
+            if (sceneFadeOutFramesRemaining > 0)
+            {
+                sceneFadeOutFramesRemaining--;
+                if (sceneFadeOutFramesRemaining == 0)
+                {
+                    // perform actual state switch and start fade-in
+                    gameState = pendingGameState.Value;
+                    pendingGameState = null;
+                    startupFadeFrames = 20; // fade-in on new scene
+                    UpdateBgm();
+                }
+            }
+
+            // While fading out, skip most per-state updates to avoid visual/logic jumps.
+            return;
+        }
 
         if (startupFadeFrames > 0)
         {
@@ -165,6 +184,16 @@ public partial class Form1
         if (languageOpeningFinished || languageOpeningLineIndex >= LanguageOpeningScript.Length)
         {
             languageOpeningFinished = true;
+            // If we were started from the title's "Start New Game", skip the
+            // language-selection prompt and advance directly to name input.
+            if (skipLanguageSelectionPrompt)
+            {
+                skipLanguageSelectionPrompt = false;
+                selectedLanguage = UiLanguage.Japanese;
+                ChangeGameState(GameState.NameInput);
+                return;
+            }
+
             return;
         }
 

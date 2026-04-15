@@ -96,6 +96,10 @@ public partial class Form1 : Form
     private bool fontLoaded;
     private int frameCounter;
     private int startupFadeFrames = 20;
+    // Scene transition fade-out state: when non-null, we are fading out towards this pending state.
+    private int sceneFadeOutFramesRemaining;
+    private const int SceneFadeOutDuration = 40; // frames (approx 0.64s at 60fps)
+    private GameState? pendingGameState;
     private PlayerFacingDirection playerFacingDirection = PlayerFacingDirection.Down;
     private Point fieldMovementAnimationDirection = Point.Empty;
     private int fieldMovementAnimationFramesRemaining;
@@ -122,6 +126,10 @@ public partial class Form1 : Form
     private int languageOpeningLineIndex;
     private int languageOpeningLineFrame;
     private bool languageOpeningFinished;
+    private bool skipLanguageSelectionPrompt;
+    // Last used source coordinates for opening pan (used to smooth integer jumps)
+    private int languageOpeningLastSourceX = -1;
+    private int languageOpeningLastSourceY = -1;
     private bool skipSaveOnClose;
     private int encounterTransitionFrames;
     private int fieldEncounterStepsRemaining = 7;
@@ -287,6 +295,16 @@ public partial class Form1 : Form
             if (startupFadeFrames > 0)
             {
                 var alpha = (int)(255f * startupFadeFrames / 20f);
+                using var fadeBrush = new SolidBrush(Color.FromArgb(alpha, Color.Black));
+                e.Graphics.FillRectangle(fadeBrush, 0, 0, UiCanvas.VirtualWidth, UiCanvas.VirtualHeight);
+            }
+
+            // Draw scene fade-out overlay if a pending state is set and we are fading out.
+            if (pendingGameState is not null && sceneFadeOutFramesRemaining > 0)
+            {
+                var progress = 1f - (sceneFadeOutFramesRemaining / (float)SceneFadeOutDuration);
+                var alpha = (int)Math.Round(255f * progress);
+                alpha = Math.Clamp(alpha, 0, 255);
                 using var fadeBrush = new SolidBrush(Color.FromArgb(alpha, Color.Black));
                 e.Graphics.FillRectangle(fadeBrush, 0, 0, UiCanvas.VirtualWidth, UiCanvas.VirtualHeight);
             }
