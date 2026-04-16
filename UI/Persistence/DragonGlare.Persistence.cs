@@ -5,7 +5,7 @@ using DragonGlareAlpha.Services;
 
 namespace DragonGlareAlpha;
 
-public partial class Form1
+public partial class DragonGlare
 {
     private string GetText(string key)
     {

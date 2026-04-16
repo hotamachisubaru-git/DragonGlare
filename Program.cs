@@ -1,11 +1,16 @@
 using DragonGlareAlpha.Security;
 using DragonGlareAlpha.Domain.Startup;
 using DragonGlareAlpha.Services;
+using System.Drawing.Text;
 
 namespace DragonGlareAlpha;
 
 static class Program
 {
+    public static Font? UiFont;
+    public static Font? SmallFont;
+    public static Font? TitleFont;
+
     /// <summary>
     ///  The main entry point for the application.
     /// </summary>
@@ -13,6 +18,19 @@ static class Program
     static void Main()
     {
         ApplicationConfiguration.Initialize();
+
+        // フォントのロード
+        var fontCollection = new PrivateFontCollection();
+        fontCollection.AddFontFile("JF-Dot-ShinonomeMin14.ttf");
+
+        // ロードしたフォントをアプリケーション全体で利用できるように静的フィールドに設定
+        if (fontCollection.Families.Length > 0)
+        {
+            // ドットの崩れを防ぐため、基準サイズ(14px)を使用
+            UiFont = new Font(fontCollection.Families[0], 14, FontStyle.Regular, GraphicsUnit.Pixel);
+            SmallFont = new Font(fontCollection.Families[0], 14, FontStyle.Regular, GraphicsUnit.Pixel);
+            TitleFont = new Font(fontCollection.Families[0], 14, FontStyle.Bold, GraphicsUnit.Pixel);
+        }
 
         var platformSupportService = new PlatformSupportService();
         if (platformSupportService.TryDetectUnsupportedPlatform(out var platformMessage))
@@ -42,6 +60,6 @@ static class Program
             launchSettingsService.Save(launchSettings);
         }
 
-        Application.Run(new Form1(launchSettings));
+        Application.Run(new DragonGlare(launchSettings));
     }
 }

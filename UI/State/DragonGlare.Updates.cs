@@ -7,7 +7,7 @@ using DragonGlareAlpha.Services;
 
 namespace DragonGlareAlpha;
 
-public partial class Form1
+public partial class DragonGlare
 {
     private void UpdateGame()
     {
@@ -392,6 +392,23 @@ public partial class Form1
             return;
         }
 
+        // バトルメッセージの1行ずつ表示アニメーション
+        if (battleFlowState is BattleFlowState.Victory or BattleFlowState.Defeat or BattleFlowState.Escaped)
+        {
+            if (battleMessageLines.Length > 0 && battleMessageVisibleLines < battleMessageLines.Length)
+            {
+                if (battleMessageLineTimer > 0)
+                {
+                    battleMessageLineTimer--;
+                }
+                else
+                {
+                    battleMessageVisibleLines++;
+                    battleMessageLineTimer = BattleMessageLineDelayFrames;
+                }
+            }
+        }
+
         if (battleFlowState == BattleFlowState.Intro)
         {
             if (WasConfirmPressed())
@@ -413,7 +430,15 @@ public partial class Form1
         {
             if (WasConfirmPressed() || WasPressed(Keys.Escape))
             {
-                FinishBattle();
+                // メッセージ表示途中で決定ボタンが押されたら、全行を一気に表示する（スキップ）
+                if (battleMessageLines.Length > 0 && battleMessageVisibleLines < battleMessageLines.Length)
+                {
+                    battleMessageVisibleLines = battleMessageLines.Length;
+                }
+                else
+                {
+                    FinishBattle();
+                }
             }
 
             return;
@@ -601,6 +626,11 @@ public partial class Form1
                 PersistProgress();
                 break;
         }
+        
+        // メッセージを1行ずつ表示するための初期化
+        battleMessageLines = battleMessage.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        battleMessageVisibleLines = 1; // 最初の1行だけは即座に表示
+        battleMessageLineTimer = BattleMessageLineDelayFrames;
     }
 
     private void AppendBattleInterest(ref string message)

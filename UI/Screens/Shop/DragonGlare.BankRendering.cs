@@ -2,7 +2,7 @@ using DragonGlareAlpha.Domain;
 
 namespace DragonGlareAlpha;
 
-public partial class Form1
+public partial class DragonGlare
 {
     private void DrawBank(Graphics g)
     {

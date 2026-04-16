@@ -2,28 +2,16 @@ using System.Drawing.Drawing2D;
 
 namespace DragonGlareAlpha;
 
-public partial class Form1
+public partial class DragonGlare
 {
     private void DrawWindow(Graphics g, Rectangle rect)
     {
-        using var shadowBrush = new SolidBrush(Color.FromArgb(112, 0, 0, 0));
-        using var outerDarkBrush = new SolidBrush(Color.FromArgb(16, 30, 52));
-        using var outerFrameBrush = new SolidBrush(Color.FromArgb(24, 84, 156));
-        using var innerFrameBrush = new SolidBrush(Color.FromArgb(144, 214, 255));
-        using var innerShadeBrush = new SolidBrush(Color.FromArgb(46, 76, 120));
-        using var backgroundBrush = new SolidBrush(Color.FromArgb(26, 24, 38));
-        using var backgroundGlowBrush = new SolidBrush(Color.FromArgb(42, 36, 58));
+        // ダイアログを「色なし（無地）」にするため、真っ黒の背景とシンプルな白い枠のみを描画します
+        using var backgroundBrush = new SolidBrush(Color.Black); // 無地の黒背景
+        using var borderPen = new Pen(Color.White, 1); // 1ピクセルの白枠
 
-        g.FillRectangle(shadowBrush, rect.X + 6, rect.Y + 6, rect.Width, rect.Height);
-        g.FillRectangle(outerDarkBrush, rect);
-        g.FillRectangle(outerFrameBrush, rect.X + 1, rect.Y + 1, rect.Width - 2, rect.Height - 2);
-        g.FillRectangle(innerShadeBrush, rect.X + 3, rect.Y + 3, rect.Width - 6, rect.Height - 6);
-        g.FillRectangle(backgroundBrush, rect.X + 4, rect.Y + 4, rect.Width - 8, rect.Height - 8);
-        g.FillRectangle(backgroundGlowBrush, rect.X + 4, rect.Y + 4, rect.Width - 8, Math.Max(2, (rect.Height - 8) / 4));
-        g.FillRectangle(innerFrameBrush, rect.X + 3, rect.Y + 3, rect.Width - 6, 1);
-        g.FillRectangle(innerFrameBrush, rect.X + 3, rect.Y + 3, 1, rect.Height - 6);
-        g.FillRectangle(innerShadeBrush, rect.Right - 4, rect.Y + 3, 1, rect.Height - 6);
-        g.FillRectangle(innerShadeBrush, rect.X + 3, rect.Bottom - 4, rect.Width - 6, 1);
+        g.FillRectangle(backgroundBrush, rect);
+        g.DrawRectangle(borderPen, rect.X, rect.Y, rect.Width - 1, rect.Height - 1);
     }
 
     private void DrawOption(Graphics g, bool selected, int x, int y, string text)

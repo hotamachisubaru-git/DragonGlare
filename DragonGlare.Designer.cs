@@ -1,6 +1,6 @@
 ﻿namespace DragonGlareAlpha;
 
-partial class Form1
+partial class DragonGlare
 {
     /// <summary>
     ///  Required designer variable.
@@ -31,7 +31,7 @@ partial class Form1
         components = new System.ComponentModel.Container();
         AutoScaleMode = AutoScaleMode.Font;
         ClientSize = UiCanvas.VirtualSize;
-        Text = "Form1";
+        Text = "DragonGlare";
     }
 
     #endregion

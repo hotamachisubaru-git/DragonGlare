@@ -16,7 +16,7 @@ using Timer = System.Windows.Forms.Timer;
 
 namespace DragonGlareAlpha;
 
-public partial class Form1 : Form
+public partial class DragonGlare : Form
 {
     private const int TileSize = 32;
     private const int ShopItemsPerPage = 6;
@@ -76,8 +76,8 @@ public partial class Form1 : Form
     private readonly FieldTransitionService fieldTransitionService = new();
     private readonly LaunchSettings launchSettings;
 
-    private Font uiFont = new(UiTypography.DefaultFontFamilyName, UiTypography.FontPixelSize, GraphicsUnit.Pixel);
-    private Font smallFont = new(UiTypography.DefaultFontFamilyName, UiTypography.FontPixelSize, GraphicsUnit.Pixel);
+    private Font uiFont = Program.UiFont ?? new Font(UiTypography.DefaultFontFamilyName, UiTypography.FontPixelSize, GraphicsUnit.Pixel);
+    private Font smallFont = Program.SmallFont ?? new Font(UiTypography.DefaultFontFamilyName, UiTypography.FontPixelSize, GraphicsUnit.Pixel);
     private PlayerProgress player = PlayerProgress.CreateDefault(PlayerStartTile);
     private BattleEncounter? currentEncounter;
     private GameState gameState = GameState.ModeSelect;
@@ -117,6 +117,11 @@ public partial class Form1 : Form
     private BankPhase bankPhase = BankPhase.Welcome;
     private SaveSlotSelectionMode saveSlotSelectionMode = SaveSlotSelectionMode.Save;
     private string battleMessage = DefaultBattleMessage;
+    // 1行ずつの表示アニメーションのためのフィールド
+    private string[] battleMessageLines = [];
+    private int battleMessageVisibleLines = 0;
+    private int battleMessageLineTimer = 0;
+    private const int BattleMessageLineDelayFrames = 30; // 0.5秒（60FPSの場合）/ 1秒（30FPSの場合）など調整可能。約0.5秒のウェイト
     private string shopMessage = ShopWelcomeMessage;
     private string bankMessage = BankWelcomeMessage;
     private BgmTrack? currentBgmTrack;
@@ -194,7 +199,7 @@ public partial class Form1 : Form
 
     private string LegacySaveFilePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DragonGlareAlpha", "save1.sav");
 
-    public Form1(LaunchSettings? launchSettings = null)
+    public DragonGlare(LaunchSettings? launchSettings = null)
     {
         this.launchSettings = launchSettings ?? new LaunchSettings();
         activeDisplayMode = this.launchSettings.DisplayMode;
@@ -249,7 +254,7 @@ public partial class Form1 : Form
             e.Graphics.SmoothingMode = SmoothingMode.None;
             e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
             e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
-            e.Graphics.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
+            e.Graphics.TextRenderingHint = TextRenderingHint.SingleBitPerPixel; // 完全にアンチエイリアスを切り、ドットを白黒2値で描画
             DrawBackdrop(e.Graphics, ClientRectangle, scale);
 
             e.Graphics.TranslateTransform(offsetX, offsetY);

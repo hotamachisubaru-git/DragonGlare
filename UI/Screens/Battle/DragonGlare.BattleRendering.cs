@@ -3,7 +3,7 @@ using DragonGlareAlpha.Domain;
 
 namespace DragonGlareAlpha;
 
-public partial class Form1
+public partial class DragonGlare
 {
     private void DrawBattle(Graphics g)
     {
@@ -246,12 +246,22 @@ public partial class Form1
     {
         var footerHeight = footer.Contains('\n') ? 38 : 20;
         var textRect = new Rectangle(rect.X, rect.Y, rect.Width, Math.Max(20, rect.Height - (footerHeight + 8)));
-        DrawText(g, battleMessage, textRect, smallFont, wrap: true);
+        
+        string displayMessage = battleMessage;
+        // バトルのリザルト等でアニメーション表示が有効な場合
+        if (battleMessageLines.Length > 0 && (battleFlowState is BattleFlowState.Victory or BattleFlowState.Defeat or BattleFlowState.Escaped))
+        {
+            var visibleCount = Math.Min(battleMessageVisibleLines, battleMessageLines.Length);
+            displayMessage = string.Join("\n", battleMessageLines.Take(visibleCount));
+        }
+
+        DrawText(g, displayMessage, textRect, smallFont, wrap: true);
         if (string.IsNullOrWhiteSpace(footer))
         {
             return;
         }
 
+        // 次へ進むためのフッターメッセージ（決定キーでスキップできることも知らせる）
         DrawText(
             g,
             footer,
