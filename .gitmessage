@@ -1,0 +1,25 @@
+# --- コミットメッセージの書き方 (日本語) ---
+# リファクタリング: refactor(場所): 日本語での修正内容
+# バグ修正:       fix: 日本語での修正内容
+# 新規実装・改良: feat: 日本語での修正内容
+#
+# 例1: feat(ui): メインメニューのレイアウトを調整
+# 例2: fix(battle): 敵のHPがマイナスになる不具合を修正
+# 例3: refactor(domain): プレイヤーのステータス計算ロジックを整理
+
+# --- テンプレート ---
+<type>(<scope>): <subject>
+
+# --- Types ---
+# feat:     新規実装・改良
+# fix:      バグ修正
+# refactor: リファクタリング（バグ修正や機能追加を含まないコード変更）
+# docs:     ドキュメントのみの変更
+# style:    コードの意味に影響を与えない変更（フォーマット等）
+# perf:     パフォーマンス向上
+# test:     テストの追加・修正
+# build:    ビルドシステムや外部依存関係の変更
+# chore:    その他（ビルド・テスト以外）
+
+# --- Scopes (場所の例) ---
+# ui, service, domain, persistence, security, data, tests, monogame, assets, build

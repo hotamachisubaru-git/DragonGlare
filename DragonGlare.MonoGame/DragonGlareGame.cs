@@ -17,14 +17,16 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using SpriteFontPlus;
-using DragonGlareAlpha.Data; // GameContent を使うために追加
+using DragonGlareAlpha.Data;
 
 namespace DragonGlare.MonoGame;
+
+public record struct OpeningNarrationLine(string Text, int DisplayFrames, int GapFrames);
 
 public class DragonGlareGame : Game
 {
     private GraphicsDeviceManager _graphics;
-    private SpriteBatch _spriteBatch;
+    private SpriteBatch? _spriteBatch;
 
     // --- ここから、古い DragonGlare.cs から移植したフィールド ---
     
@@ -32,14 +34,32 @@ public class DragonGlareGame : Game
     
     private readonly StringBuilder playerName = new();
     
+    private static readonly OpeningNarrationLine[] LanguageOpeningScript =
+    [
+        new("遠い昔。", 180, 40),
+        new("世界には五つの大地があった。", 180, 40),
+        new("その時代では、争いがなく。\n皆が平和に満ちていた。", 260, 50),
+        new("そして、それぞれの大地で\n違う神が崇められていたという。", 320, 50),
+        new("しかし", 90, 120),
+        new("平和は長くは続かなかった。", 250, 50),
+        new("争いによって、日の大地は\n跡形もなく崩れ落ちてしまった。", 290, 50),
+        new("そして、世界には暗い月しか\n上らなくなってしまった。", 280, 50),
+        new("次から次へと世界は\n闇に満ちていった。", 250, 50),
+        new("ついには、世界の中心となる光の大地が\n愚かな争いにより、闇に沈んでいった。", 340, 60),
+        new("やがて、光の神は\n闇に飲み込まれ", 220, 50),
+        new("世界にある万物が\n人々を襲うようにしてしまった。", 270, 50),
+        new("世界は、いつしか光を失い\n闇が世界を司るようになった。", 300, 0)
+    ];
+    private static readonly int LanguageOpeningTotalFrames = LanguageOpeningScript.Sum(line => line.DisplayFrames + line.GapFrames);
+
     // --- MonoGame用の新しいフィールド ---
-    private Texture2D openingImage;
-    private SpriteFont uiFont;
-    private SpriteFont smallFont;
+    private Texture2D? openingImage;
+    private SpriteFont? uiFont;
+    private SpriteFont? smallFont;
     
     // --- サービスとロジックはそのまま流用 ---
     private readonly Random random = new();
-    private readonly SaveService saveService = new();
+    private readonly SaveService saveService = new("saves"); // 引数を追加
     private readonly AntiCheatService antiCheatService = new();
     private readonly BattleService battleService = new();
     private readonly ProgressionService progressionService = new();
@@ -62,7 +82,7 @@ public class DragonGlareGame : Game
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
-        player = PlayerProgress.CreateDefault(PlayerStartTile); // player をここで初期化
+        player = PlayerProgress.CreateDefault(new System.Drawing.Point(PlayerStartTile.X, PlayerStartTile.Y)); 
     }
 
     protected override void Initialize()
@@ -72,10 +92,6 @@ public class DragonGlareGame : Game
         _graphics.PreferredBackBufferHeight = 480;
         _graphics.ApplyChanges();
 
-        // サービスなどの初期化
-        // saveService.TryMigrateLegacySave(...);
-        // RefreshSaveSlotSummaries();
-        
         base.Initialize();
     }
 
@@ -83,17 +99,31 @@ public class DragonGlareGame : Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         
-        using (var stream = new FileStream(Path.Combine(Content.RootDirectory, "UI", "SFC_opening.png"), FileMode.Open))
+        var openingImagePath = Path.Combine(Content.RootDirectory, "UI", "SFC_opening.png");
+        if (File.Exists(openingImagePath))
         {
-            openingImage = Texture2D.FromStream(GraphicsDevice, stream);
+            using (var stream = new FileStream(openingImagePath, FileMode.Open))
+            {
+                openingImage = Texture2D.FromStream(GraphicsDevice, stream);
+            }
         }
 
-        var fontBakeResult = TtfFontBaker.Bake(File.ReadAllBytes(Path.Combine(Content.RootDirectory, "JF-Dot-ShinonomeMin14.ttf")),
-            14, 1024, 1024,
-            new[] { CharacterRange.BasicLatin, CharacterRange.Latin1Supplement, CharacterRange.Cyrillic, CharacterRange.Japanese });
+        var fontPath = Path.Combine(Content.RootDirectory, "JF-Dot-ShinonomeMin14.ttf");
+        if (File.Exists(fontPath))
+        {
+            var fontBakeResult = TtfFontBaker.Bake(File.ReadAllBytes(fontPath),
+                14, 1024, 1024,
+                new[] { 
+                    new CharacterRange((char)0x0020, (char)0x007F), // Basic Latin
+                    new CharacterRange((char)0x00A0, (char)0x00FF), // Latin-1 Supplement
+                    new CharacterRange((char)0x0400, (char)0x04FF), // Cyrillic
+                    new CharacterRange((char)0x3000, (char)0x30FF), // CJK symbols and Hiragana/Katakana
+                    new CharacterRange((char)0x4E00, (char)0x9FFF)  // CJK Unified Ideographs
+                });
 
-        uiFont = fontBakeResult.CreateSpriteFont(GraphicsDevice);
-        smallFont = uiFont;
+            uiFont = fontBakeResult.CreateSpriteFont(GraphicsDevice);
+            smallFont = uiFont;
+        }
     }
 
     protected override void Update(GameTime gameTime)
@@ -104,10 +134,10 @@ public class DragonGlareGame : Game
         if (!languageOpeningFinished)
         {
             languageOpeningElapsedFrames++;
-            if (languageOpeningLineIndex < GameContent.LanguageOpeningScript.Length)
+            if (languageOpeningLineIndex < LanguageOpeningScript.Length)
             {
                 languageOpeningLineFrame++;
-                var currentLine = GameContent.LanguageOpeningScript[languageOpeningLineIndex];
+                var currentLine = LanguageOpeningScript[languageOpeningLineIndex];
                 if (languageOpeningLineFrame > currentLine.DisplayFrames + currentLine.GapFrames)
                 {
                     languageOpeningLineFrame = 0;
@@ -115,7 +145,7 @@ public class DragonGlareGame : Game
                 }
             }
 
-            if (languageOpeningElapsedFrames >= GameContent.LanguageOpeningTotalFrames)
+            if (languageOpeningElapsedFrames >= LanguageOpeningTotalFrames)
             {
                 languageOpeningFinished = true;
             }
@@ -128,15 +158,17 @@ public class DragonGlareGame : Game
     {
         GraphicsDevice.Clear(Color.Black);
 
+        if (_spriteBatch == null) return;
+
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
-        // オープニング背景を描画 (DrawLanguageOpeningBackdrop の簡易移植)
+        // オープニング背景を描画
         if (openingImage != null)
         {
             _spriteBatch.Draw(openingImage, new Rectangle(0, 0, _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight), Color.White);
         }
 
-        // オープニングナレーションを描画 (DrawLanguageOpeningNarration の移植)
+        // オープニングナレーションを描画
         DrawLanguageOpeningNarration(_spriteBatch);
         
         _spriteBatch.End();
@@ -147,12 +179,12 @@ public class DragonGlareGame : Game
     // --- WinFormsの描画メソッドをMonoGame用に移植 ---
     private void DrawLanguageOpeningNarration(SpriteBatch spriteBatch)
     {
-        if (languageOpeningFinished || languageOpeningLineIndex >= GameContent.LanguageOpeningScript.Length || uiFont == null)
+        if (languageOpeningFinished || languageOpeningLineIndex >= LanguageOpeningScript.Length || uiFont == null)
         {
             return;
         }
         
-        var currentLineData = GameContent.LanguageOpeningScript[languageOpeningLineIndex];
+        var currentLineData = LanguageOpeningScript[languageOpeningLineIndex];
         var text = (languageOpeningLineFrame < currentLineData.DisplayFrames) ? currentLineData.Text : string.Empty;
 
         if (string.IsNullOrWhiteSpace(text))

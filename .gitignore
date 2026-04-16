@@ -9,13 +9,11 @@ obj/
 *.wav
 *.ttf
 *.ico
-.gitignore
-
+.gitmessage
 TestResults/
 .release/
 .codex-build/
 .dotnet/
-/DragonGlareAlpha.Tests/
 *.zip
 *.7z
 *.rar
@@ -24,6 +22,8 @@ TestResults/
 *.bak
 *.orig
 *.log
+.tmp_opening_frames*/
+omnisharp.json
 AGENTS.md
 GEMINI.md
 # Ignore Visual Studio temporary files, build output, and
