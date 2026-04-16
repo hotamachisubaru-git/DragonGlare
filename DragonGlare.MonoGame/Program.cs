@@ -1,2 +1,2 @@
-﻿using var game = new DragonGlare.MonoGame.Game1();
+﻿using var game = new DragonGlare.MonoGame.DragonGlareGame();
 game.Run();

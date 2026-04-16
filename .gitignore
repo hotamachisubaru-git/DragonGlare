@@ -5,6 +5,11 @@ obj/
 *.suo
 *.cache
 *.png
+*.mp3
+*.wav
+*.ttf
+*.ico
+.gitignore
 
 TestResults/
 .release/
