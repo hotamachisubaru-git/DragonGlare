@@ -75,6 +75,9 @@ public partial class DragonGlareAlpha : Game
     private Texture2D? pixelTexture;
     private Texture2D? openingTexture;
     private Texture2D? menuWindowTexture;
+    private Texture2D? battleFieldTexture;
+    private Texture2D? battleWindowTexture;
+    private Texture2D? fieldTileTexture;
     private XnaSong? prologueSong;
     private Font? uiFont;
     private KeyboardState currentKeyboardState;
@@ -152,6 +155,9 @@ public partial class DragonGlareAlpha : Game
         pixelTexture.SetData([XnaColor.White]);
         openingTexture = LoadTextureFromAssets("UI", "SFC_opening.png");
         menuWindowTexture = LoadTextureFromAssets("UI", "window21.png");
+        battleFieldTexture = LoadTextureFromAssets("UI", "SFC_battlefieldFrame1.png");
+        battleWindowTexture = LoadTextureFromAssets("UI", "SFC_battlewindowFrame1.png");
+        fieldTileTexture = LoadTextureFromAssets("Tiles", "mapTile_Assets_SFCFrame1.png");
         prologueSong = LoadSongFromRoot("SFC_prologue02.mp3");
         LoadUiFont();
     }
@@ -281,8 +287,11 @@ public partial class DragonGlareAlpha : Game
             case GameState.EncounterTransition:
                 DrawField(spriteBatch);
                 break;
+            case GameState.SaveSlotSelection:
+                DrawSaveSlotSelection(spriteBatch);
+                break;
             case GameState.Battle:
-                DrawSolidPanel(spriteBatch, new XnaRectangle(64, 64, 512, 352), new XnaColor(28, 20, 24));
+                DrawBattle(spriteBatch);
                 break;
             case GameState.ShopBuy:
             case GameState.Bank:
@@ -319,6 +328,9 @@ public partial class DragonGlareAlpha : Game
         textTextureCache.Clear();
         openingTexture?.Dispose();
         menuWindowTexture?.Dispose();
+        battleFieldTexture?.Dispose();
+        battleWindowTexture?.Dispose();
+        fieldTileTexture?.Dispose();
         prologueSong?.Dispose();
         pixelTexture?.Dispose();
         uiFont?.Dispose();
@@ -512,7 +524,12 @@ public partial class DragonGlareAlpha : Game
             }
 
             RefreshSaveSlotSummaries();
-            ShowTransientNotice("NO SAVE DATA / セーブデータがありません");
+            ShowTransientNotice(saveService.LastFailureReason switch
+            {
+                SaveLoadFailureReason.InvalidSignature => "SAVE DATA INVALID / セーブデータが改ざんされています",
+                SaveLoadFailureReason.InvalidFormat => "SAVE DATA ERROR / セーブデータが壊れています",
+                _ => "NO SAVE DATA / セーブデータがありません"
+            });
             return;
         }
 
@@ -1117,6 +1134,66 @@ public partial class DragonGlareAlpha : Game
             ScaleMenuY(layout, 136));
     }
 
+    private void DrawSaveSlotSelection(SpriteBatch batch)
+    {
+        var isLoadMode = saveSlotSelectionMode == SaveSlotSelectionMode.Load;
+        DrawWindow(batch, new XnaRectangle(16, 8, 608, 64));
+        DrawText(
+            batch,
+            isLoadMode
+                ? "よみこむ ぼうけんのしょを えらんでください"
+                : "きろくする ぼうけんのしょを えらんでください",
+            48,
+            24);
+        DrawText(batch, isLoadMode ? "CHOOSE A FILE TO LOAD" : "CHOOSE A FILE TO SAVE", 48, 48);
+
+        for (var index = 0; index < SaveService.SlotCount; index++)
+        {
+            var slotRect = new XnaRectangle(16, 98 + (index * 98), 608, 82);
+            DrawWindow(batch, slotRect);
+            if (saveSlotCursor == index)
+            {
+                DrawSolidPanel(batch, new XnaRectangle(slotRect.X + 18, slotRect.Y + 34, 16, 16), new XnaColor(0, 112, 255));
+                DrawText(batch, "▶", slotRect.X + 22, slotRect.Y + 31);
+            }
+
+            var slotNumber = index + 1;
+            var summary = saveSlotSummaries.FirstOrDefault(slot => slot.SlotNumber == slotNumber);
+            DrawText(batch, $"ぼうけんのしょ {slotNumber}", slotRect.X + 54, slotRect.Y + 16);
+            DrawSaveSlotSummary(batch, summary, slotRect.X + 54, slotRect.Y + 40);
+        }
+
+        if (!string.IsNullOrWhiteSpace(menuNotice))
+        {
+            DrawWindow(batch, new XnaRectangle(32, 392, 576, 34));
+            DrawText(batch, menuNotice, 54, 403);
+        }
+
+        DrawWindow(batch, new XnaRectangle(40, 438, 560, 34));
+        DrawText(batch, isLoadMode ? "ENTER: よみこむ  ESC: モードにもどる" : "ENTER: きろく  ESC: もどる", 64, 449);
+    }
+
+    private void DrawSaveSlotSummary(SpriteBatch batch, SaveSlotSummary? summary, int x, int y)
+    {
+        if (summary is null || summary.State == SaveSlotState.Empty)
+        {
+            DrawText(batch, "NO DATA / まだ きろくがありません", x, y);
+            return;
+        }
+
+        if (summary.State == SaveSlotState.Corrupted)
+        {
+            DrawText(batch, "BROKEN DATA / よみこめません", x, y);
+            return;
+        }
+
+        DrawText(batch, $"{summary.Name}   LV {summary.Level}   G {summary.Gold}", x, y);
+        var savedAt = summary.SavedAtLocal is null
+            ? string.Empty
+            : summary.SavedAtLocal.Value.ToString("yyyy/MM/dd HH:mm");
+        DrawText(batch, $"{summary.CurrentFieldMap.ToString().ToUpperInvariant()}   {savedAt}", x, y + UiTextLineHeight);
+    }
+
     private void DrawMenuBackdrop(SpriteBatch batch)
     {
         var viewport = GraphicsDevice.Viewport;
@@ -1236,7 +1313,7 @@ public partial class DragonGlareAlpha : Game
         var alpha = GetOpeningNarrationAlpha(currentLine);
         var lines = currentLine.Text.Replace("\r\n", "\n").Split('\n');
         var totalHeight = lines.Length * UiTextLineHeight;
-        var startY = VirtualHeight - 96 - Math.Max(0, totalHeight / 2);
+        var startY = Math.Max(0, (VirtualHeight - totalHeight) / 2);
 
         for (var index = 0; index < lines.Length; index++)
         {
@@ -1289,7 +1366,7 @@ public partial class DragonGlareAlpha : Game
             for (var x = 0; x < mapWidth; x++)
             {
                 var rect = new XnaRectangle(originX + (x * TileSize), originY + (y * TileSize), TileSize, TileSize);
-                DrawSolidPanel(batch, rect, GetTileColor(map[y, x]));
+                DrawFieldTile(batch, map[y, x], rect);
             }
         }
 
@@ -1304,6 +1381,120 @@ public partial class DragonGlareAlpha : Game
         {
             var alpha = Math.Clamp(encounterTransitionFrames / (float)EncounterTransitionDuration, 0f, 1f);
             DrawSolidPanel(batch, new XnaRectangle(0, 0, VirtualWidth, VirtualHeight), XnaColor.Black * alpha);
+        }
+    }
+
+    private void DrawBattle(SpriteBatch batch)
+    {
+        if (battleFieldTexture is not null)
+        {
+            batch.Draw(battleFieldTexture, new XnaRectangle(0, 0, VirtualWidth, VirtualHeight), XnaColor.White);
+        }
+        else
+        {
+            DrawSolidPanel(batch, new XnaRectangle(0, 0, VirtualWidth, VirtualHeight), new XnaColor(28, 24, 42));
+            DrawBattleBrickBackdrop(batch);
+        }
+
+        DrawBattleEnemy(batch);
+
+        var statusRect = new XnaRectangle(96, 30, 112, 96);
+        DrawWindow(batch, statusRect);
+        DrawText(batch, GetDisplayPlayerName(), statusRect.X + 14, statusRect.Y + 14);
+        DrawText(batch, $"LV.{player.Level}", statusRect.X + 70, statusRect.Y + 14);
+        DrawText(batch, $"HP {player.CurrentHp}/{player.MaxHp}", statusRect.X + 14, statusRect.Y + 36);
+        DrawText(batch, $"MP {player.CurrentMp}/{player.MaxMp}", statusRect.X + 14, statusRect.Y + 54);
+        DrawText(batch, $"ATK {player.BaseAttack + player.Level}", statusRect.X + 14, statusRect.Y + 72);
+
+        var messageRect = new XnaRectangle(80, 286, 480, 136);
+        DrawWindow(batch, messageRect);
+        var enemyName = currentEncounter?.Enemy.Name ?? "ラヴァドレイク";
+        var enemyHp = currentEncounter is null
+            ? "HP --/--"
+            : $"HP {currentEncounter.CurrentHp}/{currentEncounter.Enemy.MaxHp}";
+        DrawText(batch, enemyName, messageRect.X + 18, messageRect.Y + 16);
+        DrawText(batch, "1匹", messageRect.X + 314, messageRect.Y + 16);
+        DrawText(batch, enemyHp, messageRect.Right - 84, messageRect.Y + 16);
+        DrawSolidPanel(batch, new XnaRectangle(messageRect.X + 16, messageRect.Y + 44, messageRect.Width - 32, 1), new XnaColor(104, 126, 156));
+        DrawText(batch, $"{enemyName}が あらわれた！", messageRect.X + 18, messageRect.Y + 58);
+        DrawText(batch, "ENTER / Z / X: つぎへ", messageRect.Right - 128, messageRect.Bottom - 30);
+    }
+
+    private void DrawFieldTile(SpriteBatch batch, int tileId, XnaRectangle destination)
+    {
+        if (fieldTileTexture is null)
+        {
+            DrawSolidPanel(batch, destination, GetTileColor(tileId));
+            return;
+        }
+
+        batch.Draw(fieldTileTexture, destination, GetFieldTileSource(tileId), XnaColor.White);
+    }
+
+    private static XnaRectangle GetFieldTileSource(int tileId)
+    {
+        return tileId switch
+        {
+            MapFactory.WallTile => new XnaRectangle(32, 0, 32, 32),
+            MapFactory.CastleBlockTile => new XnaRectangle(0, 64, 32, 32),
+            MapFactory.CastleGateTile => new XnaRectangle(64, 96, 32, 32),
+            MapFactory.FieldGateTile => new XnaRectangle(96, 32, 32, 32),
+            MapFactory.CastleFloorTile => new XnaRectangle(32, 64, 32, 32),
+            MapFactory.GrassTile => new XnaRectangle(0, 0, 32, 32),
+            MapFactory.DecorationBlueTile => new XnaRectangle(96, 96, 32, 32),
+            _ => new XnaRectangle(64, 64, 32, 32)
+        };
+    }
+
+    private void DrawBattleBrickBackdrop(SpriteBatch batch)
+    {
+        var brick = new XnaColor(72, 67, 92);
+        var mortar = new XnaColor(28, 24, 42);
+        for (var y = 0; y < 210; y += 16)
+        {
+            var offset = (y / 16) % 2 == 0 ? 80 : 60;
+            for (var x = offset; x < VirtualWidth - 60; x += 42)
+            {
+                DrawSolidPanel(batch, new XnaRectangle(x, y, 40, 14), brick);
+                DrawSolidPanel(batch, new XnaRectangle(x, y + 14, 40, 2), mortar);
+            }
+        }
+
+        DrawSolidPanel(batch, new XnaRectangle(80, 210, 480, 24), new XnaColor(144, 91, 28));
+        DrawSolidPanel(batch, new XnaRectangle(80, 234, 480, 52), new XnaColor(76, 24, 58));
+    }
+
+    private void DrawBattleEnemy(SpriteBatch batch)
+    {
+        var centerX = VirtualWidth / 2;
+        var centerY = 235;
+        DrawEllipse(batch, new XnaRectangle(centerX - 44, centerY - 40, 88, 56), new XnaColor(218, 231, 244));
+        DrawSolidPanel(batch, new XnaRectangle(centerX - 18, centerY - 1, 6, 6), XnaColor.Black);
+        DrawSolidPanel(batch, new XnaRectangle(centerX + 16, centerY - 1, 6, 6), XnaColor.Black);
+        DrawSolidPanel(batch, new XnaRectangle(centerX - 18, centerY + 18, 36, 2), new XnaColor(88, 122, 172));
+        DrawSolidPanel(batch, new XnaRectangle(centerX - 32, centerY - 56, 3, 42), new XnaColor(218, 231, 244));
+        DrawSolidPanel(batch, new XnaRectangle(centerX + 30, centerY - 56, 3, 42), new XnaColor(218, 231, 244));
+    }
+
+    private void DrawEllipse(SpriteBatch batch, XnaRectangle bounds, XnaColor color)
+    {
+        if (pixelTexture is null)
+        {
+            return;
+        }
+
+        var radiusX = bounds.Width / 2f;
+        var radiusY = bounds.Height / 2f;
+        var centerX = bounds.X + radiusX;
+        var centerY = bounds.Y + radiusY;
+
+        for (var y = bounds.Y; y < bounds.Bottom; y++)
+        {
+            var normalizedY = (y - centerY) / radiusY;
+            var halfWidth = radiusX * MathF.Sqrt(MathF.Max(0f, 1f - (normalizedY * normalizedY)));
+            var left = (int)MathF.Round(centerX - halfWidth);
+            var right = (int)MathF.Round(centerX + halfWidth);
+            batch.Draw(pixelTexture, new XnaRectangle(left, y, Math.Max(1, right - left), 1), color);
         }
     }
 
@@ -1342,6 +1533,27 @@ public partial class DragonGlareAlpha : Game
         }
     }
 
+    private void DrawWindow(SpriteBatch batch, XnaRectangle rect)
+    {
+        DrawSolidPanel(batch, rect, new XnaColor(23, 22, 34));
+        DrawWindowFrame(batch, rect);
+    }
+
+    private void DrawWindowFrame(SpriteBatch batch, XnaRectangle rect)
+    {
+        DrawBorder(batch, rect, 3, new XnaColor(0, 78, 160));
+        DrawBorder(batch, new XnaRectangle(rect.X + 3, rect.Y + 3, rect.Width - 6, rect.Height - 6), 2, new XnaColor(34, 132, 210));
+        DrawBorder(batch, new XnaRectangle(rect.X + 7, rect.Y + 7, rect.Width - 14, rect.Height - 14), 1, new XnaColor(30, 58, 98));
+    }
+
+    private void DrawBorder(SpriteBatch batch, XnaRectangle rect, int thickness, XnaColor color)
+    {
+        DrawSolidPanel(batch, new XnaRectangle(rect.X, rect.Y, rect.Width, thickness), color);
+        DrawSolidPanel(batch, new XnaRectangle(rect.X, rect.Bottom - thickness, rect.Width, thickness), color);
+        DrawSolidPanel(batch, new XnaRectangle(rect.X, rect.Y, thickness, rect.Height), color);
+        DrawSolidPanel(batch, new XnaRectangle(rect.Right - thickness, rect.Y, thickness, rect.Height), color);
+    }
+
     private static int ScaleMenuX(XnaRectangle layout, int sourceX)
     {
         return layout.X + (int)Math.Round(sourceX * layout.Width / 256f);
@@ -1372,6 +1584,13 @@ public partial class DragonGlareAlpha : Game
             3 => "セーブデータを\nけす。",
             _ => string.Empty
         };
+    }
+
+    private string GetDisplayPlayerName()
+    {
+        return string.IsNullOrWhiteSpace(player.Name)
+            ? (selectedLanguage == UiLanguage.Japanese ? "ゆうしゃ" : "HERO")
+            : player.Name;
     }
 
     private XnaColor GetTileColor(int tileId)
