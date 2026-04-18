@@ -30,6 +30,7 @@ public partial class DragonGlare : Form
     private const int EncounterTransitionDuration = 26;
     private const int BattleSelectionVisibleRows = 4;
     private const int OpeningSourceViewportWidth = 256;
+    private const string ProjectDisplayName = "DragonGlare Alpha";
     private const int OpeningSourceViewportHeight = 240;
     private static readonly Point PlayerStartTile = new(3, 12);
     private static readonly TimeSpan BgmLoopLeadTime = TimeSpan.FromMilliseconds(120);
@@ -322,7 +323,7 @@ public partial class DragonGlare : Form
 
     private void ConfigureWindow()
     {
-        Text = $"DragonGlare Alpha v{Application.ProductVersion}";
+        Text = $"{ProjectDisplayName} v{Application.ProductVersion}";
         BackColor = Color.Black;
         ShowIcon = true;
         KeyPreview = true;
@@ -453,7 +454,7 @@ public partial class DragonGlare : Form
         skipSaveOnClose = true;
         gameTimer.Stop();
         Hide();
-        MessageBox.Show(message, "DragonGlare Alpha", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+        MessageBox.Show(message, ProjectDisplayName, MessageBoxButtons.OK, MessageBoxIcon.Stop);
         Close();
     }
 }

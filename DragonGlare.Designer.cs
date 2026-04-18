@@ -1,4 +1,4 @@
-﻿namespace DragonGlareAlpha;
+﻿﻿namespace DragonGlareAlpha;
 
 partial class DragonGlare
 {
@@ -31,7 +31,7 @@ partial class DragonGlare
         components = new System.ComponentModel.Container();
         AutoScaleMode = AutoScaleMode.Font;
         ClientSize = UiCanvas.VirtualSize;
-        Text = "DragonGlare";
+        Text = "DragonGlare Alpha";
     }
 
     #endregion
