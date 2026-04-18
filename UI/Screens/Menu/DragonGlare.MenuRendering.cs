@@ -6,7 +6,7 @@ using System.Drawing.Text;
 
 namespace DragonGlareAlpha;
 
-public partial class DragonGlare
+public partial class DragonGlareAlpha
 {
     private void DrawModeSelect(Graphics g)
     {

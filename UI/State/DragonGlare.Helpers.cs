@@ -8,7 +8,7 @@ using DragonGlareAlpha.Services;
 
 namespace DragonGlareAlpha;
 
-public partial class DragonGlare
+public partial class DragonGlareAlpha
 {
     private IEnumerable<FieldEventDefinition> GetFieldEvents(FieldMapId mapId)
     {
@@ -92,7 +92,7 @@ public partial class DragonGlare
         SetFieldMap(mapId);
         player.TilePosition = destinationTile;
         CloseFieldDialog();
-        movementCooldown = 6;
+        movementCooldown = FieldMovementAnimationDuration;
 
         if (persistProgress)
         {
@@ -540,7 +540,7 @@ public partial class DragonGlare
         }
     }
 
-    private static string FormatBattleResolutionMessage(IEnumerable<DragonGlareAlpha.Domain.Battle.BattleSequenceStep> steps)
+    private static string FormatBattleResolutionMessage(IEnumerable<global::DragonGlareAlpha.Domain.Battle.BattleSequenceStep> steps)
     {
         return string.Join('\n', steps.Select(step => step.Message).Where(message => !string.IsNullOrWhiteSpace(message)));
     }

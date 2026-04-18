@@ -7,7 +7,7 @@ using DragonGlareAlpha.Services;
 
 namespace DragonGlareAlpha;
 
-public partial class DragonGlare
+public partial class DragonGlareAlpha
 {
     private void UpdateGame()
     {
@@ -366,7 +366,7 @@ public partial class DragonGlare
                 PlaySe(SoundEffect.Collision);
             }
 
-            movementCooldown = 6;
+            movementCooldown = FieldMovementAnimationDuration;
             if (gameState != GameState.Field)
             {
                 return;

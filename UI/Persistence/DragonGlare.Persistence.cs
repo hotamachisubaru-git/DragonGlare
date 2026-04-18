@@ -5,7 +5,7 @@ using DragonGlareAlpha.Services;
 
 namespace DragonGlareAlpha;
 
-public partial class DragonGlare
+public partial class DragonGlareAlpha
 {
     private string GetText(string key)
     {

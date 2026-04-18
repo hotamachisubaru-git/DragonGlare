@@ -3,7 +3,7 @@ using DragonGlareAlpha.Services;
 
 namespace DragonGlareAlpha;
 
-public partial class DragonGlare
+public partial class DragonGlareAlpha
 {
     private void DrawField(Graphics g)
     {

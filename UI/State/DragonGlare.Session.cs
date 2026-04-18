@@ -3,7 +3,7 @@ using DragonGlareAlpha.Domain.Player;
 
 namespace DragonGlareAlpha;
 
-public partial class DragonGlare
+public partial class DragonGlareAlpha
 {
     private const string DefaultBattleMessage = "まものが あらわれた！";
     private const string BattleEscapeMessage = "うまく にげきった！";

@@ -2,7 +2,7 @@ using System.Drawing.Drawing2D;
 
 namespace DragonGlareAlpha;
 
-public partial class DragonGlare
+public partial class DragonGlareAlpha
 {
     private void DrawWindow(Graphics g, Rectangle rect)
     {

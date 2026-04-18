@@ -3,7 +3,7 @@ using DragonGlareAlpha.Domain;
 
 namespace DragonGlareAlpha;
 
-public partial class DragonGlare
+public partial class DragonGlareAlpha
 {
     private void DrawShopBuy(Graphics g)
     {

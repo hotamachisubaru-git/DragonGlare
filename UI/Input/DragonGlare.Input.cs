@@ -4,7 +4,7 @@ using DragonGlareAlpha.Services;
 
 namespace DragonGlareAlpha;
 
-public partial class DragonGlare
+public partial class DragonGlareAlpha
 {
     private void MoveNameCursor(int deltaX, int deltaY)
     {
