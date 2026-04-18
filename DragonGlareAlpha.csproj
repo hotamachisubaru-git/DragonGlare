@@ -1,12 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
-    <UseWPF>true</UseWPF>
+    <UseWPF>false</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
+    <MonoGamePlatform>DesktopGL</MonoGamePlatform>
     <AppVersion>1.5.0</AppVersion>
     <Version>$(AppVersion)</Version>
     <AssemblyVersion>$(AppVersion).0</AssemblyVersion>
@@ -17,10 +18,24 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="DragonGlare.Designer.cs" />
     <Compile Remove="DragonGlareAlpha.Tests\**\*.cs" />
     <Compile Remove="DragonGlare.MonoGame\**\*.cs" />
+    <Compile Remove="UI\Audio\**\*.cs" />
+    <Compile Remove="UI\Input\**\*.cs" />
+    <Compile Remove="UI\Persistence\**\*.cs" />
+    <Compile Remove="UI\Rendering\**\*.cs" />
+    <Compile Remove="UI\Screens\**\*.cs" />
+    <Compile Remove="UI\State\**\*.cs" />
     <Compile Remove="**/Form1.*.cs" />
     <None Update="JF-Dot-ShinonomeMin14.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="SFC_prologue02.mp3">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\**\*.*">

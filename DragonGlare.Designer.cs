@@ -1,4 +1,4 @@
-﻿﻿namespace DragonGlareAlpha;
+namespace DragonGlareAlpha;
 
 partial class DragonGlare
 {
