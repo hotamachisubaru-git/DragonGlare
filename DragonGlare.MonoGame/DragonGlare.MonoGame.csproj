@@ -1,13 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <RollForward>Major</RollForward>
     <PublishReadyToRun>false</PublishReadyToRun>
     <TieredCompilation>false</TieredCompilation>
-    <ImplicitUsings>disable</ImplicitUsings>
+    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Title>DragonGlare.Alpha</Title>
+    <Product>DragonGlare.Alpha</Product>
     <!-- 親ディレクトリのobjフォルダなどを拾わないようにする -->
     <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
@@ -16,15 +19,34 @@
     <ApplicationIcon>Icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="DragonGlareGame.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="LegacyGlobalUsings.cs" />
+    <Compile Include="Scenes\Menu\**\*.cs" />
+    <Compile Include="..\Data\**\*.cs" LinkBase="Data" />
+    <Compile Include="..\Domain\**\*.cs" LinkBase="Domain" />
+    <Compile Include="..\Persistence\**\*.cs" LinkBase="Persistence" />
+    <Compile Include="..\Security\**\*.cs" LinkBase="Security" />
+    <Compile Include="..\Services\**\*.cs" LinkBase="Services" />
+    <Compile Include="..\UI\Audio\**\*.cs" LinkBase="Managers\Audio" />
+    <Compile Include="..\UI\Input\**\*.cs" LinkBase="Managers\Input" />
+    <Compile Include="..\UI\Layout\**\*.cs" LinkBase="Managers\Layout" />
+    <Compile Include="..\UI\Persistence\**\*.cs" LinkBase="Core\Persistence" />
+    <Compile Include="..\UI\Rendering\**\*.cs" LinkBase="Managers\Rendering" />
+    <Compile Include="..\UI\Screens\Battle\**\*.cs" LinkBase="Scenes\Battle" />
+    <Compile Include="..\UI\Screens\Field\**\*.cs" LinkBase="Scenes\Field" />
+    <Compile Include="..\UI\Screens\Menu\**\*.cs" LinkBase="Scenes\Menu" />
+    <Compile Include="..\UI\Screens\Shop\**\*.cs" LinkBase="Scenes\Shop" />
+    <Compile Include="..\UI\State\**\*.cs" LinkBase="Core\State" />
+    <Compile Include="..\DragonGlare.cs" Link="Core\DragonGlare.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DragonGlareAlpha.csproj" />
+    <None Include="Assets\**\*.*" Exclude="Assets\JF-Dot-ShinonomeMin14.ttf" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Assets\JF-Dot-ShinonomeMin14.ttf" CopyToOutputDirectory="PreserveNewest" TargetPath="JF-Dot-ShinonomeMin14.ttf" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="MonoGame.Framework.WindowsDX" Version="3.8.1.303" />
-    <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.1.303" />
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.*" />
     <PackageReference Include="SpriteFontPlus" Version="0.9.2" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.0" />
   </ItemGroup>
 </Project>

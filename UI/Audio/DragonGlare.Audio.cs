@@ -1,5 +1,6 @@
 using System.IO;
 using DragonGlareAlpha.Domain;
+using XnaSoundEffect = Microsoft.Xna.Framework.Audio.SoundEffect;
 
 namespace DragonGlareAlpha;
 
@@ -45,11 +46,6 @@ public partial class DragonGlareAlpha
 
     private void InitializeAudio()
     {
-        bgmPlayer.Volume = 0.45;
-        sePlayer.Volume = 0.9;
-        bgmPlayer.MediaEnded += (_, _) => RestartCurrentBgm();
-        bgmPlayer.MediaFailed += (_, _) => currentBgmTrack = null;
-
         RegisterBgm(BgmTrack.MainMenu, "main_menu", "glare");
         RegisterBgm(BgmTrack.Field, "field");
         RegisterBgm(BgmTrack.Castle, "castle");
@@ -255,23 +251,16 @@ public partial class DragonGlareAlpha
 
         if (currentBgmTrack == desiredTrack)
         {
-            EnsureBgmLooping();
             return;
         }
 
-        if (!bgmUris.TryGetValue(desiredTrack, out var trackUri))
+        if (!bgmUris.ContainsKey(desiredTrack))
         {
             currentBgmTrack = null;
-            bgmPlayer.Stop();
             return;
         }
 
         currentBgmTrack = desiredTrack;
-        bgmPlayer.Stop();
-        bgmPlayer.Close();
-        bgmPlayer.Open(trackUri);
-        bgmPlayer.Position = TimeSpan.Zero;
-        bgmPlayer.Play();
     }
 
     private BgmTrack GetDesiredBgmTrack()
@@ -299,45 +288,14 @@ public partial class DragonGlareAlpha
 
     private void PlaySe(SoundEffect effect)
     {
-        if (!seUris.TryGetValue(effect, out var seUri))
+        if (!seUris.TryGetValue(effect, out var seUri) ||
+            !seUri.LocalPath.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
-        sePlayer.Open(seUri);
-        sePlayer.Position = TimeSpan.Zero;
-        sePlayer.Play();
-    }
-
-    private void EnsureBgmLooping()
-    {
-        if (currentBgmTrack is null || !bgmPlayer.NaturalDuration.HasTimeSpan)
-        {
-            return;
-        }
-
-        var duration = bgmPlayer.NaturalDuration.TimeSpan;
-        if (duration <= TimeSpan.Zero)
-        {
-            return;
-        }
-
-        if (duration - bgmPlayer.Position > BgmLoopLeadTime)
-        {
-            return;
-        }
-
-        RestartCurrentBgm();
-    }
-
-    private void RestartCurrentBgm()
-    {
-        if (currentBgmTrack is null)
-        {
-            return;
-        }
-
-        bgmPlayer.Position = TimeSpan.Zero;
-        bgmPlayer.Play();
+        using var stream = File.OpenRead(seUri.LocalPath);
+        using var soundEffect = XnaSoundEffect.FromStream(stream);
+        soundEffect.Play(0.9f, 0f, 0f);
     }
 }

@@ -1,6 +1,7 @@
 using DragonGlareAlpha.Data;
 using DragonGlareAlpha.Domain;
 using DragonGlareAlpha.Services;
+using Keys = Microsoft.Xna.Framework.Input.Keys;
 
 namespace DragonGlareAlpha;
 
@@ -157,31 +158,4 @@ public partial class DragonGlareAlpha
         return WasPressed(Keys.Enter) || WasPressed(Keys.Z);
     }
 
-    private void OnKeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.KeyCode == Keys.F11)
-        {
-            if (!heldKeys.Contains(e.KeyCode))
-            {
-                ToggleFullscreen();
-            }
-
-            heldKeys.Add(e.KeyCode);
-            e.Handled = true;
-            e.SuppressKeyPress = true;
-            return;
-        }
-
-        if (!heldKeys.Contains(e.KeyCode))
-        {
-            pressedKeys.Add(e.KeyCode);
-        }
-
-        heldKeys.Add(e.KeyCode);
-    }
-
-    private void OnKeyUp(object? sender, KeyEventArgs e)
-    {
-        heldKeys.Remove(e.KeyCode);
-    }
 }

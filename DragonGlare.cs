@@ -21,7 +21,6 @@ using Microsoft.Xna.Framework.Input;
 using XnaColor = Microsoft.Xna.Framework.Color;
 using XnaRectangle = Microsoft.Xna.Framework.Rectangle;
 using XnaKeys = Microsoft.Xna.Framework.Input.Keys;
-using FormsKeys = System.Windows.Forms.Keys;
 
 namespace DragonGlareAlpha;
 
@@ -42,7 +41,6 @@ public partial class DragonGlareAlpha : Game
     private const int OpeningSourceViewportHeight = 240;
     private const int SceneFadeOutDuration = 40;
     private static readonly System.Drawing.Point PlayerStartTile = new(3, 12);
-    private static readonly TimeSpan BgmLoopLeadTime = TimeSpan.FromMilliseconds(120);
     private static readonly OpeningNarrationLine[] LanguageOpeningScript =
     [
         new("遠い昔。", 180, 40),
@@ -68,12 +66,10 @@ public partial class DragonGlareAlpha : Game
     private byte[] frameBytes = [];
     private XnaColor[] framePixels = [];
 
-    private readonly HashSet<FormsKeys> heldKeys = [];
-    private readonly HashSet<FormsKeys> pressedKeys = [];
+    private readonly HashSet<XnaKeys> heldKeys = [];
+    private readonly HashSet<XnaKeys> pressedKeys = [];
     private readonly PrivateFontCollection privateFontCollection = new();
     private readonly StringBuilder playerName = new();
-    private readonly System.Windows.Media.MediaPlayer bgmPlayer = new();
-    private readonly System.Windows.Media.MediaPlayer sePlayer = new();
     private readonly Dictionary<BgmTrack, Uri> bgmUris = [];
     private readonly Dictionary<SoundEffect, Uri> seUris = [];
     private readonly Dictionary<string, Image> npcSprites = [];
@@ -240,6 +236,7 @@ public partial class DragonGlareAlpha : Game
         frameTexture = new Texture2D(GraphicsDevice, UiCanvas.VirtualWidth, UiCanvas.VirtualHeight, false, SurfaceFormat.Color);
         framePixels = new XnaColor[UiCanvas.VirtualWidth * UiCanvas.VirtualHeight];
         frameBytes = new byte[UiCanvas.VirtualWidth * UiCanvas.VirtualHeight * 4];
+        LoadSpriteBatchUiContent();
     }
 
     protected override void Update(GameTime gameTime)
@@ -264,6 +261,14 @@ public partial class DragonGlareAlpha : Game
     protected override void Draw(GameTime gameTime)
     {
         if (spriteBatch is null || frameBitmap is null || frameTexture is null)
+        {
+            base.Draw(gameTime);
+            return;
+        }
+
+        var spriteBatchHandled = false;
+        TryDrawSpriteBatchFrame(gameTime, ref spriteBatchHandled);
+        if (spriteBatchHandled)
         {
             base.Draw(gameTime);
             return;
@@ -348,19 +353,16 @@ public partial class DragonGlareAlpha : Game
     private void PollKeyboard()
     {
         var state = Keyboard.GetState();
-        var nextHeld = new HashSet<FormsKeys>();
+        var nextHeld = new HashSet<XnaKeys>();
         foreach (var xnaKey in state.GetPressedKeys())
         {
-            if (TryMapKey(xnaKey, out var formsKey))
+            nextHeld.Add(xnaKey);
+            if (!heldKeys.Contains(xnaKey))
             {
-                nextHeld.Add(formsKey);
-                if (!heldKeys.Contains(formsKey))
+                pressedKeys.Add(xnaKey);
+                if (xnaKey == XnaKeys.F11)
                 {
-                    pressedKeys.Add(formsKey);
-                    if (formsKey == FormsKeys.F11)
-                    {
-                        ToggleFullscreen();
-                    }
+                    ToggleFullscreen();
                 }
             }
         }
@@ -370,32 +372,6 @@ public partial class DragonGlareAlpha : Game
         {
             heldKeys.Add(key);
         }
-    }
-
-    private static bool TryMapKey(XnaKeys source, out FormsKeys target)
-    {
-        target = source switch
-        {
-            XnaKeys.Up => FormsKeys.Up,
-            XnaKeys.Down => FormsKeys.Down,
-            XnaKeys.Left => FormsKeys.Left,
-            XnaKeys.Right => FormsKeys.Right,
-            XnaKeys.W => FormsKeys.W,
-            XnaKeys.A => FormsKeys.A,
-            XnaKeys.S => FormsKeys.S,
-            XnaKeys.D => FormsKeys.D,
-            XnaKeys.Z => FormsKeys.Z,
-            XnaKeys.X => FormsKeys.X,
-            XnaKeys.B => FormsKeys.B,
-            XnaKeys.V => FormsKeys.V,
-            XnaKeys.Enter => FormsKeys.Enter,
-            XnaKeys.Space => FormsKeys.Space,
-            XnaKeys.Escape => FormsKeys.Escape,
-            XnaKeys.Back => FormsKeys.Back,
-            XnaKeys.F11 => FormsKeys.F11,
-            _ => FormsKeys.None
-        };
-        return target != FormsKeys.None;
     }
 
     private XnaRectangle GetVirtualDestination()
@@ -502,10 +478,6 @@ public partial class DragonGlareAlpha : Game
 
     protected override void UnloadContent()
     {
-        bgmPlayer.Stop();
-        bgmPlayer.Close();
-        sePlayer.Stop();
-        sePlayer.Close();
         uiFont.Dispose();
         smallFont.Dispose();
         privateFontCollection.Dispose();
@@ -526,4 +498,8 @@ public partial class DragonGlareAlpha : Game
         skipSaveOnClose = true;
         Exit();
     }
+
+    partial void LoadSpriteBatchUiContent();
+
+    partial void TryDrawSpriteBatchFrame(GameTime gameTime, ref bool handled);
 }
