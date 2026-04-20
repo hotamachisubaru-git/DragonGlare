@@ -1,10 +1,5 @@
-using DragonGlareAlpha.Domain.Startup;
+using DragonGlare.Core;
 
-using var game = new DragonGlareAlpha.DragonGlareAlpha(new LaunchSettings
-{
-    DisplayMode = LaunchDisplayMode.Window720p,
-    PromptOnStartup = false
-});
-
+using var game = new GameMain();
 game.Window.Title = "DragonGlare.Alpha";
 game.Run();

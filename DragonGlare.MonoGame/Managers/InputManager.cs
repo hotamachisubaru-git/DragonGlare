@@ -15,7 +15,11 @@ namespace DragonGlare.Managers
 
         public static bool IsKeyDown(Keys key) => _currentKeyState.IsKeyDown(key);
         
-        public static bool IsKeyPressed(Keys key) => 
+        public static bool WasPressed(Keys key) =>
             _currentKeyState.IsKeyDown(key) && _previousKeyState.IsKeyUp(key);
+
+        public static bool IsKeyPressed(Keys key) => WasPressed(key);
+
+        public static bool Wasessed(Keys key) => WasPressed(key);
     }
 }
