@@ -6,25 +6,24 @@ namespace DragonGlare.Scenes
 {
     public class ShopScene : IScene
     {
-        private SpriteBatch _spriteBatch;
-        private Texture2D _shopBackground;
-
-        public void Initialize()
-        {
-            _spriteBatch = new SpriteBatch(Game1.Instance.GraphicsDevice);
-            _shopBackground = AssetManager.GetTexture("ShopBackground");
-        }
-
         public void Update(GameTime gameTime)
         {
             // Shop logic
         }
 
-        public void Draw(GameTime gameTime)
+        public void Draw(SpriteBatch spriteBatch)
         {
-            _spriteBatch.Begin();
-            _spriteBatch.Draw(_shopBackground, Vector2.Zero, Color.White);
-            _spriteBatch.End();
+            var background = AssetManager.GetTexture("ShopBackground");
+            if (background != null)
+            {
+                spriteBatch.Draw(background, Vector2.Zero, Color.White);
+            }
+
+            if (AssetManager.MainFont != null)
+            {
+                spriteBatch.DrawString(AssetManager.MainFont, "いらっしゃいませ", new Vector2(50, 50), Color.White);
+                UIManager.DrawGold(spriteBatch, 120, new Vector2(500, 20));
+            }
         }
     }
 }

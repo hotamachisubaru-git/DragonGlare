@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using System.Text.Json.Serialization;
 using Microsoft.Xna.Framework.Input;
 using DragonGlareAlpha.Data;
 using DragonGlareAlpha.Domain;
@@ -30,7 +31,6 @@ namespace DragonGlare.Scenes
         private readonly Field _field;
         private readonly Player _player;
         private readonly FieldTransitionService _fieldTransitionService = new();
-        private XnaPoint _playerTile;
         private PlayerFacingDirection _playerFacingDirection = PlayerFacingDirection.Down;
         private int _movementCooldown;
         private int _currentMp = 8;
@@ -54,7 +54,23 @@ namespace DragonGlare.Scenes
         {
             _field = new Field(content, initialMap);
             _player = new Player(XnaVector2.Zero);
-            SetPlayerTile(ToXnaPoint(Constants.PlayerStartTile));
+            InitializePlayerState(ToXnaPoint(Constants.PlayerStartTile), PlayerFacingDirection.Down);
+        }
+
+        public GameScene(ContentManager content, SaveData saveData)
+        {
+            _field = new Field(content, saveData.MapId);
+            _player = new Player(XnaVector2.Zero); // 初期位置は後で設定
+            InitializePlayerState(saveData.PlayerTile, saveData.PlayerFacingDirection);
+            _player.CurrentHP = saveData.PlayerCurrentHP;
+            _player.MaxHP = saveData.PlayerMaxHP;
+            _currentMp = saveData.PlayerCurrentMP;
+            _maxMp = saveData.PlayerMaxMP;
+            _gold = saveData.PlayerGold;
+            _experience = saveData.PlayerExperience;
+
+            // ロード時のBGM再生
+            AudioManager.PlayFieldBgm(saveData.MapId);
         }
 
         public FieldMapId CurrentMapId => _field.MapId;
@@ -232,7 +248,7 @@ namespace DragonGlare.Scenes
 
         private void SetPlayerTile(XnaPoint tile)
         {
-            _playerTile = tile;
+            _player.TilePosition = tile; // PlayerクラスにTilePositionプロパティを追加
             _player.Position = new XnaVector2(tile.X * Constants.TileSize, tile.Y * Constants.TileSize);
         }
 
@@ -262,6 +278,12 @@ namespace DragonGlare.Scenes
             }
         }
 
+        private void InitializePlayerState(XnaPoint tile, PlayerFacingDirection direction)
+        {
+            _player.TilePosition = tile;
+            _player.Position = new XnaVector2(tile.X * Constants.TileSize, tile.Y * Constants.TileSize);
+            _playerFacingDirection = direction;
+        }
         private void AdvanceDialog()
         {
             if (_dialogPageIndex < _dialogPages.Count - 1)
@@ -293,13 +315,13 @@ namespace DragonGlare.Scenes
         private FieldEventDefinition? GetInteractableFieldEvent()
         {
             // 向いている方向の1マス先を計算
-            var targetTile = _playerFacingDirection switch
+            var targetTile = _playerFacingDirection switch // _player.TilePosition を使用
             {
-                PlayerFacingDirection.Up => new XnaPoint(_playerTile.X, _playerTile.Y - 1),
-                PlayerFacingDirection.Down => new XnaPoint(_playerTile.X, _playerTile.Y + 1),
-                PlayerFacingDirection.Left => new XnaPoint(_playerTile.X - 1, _playerTile.Y),
-                PlayerFacingDirection.Right => new XnaPoint(_playerTile.X + 1, _playerTile.Y),
-                _ => _playerTile
+                PlayerFacingDirection.Up => new XnaPoint(_player.TilePosition.X, _player.TilePosition.Y - 1),
+                PlayerFacingDirection.Down => new XnaPoint(_player.TilePosition.X, _player.TilePosition.Y + 1),
+                PlayerFacingDirection.Left => new XnaPoint(_player.TilePosition.X - 1, _player.TilePosition.Y),
+                PlayerFacingDirection.Right => new XnaPoint(_player.TilePosition.X + 1, _player.TilePosition.Y),
+                _ => _player.TilePosition
             };
 
             // 目の前にあるイベントを探す
@@ -310,7 +332,7 @@ namespace DragonGlare.Scenes
 
             // 足元のイベント（階段など）をフォールバックとしてチェック
             return GameContent.FieldEvents
-                .FirstOrDefault(e => e.MapId == _field.MapId && ToXnaPoint(e.TilePosition) == _playerTile);
+                .FirstOrDefault(e => e.MapId == _field.MapId && ToXnaPoint(e.TilePosition) == _player.TilePosition);
         }
 
         private IEnumerable<FieldEventDefinition> GetCurrentFieldEvents()
@@ -346,7 +368,7 @@ namespace DragonGlare.Scenes
 
         private void DrawPlayer(SpriteBatch spriteBatch, XnaRectangle viewport, XnaPoint cameraOrigin)
         {
-            var tileRect = GetFieldTileRectangle(viewport, cameraOrigin, _playerTile);
+            var tileRect = GetFieldTileRectangle(viewport, cameraOrigin, _player.TilePosition);
             var texture = GetPlayerTexture();
             if (texture is not null)
             {
@@ -652,8 +674,8 @@ namespace DragonGlare.Scenes
             var maxCameraY = Math.Max(0, _field.HeightTiles - heightTiles);
 
             return new XnaPoint(
-                Math.Clamp(_playerTile.X - (widthTiles / 2), 0, maxCameraX),
-                Math.Clamp(_playerTile.Y - (heightTiles / 2), 0, maxCameraY));
+                Math.Clamp(_player.TilePosition.X - (widthTiles / 2), 0, maxCameraX),
+                Math.Clamp(_player.TilePosition.Y - (heightTiles / 2), 0, maxCameraY));
         }
 
         private int GetFieldViewportWidthTiles()
@@ -751,14 +773,6 @@ namespace DragonGlare.Scenes
         private static XnaColor ToXnaColor(DrawingColor color)
         {
             return new XnaColor(color.R, color.G, color.B, color.A);
-        }
-
-        private enum PlayerFacingDirection
-        {
-            Left,
-            Right,
-            Up,
-            Down
         }
     }
 }

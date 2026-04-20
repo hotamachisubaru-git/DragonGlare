@@ -6,25 +6,24 @@ namespace DragonGlare.Scenes
 {
     public class BattleScene : IScene
     {
-        private SpriteBatch _spriteBatch;
-        private Texture2D _battleBackground;
-
-        public void Initialize()
-        {
-            _spriteBatch = new SpriteBatch(Game1.Instance.GraphicsDevice);
-            _battleBackground = AssetManager.GetTexture("BattleBackground");
-        }
-
         public void Update(GameTime gameTime)
         {
             // Battle logic here
         }
 
-        public void Draw(GameTime gameTime)
+        public void Draw(SpriteBatch spriteBatch)
         {
-            _spriteBatch.Begin();
-            _spriteBatch.Draw(_battleBackground, Vector2.Zero, Color.White);
-            _spriteBatch.End();
+            var background = AssetManager.GetTexture("BattleBackground");
+            if (background != null)
+            {
+                spriteBatch.Draw(background, Vector2.Zero, Color.White);
+            }
+
+            // Battle UI Panels
+            if (AssetManager.Pixel != null)
+            {
+                spriteBatch.Draw(AssetManager.Pixel, new Rectangle(0, 350, 640, 130), Color.Black * 0.7f);
+            }
         }
     }
 }
