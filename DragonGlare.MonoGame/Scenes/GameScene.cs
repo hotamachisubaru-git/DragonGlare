@@ -292,17 +292,25 @@ namespace DragonGlare.Scenes
 
         private FieldEventDefinition? GetInteractableFieldEvent()
         {
+            // 向いている方向の1マス先を計算
+            var targetTile = _playerFacingDirection switch
+            {
+                PlayerFacingDirection.Up => new XnaPoint(_playerTile.X, _playerTile.Y - 1),
+                PlayerFacingDirection.Down => new XnaPoint(_playerTile.X, _playerTile.Y + 1),
+                PlayerFacingDirection.Left => new XnaPoint(_playerTile.X - 1, _playerTile.Y),
+                PlayerFacingDirection.Right => new XnaPoint(_playerTile.X + 1, _playerTile.Y),
+                _ => _playerTile
+            };
+
+            // 目の前にあるイベントを探す
+            var eventAtTarget = GameContent.FieldEvents
+                .FirstOrDefault(e => e.MapId == _field.MapId && ToXnaPoint(e.TilePosition) == targetTile);
+
+            if (eventAtTarget != null) return eventAtTarget;
+
+            // 足元のイベント（階段など）をフォールバックとしてチェック
             return GameContent.FieldEvents
-                .Where(fieldEvent => fieldEvent.MapId == _field.MapId)
-                .Select(fieldEvent => new
-                {
-                    Event = fieldEvent,
-                    Tile = ToXnaPoint(fieldEvent.TilePosition)
-                })
-                .Where(entry => GetManhattanDistance(entry.Tile, _playerTile) <= InteractionRangeTiles)
-                .OrderBy(entry => GetManhattanDistance(entry.Tile, _playerTile))
-                .FirstOrDefault()
-                ?.Event;
+                .FirstOrDefault(e => e.MapId == _field.MapId && ToXnaPoint(e.TilePosition) == _playerTile);
         }
 
         private IEnumerable<FieldEventDefinition> GetCurrentFieldEvents()
@@ -356,14 +364,20 @@ namespace DragonGlare.Scenes
 
         private Texture2D? GetPlayerTexture()
         {
-            return _playerFacingDirection switch
+            var baseKey = _playerFacingDirection switch
             {
-                PlayerFacingDirection.Left => AssetManager.GetTexture("player_left"),
-                PlayerFacingDirection.Right => AssetManager.GetTexture("player_right"),
-                PlayerFacingDirection.Up => AssetManager.GetTexture("player_up"),
-                PlayerFacingDirection.Down => AssetManager.GetTexture("player_down"),
+                PlayerFacingDirection.Left => "player_left",
+                PlayerFacingDirection.Right => "player_right",
+                PlayerFacingDirection.Up => "player_up",
+                PlayerFacingDirection.Down => "player_down",
                 _ => null
-            } ?? AssetManager.GetTexture("player") ?? _player.Texture;
+            };
+
+            if (baseKey == null) return AssetManager.GetTexture("player") ?? _player.Texture;
+
+            return AssetManager.GetTexture(baseKey)
+                ?? AssetManager.GetTexture("player")
+                ?? _player.Texture;
         }
 
         private void DrawNpcMarker(SpriteBatch spriteBatch, XnaRectangle tileRect, XnaColor color, string label)

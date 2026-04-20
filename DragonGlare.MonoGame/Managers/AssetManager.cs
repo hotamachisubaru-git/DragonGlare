@@ -63,7 +63,49 @@ namespace DragonGlare.Managers
 
         private static void TryLoadHeroTexture(GraphicsDevice graphicsDevice, string rootDirectory)
         {
-            if (Textures.ContainsKey("player_down"))
+            // 個別の方向別およびアニメーションフレームファイルを読み込む
+            string[] directions = ["up", "down", "left", "right"];
+            foreach (var dir in directions)
+            {
+                var key = $"player_{dir}";
+                TryLoadTexture(graphicsDevice, rootDirectory, key, "Sprites", "Characters", $"hero_{dir}.png");
+                // 足踏み用のフレーム (例: hero_down_0.png, hero_down_1.png) があれば読み込む
+                TryLoadTexture(graphicsDevice, rootDirectory, $"{key}_0", "Sprites", "Characters", $"hero_{dir}_0.png");
+                TryLoadTexture(graphicsDevice, rootDirectory, $"{key}_1", "Sprites", "Characters", $"hero_{dir}_1.png");
+            }
+
+            // 下向きの画像として hero_3.png を特別にチェックして読み込む
+            if (!Textures.ContainsKey("player_down"))
+            {
+                var hero3Path = GetAssetPath(rootDirectory, ["Sprites", "Characters", "hero_3.png"]);
+                if (hero3Path is not null)
+                {
+                    try
+                    {
+                        using var source = new Bitmap(hero3Path);
+                        // 3フレームの横長画像と想定（左2枚が歩行、右端が正面/立ちポーズ）
+                        const int cols = 3;
+                        var cellWidth = source.Width / cols;
+                        var cellHeight = source.Height;
+
+                        if (cellWidth > 0 && cellHeight > 0)
+                        {
+                            for (var c = 0; c < cols; c++)
+                            {
+                                var key = $"player_down_{c}";
+                                LoadHeroDirectionFromSheet(graphicsDevice, source, key, new Rectangle(c * cellWidth, 0, cellWidth, cellHeight));
+                            }
+                            // 右端（インデックス2）を通常の立ち状態（player_down）として登録
+                            if (Textures.TryGetValue("player_down_2", out var standing))
+                                Textures["player_down"] = standing;
+                        }
+                    }
+                    catch { }
+                }
+            }
+
+            var heroAnimSheetPath = GetAssetPath(rootDirectory, ["Sprites", "Characters", "hero_anim.png"]);
+            if (heroAnimSheetPath is not null && TryLoadHeroAnimationFromSheet(graphicsDevice, heroAnimSheetPath))
             {
                 return;
             }
@@ -94,10 +136,10 @@ namespace DragonGlare.Managers
                     return false;
                 }
 
-                LoadHeroDirectionFromSheet(graphicsDevice, source, "player_left", new Rectangle(0, 0, cellWidth, cellHeight));
-                LoadHeroDirectionFromSheet(graphicsDevice, source, "player_right", new Rectangle(cellWidth, 0, cellWidth, cellHeight));
-                LoadHeroDirectionFromSheet(graphicsDevice, source, "player_up", new Rectangle(0, cellHeight, cellWidth, cellHeight));
-                LoadHeroDirectionFromSheet(graphicsDevice, source, "player_down", new Rectangle(cellWidth, cellHeight, cellWidth, cellHeight));
+                if (!Textures.ContainsKey("player_left")) LoadHeroDirectionFromSheet(graphicsDevice, source, "player_left", new Rectangle(0, 0, cellWidth, cellHeight));
+                if (!Textures.ContainsKey("player_up")) LoadHeroDirectionFromSheet(graphicsDevice, source, "player_up", new Rectangle(cellWidth, 0, cellWidth, cellHeight));
+                if (!Textures.ContainsKey("player_right")) LoadHeroDirectionFromSheet(graphicsDevice, source, "player_right", new Rectangle(0, cellHeight, cellWidth, cellHeight));
+                if (!Textures.ContainsKey("player_down")) LoadHeroDirectionFromSheet(graphicsDevice, source, "player_down", new Rectangle(cellWidth, cellHeight, cellWidth, cellHeight));
 
                 if (!Textures.TryGetValue("player_down", out var downTexture))
                 {
@@ -114,6 +156,41 @@ namespace DragonGlare.Managers
             {
                 return false;
             }
+        }
+
+        private static bool TryLoadHeroAnimationFromSheet(GraphicsDevice graphicsDevice, string path)
+        {
+            try
+            {
+                using var source = new Bitmap(path);
+                // 一般的な3列4行の歩行グラフィックを想定
+                const int cols = 3;
+                const int rows = 4;
+                var cellWidth = source.Width / cols;
+                var cellHeight = source.Height / rows;
+
+                if (cellWidth <= 0 || cellHeight <= 0) return false;
+
+                // 行ごとの対応方向 (RPG Maker等の標準的な並び: 下・左・右・上)
+                string[] directions = ["down", "left", "right", "up"];
+
+                for (var r = 0; r < rows; r++)
+                {
+                    var dir = directions[r];
+                    for (var c = 0; c < cols; c++)
+                    {
+                        var key = $"player_{dir}_{c}";
+                        LoadHeroDirectionFromSheet(graphicsDevice, source, key, new Rectangle(c * cellWidth, r * cellHeight, cellWidth, cellHeight));
+                    }
+                    // player_down 等の基本キーには中央のフレーム(1番)を割り当て
+                    if (Textures.TryGetValue($"player_{dir}_1", out var centerFrame) && !Textures.ContainsKey($"player_{dir}"))
+                        Textures[$"player_{dir}"] = centerFrame;
+                }
+
+                Textures.TryAdd("player", Textures["player_down"]);
+                return true;
+            }
+            catch { return false; }
         }
 
         private static void LoadHeroDirectionFromSheet(GraphicsDevice graphicsDevice, Bitmap source, string key, Rectangle sourceRegion)
