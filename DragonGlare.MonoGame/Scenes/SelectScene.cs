@@ -32,6 +32,8 @@ namespace DragonGlare.Scenes
 
         public void Draw(SpriteBatch spriteBatch)
         {
+            spriteBatch.Begin();
+
             var background = AssetManager.GetTexture("SelectBackground");
             if (background != null)
             {
@@ -48,6 +50,8 @@ namespace DragonGlare.Scenes
                     spriteBatch.DrawString(AssetManager.MainFont, text, new Vector2(100, 200 + (i * 40)), color);
                 }
             }
+
+            spriteBatch.End();
         }
 
         private void LoadGame()

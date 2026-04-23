@@ -478,6 +478,7 @@ public partial class DragonGlareAlpha : Game
 
     protected override void UnloadContent()
     {
+        StopBgm();
         uiFont.Dispose();
         smallFont.Dispose();
         privateFontCollection.Dispose();

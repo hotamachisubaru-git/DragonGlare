@@ -12,6 +12,7 @@ public partial class DragonGlareAlpha
     private Texture2D? spriteBatchPixel;
     private Texture2D? spriteBatchModeSelectLayout;
     private SpriteFont? spriteBatchUiFont;
+    private const string SpriteBatchModeSelectKanji = "選最初前回別枠未実装";
 
     partial void LoadSpriteBatchUiContent()
     {
@@ -310,7 +311,9 @@ public partial class DragonGlareAlpha
             [
                 new SpriteFontPlus.CharacterRange((char)0x0020, (char)0x007f),
                 new SpriteFontPlus.CharacterRange((char)0x3000, (char)0x30ff),
-                new SpriteFontPlus.CharacterRange((char)0x4e00, (char)0x9fff)
+                .. SpriteBatchModeSelectKanji
+                    .Distinct()
+                    .Select(character => new SpriteFontPlus.CharacterRange(character, character))
             ]);
 
         return bakeResult.CreateSpriteFont(GraphicsDevice);

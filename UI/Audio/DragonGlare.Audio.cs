@@ -1,11 +1,20 @@
 using System.IO;
 using DragonGlareAlpha.Domain;
+using NAudio.CoreAudioApi;
+using NAudio.Wave;
 using XnaSoundEffect = Microsoft.Xna.Framework.Audio.SoundEffect;
 
 namespace DragonGlareAlpha;
 
 public partial class DragonGlareAlpha
 {
+    private readonly object audioSyncRoot = new();
+    private AudioFileReader? bgmReader;
+    private IWavePlayer? bgmOutput;
+    private Uri? currentBgmUri;
+    private BgmTrack? failedBgmTrack;
+    private bool isStoppingBgm;
+
     private void LoadCustomFont()
     {
         var candidates = new[]
@@ -249,18 +258,128 @@ public partial class DragonGlareAlpha
     {
         var desiredTrack = GetDesiredBgmTrack();
 
-        if (currentBgmTrack == desiredTrack)
+        if (currentBgmTrack == desiredTrack && bgmOutput is not null)
+        {
+            if (bgmOutput.PlaybackState != PlaybackState.Playing)
+            {
+                bgmOutput.Play();
+            }
+
+            return;
+        }
+
+        if (failedBgmTrack == desiredTrack)
         {
             return;
         }
 
-        if (!bgmUris.ContainsKey(desiredTrack))
+        if (!bgmUris.TryGetValue(desiredTrack, out var bgmUri))
         {
+            StopBgm();
             currentBgmTrack = null;
+            failedBgmTrack = desiredTrack;
             return;
         }
 
-        currentBgmTrack = desiredTrack;
+        PlayBgm(desiredTrack, bgmUri);
+    }
+
+    private void PlayBgm(BgmTrack track, Uri bgmUri)
+    {
+        lock (audioSyncRoot)
+        {
+            StopBgmLocked();
+
+            try
+            {
+                bgmReader = new AudioFileReader(bgmUri.LocalPath)
+                {
+                    Volume = 0.85f
+                };
+                bgmOutput = CreateBgmOutputDevice();
+                bgmOutput.Init(bgmReader);
+                bgmOutput.PlaybackStopped += HandleBgmPlaybackStopped;
+                bgmOutput.Play();
+
+                currentBgmTrack = track;
+                currentBgmUri = bgmUri;
+                failedBgmTrack = null;
+            }
+            catch
+            {
+                StopBgmLocked();
+                currentBgmTrack = null;
+                currentBgmUri = null;
+                failedBgmTrack = track;
+            }
+        }
+    }
+
+    private IWavePlayer CreateBgmOutputDevice()
+    {
+        try
+        {
+            using var enumerator = new MMDeviceEnumerator();
+            var endpoint = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            return new WasapiOut(endpoint, AudioClientShareMode.Shared, false, 100);
+        }
+        catch
+        {
+            return new WaveOutEvent
+            {
+                DesiredLatency = 100
+            };
+        }
+    }
+
+    private void HandleBgmPlaybackStopped(object? sender, StoppedEventArgs args)
+    {
+        lock (audioSyncRoot)
+        {
+            if (isStoppingBgm || bgmReader is null || bgmOutput is null || currentBgmUri is null)
+            {
+                return;
+            }
+
+            if (args.Exception is not null)
+            {
+                StopBgmLocked();
+                currentBgmTrack = null;
+                currentBgmUri = null;
+                failedBgmTrack = GetDesiredBgmTrack();
+                return;
+            }
+
+            bgmReader.Position = 0;
+            bgmOutput.Play();
+        }
+    }
+
+    private void StopBgm()
+    {
+        lock (audioSyncRoot)
+        {
+            StopBgmLocked();
+        }
+    }
+
+    private void StopBgmLocked()
+    {
+        isStoppingBgm = true;
+
+        if (bgmOutput is not null)
+        {
+            bgmOutput.PlaybackStopped -= HandleBgmPlaybackStopped;
+            bgmOutput.Stop();
+            bgmOutput.Dispose();
+            bgmOutput = null;
+        }
+
+        bgmReader?.Dispose();
+        bgmReader = null;
+        currentBgmTrack = null;
+        currentBgmUri = null;
+        isStoppingBgm = false;
     }
 
     private BgmTrack GetDesiredBgmTrack()

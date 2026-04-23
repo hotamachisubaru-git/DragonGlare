@@ -43,9 +43,8 @@ public partial class DragonGlareAlpha
         languageOpeningLineIndex = 0;
         languageOpeningLineFrame = 0;
         languageOpeningFinished = false;
-        // When starting a new game from the title, skip the language-selection
-        // prompt and proceed automatically to name input after the opening.
-        skipLanguageSelectionPrompt = true;
+        // 新規開始時はOP後に言語選択へ進む。
+        skipLanguageSelectionPrompt = false;
         nameCursorRow = 0;
         nameCursorColumn = 0;
         activeSaveSlot = 0;

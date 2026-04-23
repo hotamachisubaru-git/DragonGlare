@@ -13,11 +13,15 @@ namespace DragonGlare.Scenes
 
         public void Draw(SpriteBatch spriteBatch)
         {
+            spriteBatch.Begin();
+
             var background = AssetManager.GetTexture("OPBackground");
             if (background != null)
             {
                 spriteBatch.Draw(background, Vector2.Zero, Color.White);
             }
+
+            spriteBatch.End();
         }
     }
 }

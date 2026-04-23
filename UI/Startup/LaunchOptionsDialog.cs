@@ -22,59 +22,71 @@ internal sealed class LaunchOptionsDialog : Form
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = false;
-        ClientSize = new Size(280, 210);
+        ClientSize = new Size(260, 184);
+        Text = CreateCenteredCaption("DragonGlare Alpha");
+
+        const string titleText = "ウィンドウモードを選択してください";
+        var optionX = Math.Max(0, (ClientSize.Width - TextRenderer.MeasureText(
+            titleText,
+            Font,
+            ClientSize,
+            TextFormatFlags.NoPadding).Width) / 2);
 
         var titleLabel = new Label
         {
-            AutoSize = true,
-            Location = new Point(12, 12),
-            Text = "ウィンドウモードを選択してください"
+            AutoSize = false,
+            Location = new Point(0, 8),
+            Size = new Size(ClientSize.Width, 20),
+            Text = titleText,
+            TextAlign = ContentAlignment.MiddleCenter
         };
 
         fullscreenRadio = new RadioButton
         {
             AutoSize = true,
-            Location = new Point(12, 42),
-            Text = "フルスクリーン（モニターに合わせる）"
+            Location = new Point(optionX, 34),
+            Text = "フルスクリーン"
         };
 
         window640Radio = new RadioButton
         {
             AutoSize = true,
-            Location = new Point(12, 66),
+            Location = new Point(optionX, 57),
             Text = "ウィンドウ(640x480)"
         };
 
         window720Radio = new RadioButton
         {
             AutoSize = true,
-            Location = new Point(12, 90),
+            Location = new Point(optionX, 80),
             Text = "ウィンドウ(720p)"
         };
 
         window1080Radio = new RadioButton
         {
             AutoSize = true,
-            Location = new Point(12, 114),
+            Location = new Point(optionX, 103),
             Text = "ウィンドウ(1080p)"
         };
 
         promptOnStartupCheckBox = new CheckBox
         {
             AutoSize = true,
-            Location = new Point(28, 146),
             Text = "起動時に毎回聞く",
             Checked = initialSettings.PromptOnStartup
         };
+        promptOnStartupCheckBox.Location = new Point(
+            Math.Max(0, (ClientSize.Width - promptOnStartupCheckBox.PreferredSize.Width) / 2),
+            128);
 
         var startButton = new Button
         {
             AutoSize = true,
-            Location = new Point(94, 174),
             Size = new Size(92, 28),
             Text = "ゲーム起動",
             UseVisualStyleBackColor = true
         };
+        startButton.Location = new Point((ClientSize.Width - startButton.Width) / 2, 152);
         startButton.Click += (_, _) => ConfirmSelection();
 
         AcceptButton = startButton;
@@ -88,6 +100,14 @@ internal sealed class LaunchOptionsDialog : Form
         Controls.Add(startButton);
 
         SetSelectedDisplayMode(initialSettings.DisplayMode);
+    }
+
+    private string CreateCenteredCaption(string caption)
+    {
+        var captionWidth = TextRenderer.MeasureText(caption, Font, ClientSize, TextFormatFlags.NoPadding).Width;
+        var spaceWidth = Math.Max(1, TextRenderer.MeasureText(" ", Font, ClientSize, TextFormatFlags.NoPadding).Width);
+        var leadingSpaceCount = Math.Max(0, ((ClientSize.Width - captionWidth) / 2) / spaceWidth);
+        return new string(' ', leadingSpaceCount) + caption;
     }
 
     private void SetSelectedDisplayMode(LaunchDisplayMode mode)

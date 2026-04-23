@@ -24,6 +24,8 @@ namespace DragonGlare.Scenes
 
         public void Draw(SpriteBatch spriteBatch)
         {
+            spriteBatch.Begin();
+
             if (AssetManager.Pixel != null)
             {
                 spriteBatch.Draw(AssetManager.Pixel, new Rectangle(0, 0, 640, 480), Color.Black);
@@ -38,6 +40,8 @@ namespace DragonGlare.Scenes
                     spriteBatch.DrawString(AssetManager.MainFont, text, new Vector2(280, 200 + (i * 50)), color);
                 }
             }
+
+            spriteBatch.End();
         }
     }
 }
