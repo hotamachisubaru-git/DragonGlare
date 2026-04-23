@@ -43,7 +43,7 @@ internal static class Program
         }
 
         using var game = new global::DragonGlareAlpha.DragonGlareAlpha(launchSettings);
-        game.Window.Title = "DragonGlare.Alpha";
+        game.Window.Title = global::DragonGlareAlpha.DragonGlareAlpha.WindowTitle;
         game.Run();
     }
 }

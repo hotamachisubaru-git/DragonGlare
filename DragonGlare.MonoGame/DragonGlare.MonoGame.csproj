@@ -9,15 +9,22 @@
     <Nullable>enable</Nullable>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <UseWindowsForms>true</UseWindowsForms>
+    <AppVersion>1.5.1</AppVersion>
+    <Version>$(AppVersion)</Version>
+    <AssemblyVersion>$(AppVersion).0</AssemblyVersion>
+    <FileVersion>$(AppVersion)</FileVersion>
+    <InformationalVersion>$(AppVersion)</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-    <Title>DragonGlare-Alpha</Title>
-    <Product>DragonGlare-Alpha</Product>
+    <AssemblyTitle>DragonGlare Alpha $(AppVersion)</AssemblyTitle>
+    <Title>DragonGlare Alpha $(AppVersion)</Title>
+    <Product>DragonGlare Alpha</Product>
     <!-- 親ディレクトリのobjフォルダなどを拾わないようにする -->
     <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon>Icon.ico</ApplicationIcon>
+    <ApplicationIcon>Dragon_glare.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
@@ -44,6 +51,7 @@
   <ItemGroup>
     <None Include="Assets\**\*.*" Exclude="Assets\JF-Dot-ShinonomeMin14.ttf" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Assets\JF-Dot-ShinonomeMin14.ttf" CopyToOutputDirectory="PreserveNewest" TargetPath="JF-Dot-ShinonomeMin14.ttf" />
+    <None Include="Dragon_glare.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.*" />

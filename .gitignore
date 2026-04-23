@@ -9,6 +9,7 @@ obj/
 *.wav
 *.ttf
 *.ico
+!DragonGlare.MonoGame/Dragon_glare.ico
 .gitmessage
 TestResults/
 .release/

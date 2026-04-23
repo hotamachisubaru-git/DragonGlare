@@ -3,6 +3,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Drawing.Text;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using DragonGlareAlpha.Domain;
@@ -154,6 +155,8 @@ public partial class DragonGlareAlpha : Game
     private IReadOnlyList<SaveSlotSummary> saveSlotSummaries = [];
     private LaunchDisplayMode activeDisplayMode;
     private LaunchDisplayMode lastWindowedDisplayMode = LaunchDisplayMode.Window640x480;
+    private int windowChromeRefreshFramesRemaining = 180;
+    private bool windowIconApplied;
 
     private enum ShopMenuEntryType
     {
@@ -212,7 +215,7 @@ public partial class DragonGlareAlpha : Game
         graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
-        Window.Title = $"DragonGlare Alpha v{typeof(DragonGlareAlpha).Assembly.GetName().Version}";
+        ApplyWindowChrome(forceIcon: true);
 
         this.launchSettings = launchSettings ?? new LaunchSettings();
         activeDisplayMode = this.launchSettings.DisplayMode;
@@ -222,11 +225,18 @@ public partial class DragonGlareAlpha : Game
         }
 
         ApplyDisplayMode();
+        ApplyWindowChrome(forceIcon: true);
         LoadCustomFont();
         InitializeAudio();
         LoadFieldSprites();
         saveService.TryMigrateLegacySave(LegacySaveFilePath);
         RefreshSaveSlotSummaries();
+    }
+
+    protected override void Initialize()
+    {
+        base.Initialize();
+        ApplyWindowChrome(forceIcon: true);
     }
 
     protected override void LoadContent()
@@ -241,6 +251,12 @@ public partial class DragonGlareAlpha : Game
 
     protected override void Update(GameTime gameTime)
     {
+        if (windowChromeRefreshFramesRemaining > 0)
+        {
+            ApplyWindowChrome(forceIcon: !windowIconApplied);
+            windowChromeRefreshFramesRemaining--;
+        }
+
         try
         {
             PollKeyboard();
@@ -433,7 +449,148 @@ public partial class DragonGlareAlpha : Game
         }
 
         graphics.ApplyChanges();
+        windowIconApplied = false;
+        ApplyWindowChrome(forceIcon: true);
     }
+
+    public static string WindowTitle => GetWindowTitle();
+
+    private static string GetWindowTitle()
+    {
+        var version = typeof(DragonGlareAlpha).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion;
+
+        if (string.IsNullOrWhiteSpace(version))
+        {
+            version = typeof(DragonGlareAlpha).Assembly.GetName().Version?.ToString(3);
+        }
+
+        var metadataIndex = version?.IndexOf('+') ?? -1;
+        if (metadataIndex > 0)
+        {
+            version = version![..metadataIndex];
+        }
+
+        return string.IsNullOrWhiteSpace(version)
+            ? "DragonGlare Alpha"
+            : $"DragonGlare Alpha {version}";
+    }
+
+    private void ApplyWindowChrome(bool forceIcon = false)
+    {
+        Window.Title = WindowTitle;
+
+        if (forceIcon || !windowIconApplied)
+        {
+            ApplyWindowIcon();
+        }
+    }
+
+    private void ApplyWindowIcon()
+    {
+        if (!OperatingSystem.IsWindows() || Window.Handle == IntPtr.Zero)
+        {
+            return;
+        }
+
+        var iconPath = ResolveWindowIconPath();
+        if (iconPath is null)
+        {
+            return;
+        }
+
+        try
+        {
+            using var icon = new Icon(iconPath);
+            using var bitmap = icon.ToBitmap();
+            using var argbBitmap = new Bitmap(bitmap.Width, bitmap.Height, PixelFormat.Format32bppArgb);
+            using (var graphics = Graphics.FromImage(argbBitmap))
+            {
+                graphics.DrawImage(bitmap, 0, 0, bitmap.Width, bitmap.Height);
+            }
+
+            var rect = new System.Drawing.Rectangle(0, 0, argbBitmap.Width, argbBitmap.Height);
+            var data = argbBitmap.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+            try
+            {
+                var surface = SdlCreateRgbSurfaceFrom(
+                    data.Scan0,
+                    argbBitmap.Width,
+                    argbBitmap.Height,
+                    32,
+                    data.Stride,
+                    0x00ff0000,
+                    0x0000ff00,
+                    0x000000ff,
+                    0xff000000);
+
+                if (surface == IntPtr.Zero)
+                {
+                    return;
+                }
+
+                try
+                {
+                    SdlSetWindowIcon(Window.Handle, surface);
+                    windowIconApplied = true;
+                }
+                finally
+                {
+                    SdlFreeSurface(surface);
+                }
+            }
+            finally
+            {
+                argbBitmap.UnlockBits(data);
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private static string? ResolveWindowIconPath()
+    {
+        var candidates = new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "Dragon_glare.ico"),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Dragon_glare.ico"),
+            Path.Combine(Directory.GetCurrentDirectory(), "Dragon_glare.ico"),
+            Path.Combine(AppContext.BaseDirectory, "Resources", "App", "dragon_glare.ico"),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Resources", "App", "dragon_glare.ico"),
+            Path.Combine(Directory.GetCurrentDirectory(), "Resources", "App", "dragon_glare.ico")
+        };
+
+        foreach (var candidate in candidates)
+        {
+            var normalized = Path.GetFullPath(candidate);
+            if (File.Exists(normalized))
+            {
+                return normalized;
+            }
+        }
+
+        return null;
+    }
+
+    [DllImport("SDL2.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "SDL_CreateRGBSurfaceFrom")]
+    private static extern IntPtr SdlCreateRgbSurfaceFrom(
+        IntPtr pixels,
+        int width,
+        int height,
+        int depth,
+        int pitch,
+        uint rmask,
+        uint gmask,
+        uint bmask,
+        uint amask);
+
+    [DllImport("SDL2.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "SDL_SetWindowIcon")]
+    private static extern void SdlSetWindowIcon(IntPtr window, IntPtr icon);
+
+    [DllImport("SDL2.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "SDL_FreeSurface")]
+    private static extern void SdlFreeSurface(IntPtr surface);
 
     private void ToggleFullscreen()
     {
