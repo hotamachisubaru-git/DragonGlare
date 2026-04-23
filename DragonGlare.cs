@@ -27,6 +27,7 @@ namespace DragonGlareAlpha;
 
 public partial class DragonGlareAlpha : Game
 {
+    private const string AppUserModelId = "DragonGlare.Alpha";
     private const int TileSize = 32;
     private const int ShopItemsPerPage = 6;
     private const int CompactFieldViewportWidthTiles = 13;
@@ -157,6 +158,7 @@ public partial class DragonGlareAlpha : Game
     private LaunchDisplayMode lastWindowedDisplayMode = LaunchDisplayMode.Window640x480;
     private int windowChromeRefreshFramesRemaining = 180;
     private bool windowIconApplied;
+    private bool appUserModelIdApplied;
 
     private enum ShopMenuEntryType
     {
@@ -480,10 +482,24 @@ public partial class DragonGlareAlpha : Game
     private void ApplyWindowChrome(bool forceIcon = false)
     {
         Window.Title = WindowTitle;
+        ApplyAppUserModelId();
 
         if (forceIcon || !windowIconApplied)
         {
             ApplyWindowIcon();
+        }
+    }
+
+    private void ApplyAppUserModelId()
+    {
+        if (appUserModelIdApplied || !OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        if (SetCurrentProcessExplicitAppUserModelID(AppUserModelId) == 0)
+        {
+            appUserModelIdApplied = true;
         }
     }
 
@@ -591,6 +607,9 @@ public partial class DragonGlareAlpha : Game
 
     [DllImport("SDL2.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "SDL_FreeSurface")]
     private static extern void SdlFreeSurface(IntPtr surface);
+
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    private static extern int SetCurrentProcessExplicitAppUserModelID(string appId);
 
     private void ToggleFullscreen()
     {
