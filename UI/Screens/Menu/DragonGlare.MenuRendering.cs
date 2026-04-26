@@ -35,10 +35,10 @@ public partial class DragonGlareAlpha
             "データけす"
         };
 
-        var menuStartX = ScaleModeSelectX(layoutRect, 24);
+        var menuStartX = ScaleModeSelectX(layoutRect, 28);
         var menuStartY = ScaleModeSelectY(layoutRect, 24);
         var menuLineHeight = ScaleModeSelectHeight(layoutRect, 24);
-        var menuCursorX = ScaleModeSelectX(layoutRect, 16);
+        var menuCursorX = ScaleModeSelectX(layoutRect, 20);
 
         for (var index = 0; index < menuItems.Length; index++)
         {
@@ -84,22 +84,57 @@ public partial class DragonGlareAlpha
             return;
         }
 
-        // オーバーレイブラシを使用して背景を透明化
-        using var overlayBrush = new SolidBrush(Color.Transparent);
-        g.FillRectangle(overlayBrush, new Rectangle(0, 0, UiCanvas.VirtualWidth, UiCanvas.VirtualHeight));
+        DrawLanguageSelectionLayout(g);
 
-        DrawWindow(g, new Rectangle(84, 64, 260, 128));
-        DrawOption(g, languageCursor == 0, 104, 94, "にほんご");
-        DrawOption(g, languageCursor == 1, 104, 134, "ENGLISH");
+        DrawLanguageOption(g, languageCursor == 0, 104, 78, "にほんご");
+        DrawLanguageOption(g, languageCursor == 1, 104, 118, "ENGLISH");
 
-        DrawWindow(g, new Rectangle(116, 270, 410, 180));
-        DrawText(g, "げんごをえらんでください", 140, 310);
-        DrawText(g, "CHOOSE A LANGUAGE", 140, 350);
-        DrawText(g, "ENTER/Z: けってい  ESC: もどる", 140, 390, smallFont);
+        DrawText(g, "げんごをえらんでください", 140, 276);
+        DrawText(g, "CHOOSE A LANGUAGE", 140, 316);
+        DrawText(g, "ENTER/Z: けってい  ESC: もどる", 140, 356, smallFont);
+    }
+
+    private void DrawLanguageSelectionLayout(Graphics g)
+    {
+        var layoutImage = GetUiImage("SFC_language.png");
+        if (layoutImage is not null)
+        {
+            var previousInterpolationMode = g.InterpolationMode;
+            g.InterpolationMode = InterpolationMode.NearestNeighbor;
+            g.DrawImage(layoutImage, new Rectangle(0, 0, UiCanvas.VirtualWidth, UiCanvas.VirtualHeight));
+            g.InterpolationMode = previousInterpolationMode;
+            return;
+        }
+
+        g.Clear(Color.Black);
+        DrawWindow(g, new Rectangle(75, 46, 241, 120));
+        DrawWindow(g, new Rectangle(108, 236, 422, 187));
+    }
+
+    private void DrawLanguageOption(Graphics g, bool selected, int x, int y, string text)
+    {
+        if (selected)
+        {
+            DrawLanguageSelectionCursor(g, x - 28, y + 4);
+        }
+
+        DrawText(g, text, x, y);
+    }
+
+    private void DrawLanguageSelectionCursor(Graphics g, int x, int y)
+    {
+        if ((frameCounter / 18) % 2 == 1)
+        {
+            return;
+        }
+
+        DrawMenuCursorArrow(g, x, y);
     }
 
     private void DrawNameInput(Graphics g)
     {
+        g.Clear(Color.Black);
+
         var table = GameContent.GetNameTable(selectedLanguage);
         const int originX = 44;
         const int originY = 52;
@@ -250,14 +285,7 @@ public partial class DragonGlareAlpha
             return;
         }
 
-        using var brush = new SolidBrush(Color.White);
-        g.FillPolygon(
-            brush,
-            [
-                new Point(x, y),
-                new Point(x, y + 14),
-                new Point(x + 12, y + 7)
-            ]);
+        DrawMenuCursorArrow(g, x, y);
     }
 
     // 言語オープニングの背景を描画

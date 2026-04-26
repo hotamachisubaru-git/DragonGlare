@@ -70,10 +70,10 @@ public partial class DragonGlareAlpha
             "データけす"
         };
 
-        var menuStartX = ScaleModeSelectX(layoutRect, 24);
+        var menuStartX = ScaleModeSelectX(layoutRect, 28);
         var menuStartY = ScaleModeSelectY(layoutRect, 24);
         var menuLineHeight = ScaleModeSelectHeight(layoutRect, 24);
-        var menuCursorX = ScaleModeSelectX(layoutRect, 16);
+        var menuCursorX = ScaleModeSelectX(layoutRect, 20);
 
         for (var index = 0; index < menuItems.Length; index++)
         {
@@ -107,15 +107,7 @@ public partial class DragonGlareAlpha
 
     private void DrawSpriteBatchMenuBackdrop()
     {
-        spriteBatch!.Draw(spriteBatchPixel!, new XnaRectangle(0, 0, UiCanvas.VirtualWidth, UiCanvas.VirtualHeight), new XnaColor(0, 4, 12));
-
-        for (var y = 0; y < UiCanvas.VirtualHeight; y += 4)
-        {
-            spriteBatch.Draw(spriteBatchPixel!, new XnaRectangle(0, y, UiCanvas.VirtualWidth, 1), new XnaColor(24, 38, 80));
-        }
-
-        spriteBatch.Draw(spriteBatchPixel!, new XnaRectangle(0, 0, 18, UiCanvas.VirtualHeight), new XnaColor(0, 18, 66));
-        spriteBatch.Draw(spriteBatchPixel!, new XnaRectangle(UiCanvas.VirtualWidth - 18, 0, 18, UiCanvas.VirtualHeight), new XnaColor(0, 18, 66));
+        spriteBatch!.Draw(spriteBatchPixel!, new XnaRectangle(0, 0, UiCanvas.VirtualWidth, UiCanvas.VirtualHeight), XnaColor.Black);
     }
 
     private void DrawSpriteBatchWindow(XnaRectangle rect)

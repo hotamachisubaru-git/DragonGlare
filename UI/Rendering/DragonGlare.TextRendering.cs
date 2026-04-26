@@ -213,26 +213,9 @@ public partial class DragonGlareAlpha
         var safeBounds = bounds.Width <= 0 || bounds.Height <= 0
             ? new Rectangle(bounds.X, bounds.Y, Math.Max(1, bounds.Width), Math.Max(1, bounds.Height))
             : bounds;
-        var scanlineStep = Math.Max(4, (int)Math.Round(4f * scale));
-        var sideGlowWidth = Math.Max(18, (int)Math.Round(18f * scale));
 
-        using var gradient = new LinearGradientBrush(
-            safeBounds,
-            Color.Black,
-            Color.FromArgb(0, 10, 22),
-            90f);
-        using var scanlinePen = new Pen(Color.FromArgb(24, 38, 80));
-        using var sideGlowBrush = new SolidBrush(Color.FromArgb(14, 0, 80, 255));
-
-        g.FillRectangle(gradient, safeBounds);
-
-        for (var y = safeBounds.Top; y < safeBounds.Bottom; y += scanlineStep)
-        {
-            g.DrawLine(scanlinePen, safeBounds.Left, y, safeBounds.Right, y);
-        }
-
-        g.FillRectangle(sideGlowBrush, safeBounds.Left, safeBounds.Top, sideGlowWidth, safeBounds.Height);
-        g.FillRectangle(sideGlowBrush, safeBounds.Right - sideGlowWidth, safeBounds.Top, sideGlowWidth, safeBounds.Height);
+        using var backgroundBrush = new SolidBrush(Color.Black);
+        g.FillRectangle(backgroundBrush, safeBounds);
     }
 
     private void DrawMenuBackdrop(Graphics g)
@@ -262,12 +245,25 @@ public partial class DragonGlareAlpha
             return;
         }
 
-        using var shadowBrush = new SolidBrush(Color.FromArgb(0, 56, 180));
-        using var baseBrush = new SolidBrush(Color.FromArgb(0, 120, 255));
-        using var shineBrush = new SolidBrush(Color.FromArgb(180, 226, 255));
+        DrawMenuCursorArrow(g, x, y);
+    }
 
-        g.FillRectangle(shadowBrush, x + 2, y + 2, 12, 12);
-        g.FillRectangle(baseBrush, x, y, 12, 12);
-        g.FillRectangle(shineBrush, x + 3, y + 3, 4, 4);
+    private static void DrawMenuCursorArrow(Graphics g, int x, int y)
+    {
+        using var brush = new SolidBrush(Color.White);
+        var slices = new[]
+        {
+            new Rectangle(x, y, 2, 14),
+            new Rectangle(x + 2, y + 1, 2, 12),
+            new Rectangle(x + 4, y + 2, 2, 10),
+            new Rectangle(x + 6, y + 3, 2, 8),
+            new Rectangle(x + 8, y + 4, 2, 6),
+            new Rectangle(x + 10, y + 5, 2, 4)
+        };
+
+        foreach (var slice in slices)
+        {
+            g.FillRectangle(brush, slice);
+        }
     }
 }

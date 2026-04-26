@@ -25,9 +25,16 @@ public partial class DragonGlareAlpha
                 if (sceneFadeOutFramesRemaining == 0)
                 {
                     // perform actual state switch and start fade-in
-                    gameState = pendingGameState.Value;
+                    var previousState = gameState;
+                    var nextState = pendingGameState.Value;
+                    gameState = nextState;
                     pendingGameState = null;
                     startupFadeFrames = 20; // fade-in on new scene
+                    if (previousState == GameState.Battle && nextState != GameState.Battle)
+                    {
+                        ResetBattleState();
+                    }
+
                     UpdateBgm();
                 }
             }
@@ -890,7 +897,6 @@ public partial class DragonGlareAlpha
     private void FinishBattle()
     {
         ResetEncounterCounter();
-        ResetBattleState();
         ChangeGameState(GameState.Field);
         PersistProgress();
     }

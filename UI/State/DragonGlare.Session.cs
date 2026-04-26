@@ -55,6 +55,9 @@ public partial class DragonGlareAlpha
         encounterTransitionFrames = 0;
         ResetBattleSelectionState();
         battleMessage = message ?? DefaultBattleMessage;
+        battleMessageLines = [];
+        battleMessageVisibleLines = 0;
+        battleMessageLineTimer = 0;
     }
 
     private void ResetShopState(string? message = null)
