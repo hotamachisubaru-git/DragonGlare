@@ -37,7 +37,11 @@ public enum BankPhase
 public enum EquipmentSlot
 {
     Weapon,
-    Armor
+    Armor,
+    Head,
+    Arms,
+    Legs,
+    Feet
 }
 
 public enum UiLanguage

@@ -19,24 +19,25 @@ public sealed class BattleAndProgressionTests
 
         var encounter = new BattleEncounter(new EnemyDefinition("test", "テストまもの", FieldMapId.Field, 1, 99, 1, 10, 1, 0, 2, 3));
 
-        var result = service.ResolveTurn(player, encounter, BattleActionType.Attack, null, null, null, null, random);
+        var result = service.ResolveTurn(player, encounter, BattleActionType.Attack, null, null, random);
 
         Assert.Equal(BattleOutcome.Victory, result.Outcome);
         Assert.Equal(0, encounter.CurrentHp);
     }
 
     [Fact]
-    public void GetPlayerDefense_IncludesEquippedArmorBonus()
+    public void GetPlayerDefense_IncludesEquippedArmorBonusesAcrossSlots()
     {
         var service = new BattleService();
         var player = PlayerProgress.CreateDefault(new Point(0, 0));
         player.Level = 6;
+        player.EquippedArmorId = "leather_armor";
+        player.EquippedHeadId = "leather_cap";
+        player.EquippedFeetId = "travel_boots";
 
-        var armor = GameContent.GetArmorById("leather_armor");
+        var defense = service.GetPlayerDefense(player);
 
-        var defense = service.GetPlayerDefense(player, armor);
-
-        Assert.Equal(player.BaseDefense + 3 + armor!.DefenseBonus, defense);
+        Assert.Equal(player.BaseDefense + 3 + 3 + 1 + 1, defense);
     }
 
     [Fact]
@@ -49,7 +50,7 @@ public sealed class BattleAndProgressionTests
         player.BaseDefense = 0;
         var encounter = new BattleEncounter(new EnemyDefinition("test", "テストまもの", FieldMapId.Field, 1, 99, 1, 12, 8, 0, 2, 3));
 
-        var result = service.ResolveTurn(player, encounter, BattleActionType.Defend, null, null, null, null, random);
+        var result = service.ResolveTurn(player, encounter, BattleActionType.Defend, null, null, random);
 
         Assert.Equal(BattleOutcome.Ongoing, result.Outcome);
         Assert.Equal(15, player.CurrentHp);
@@ -70,11 +71,29 @@ public sealed class BattleAndProgressionTests
         var club = GameContent.GetWeaponById("club");
         var encounter = new BattleEncounter(new EnemyDefinition("test", "テストまもの", FieldMapId.Field, 1, 99, 1, 14, 6, 0, 2, 3));
 
-        var result = service.ResolveTurn(player, encounter, BattleActionType.Equip, null, null, null, club, random);
+        var result = service.ResolveTurn(player, encounter, BattleActionType.Equip, null, club, random);
 
         Assert.Equal(BattleOutcome.Ongoing, result.Outcome);
         Assert.Equal("club", player.EquippedWeaponId);
         Assert.Contains("こんぼうを そうびした", result.Steps[0].Message);
+    }
+
+    [Fact]
+    public void ResolveTurn_WhenEquippingHeadGear_UpdatesHeadSlotAndContinuesBattle()
+    {
+        var random = new FixedRandom(1);
+        var service = new BattleService();
+        var player = PlayerProgress.CreateDefault(new Point(0, 0));
+        player.BaseDefense = 4;
+        player.AddItem("leather_cap");
+        var cap = GameContent.GetArmorById("leather_cap");
+        var encounter = new BattleEncounter(new EnemyDefinition("test", "テストまもの", FieldMapId.Field, 1, 99, 1, 14, 6, 0, 2, 3));
+
+        var result = service.ResolveTurn(player, encounter, BattleActionType.Equip, null, cap, random);
+
+        Assert.Equal(BattleOutcome.Ongoing, result.Outcome);
+        Assert.Equal("leather_cap", player.EquippedHeadId);
+        Assert.Contains("かわぼうしを そうびした", result.Steps[0].Message);
     }
 
     [Fact]

@@ -52,6 +52,7 @@
   <ItemGroup>
     <None Include="Assets\**\*.*" Exclude="Assets\JF-Dot-ShinonomeMin14.ttf" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Assets\JF-Dot-ShinonomeMin14.ttf" CopyToOutputDirectory="PreserveNewest" TargetPath="JF-Dot-ShinonomeMin14.ttf" />
+    <None Include="Content\**\*.*" Exclude="Content\obj\**\*.*;Content\bin\**\*.*" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Dragon_glare.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>

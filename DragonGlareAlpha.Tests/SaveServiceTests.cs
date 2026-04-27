@@ -37,6 +37,8 @@ public sealed class SaveServiceTests
                 LoanStepCounter = 4,
                 EquippedWeaponId = "bronze_sword",
                 EquippedArmorId = "leather_armor",
+                EquippedHeadId = "leather_cap",
+                EquippedLegsId = "leather_leggings",
                 Inventory =
                 [
                     new InventoryEntry
@@ -47,6 +49,16 @@ public sealed class SaveServiceTests
                     new InventoryEntry
                     {
                         ItemId = "leather_armor",
+                        Quantity = 1
+                    },
+                    new InventoryEntry
+                    {
+                        ItemId = "leather_cap",
+                        Quantity = 1
+                    },
+                    new InventoryEntry
+                    {
+                        ItemId = "leather_leggings",
                         Quantity = 1
                     }
                 ]
@@ -63,7 +75,9 @@ public sealed class SaveServiceTests
             Assert.Equal(3, roundTripped.Level);
             Assert.Equal("bronze_sword", roundTripped.EquippedWeaponId);
             Assert.Equal("leather_armor", roundTripped.EquippedArmorId);
-            Assert.Equal(2, roundTripped.Inventory.Count);
+            Assert.Equal("leather_cap", roundTripped.EquippedHeadId);
+            Assert.Equal("leather_leggings", roundTripped.EquippedLegsId);
+            Assert.Equal(4, roundTripped.Inventory.Count);
             Assert.Equal(123, roundTripped.Gold);
             Assert.Equal(400, roundTripped.BankGold);
             Assert.Equal(90, roundTripped.LoanBalance);

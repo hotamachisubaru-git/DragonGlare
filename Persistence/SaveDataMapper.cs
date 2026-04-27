@@ -31,6 +31,10 @@ public static class SaveDataMapper
         player.LoanStepCounter = saveData.LoanStepCounter;
         player.EquippedWeaponId = saveData.EquippedWeaponId;
         player.EquippedArmorId = saveData.EquippedArmorId;
+        player.EquippedHeadId = saveData.EquippedHeadId;
+        player.EquippedArmsId = saveData.EquippedArmsId;
+        player.EquippedLegsId = saveData.EquippedLegsId;
+        player.EquippedFeetId = saveData.EquippedFeetId;
         player.Inventory = saveData.Inventory?.Select(entry => entry.Clone()).ToList() ?? [];
         player.Normalize();
 
@@ -62,6 +66,10 @@ public static class SaveDataMapper
             LoanStepCounter = player.LoanStepCounter,
             EquippedWeaponId = player.EquippedWeaponId,
             EquippedArmorId = player.EquippedArmorId,
+            EquippedHeadId = player.EquippedHeadId,
+            EquippedArmsId = player.EquippedArmsId,
+            EquippedLegsId = player.EquippedLegsId,
+            EquippedFeetId = player.EquippedFeetId,
             Inventory = player.Inventory.Select(entry => entry.Clone()).ToList()
         };
     }

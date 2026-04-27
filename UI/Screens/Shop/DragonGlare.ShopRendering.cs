@@ -1,5 +1,6 @@
 using DragonGlareAlpha.Data;
 using DragonGlareAlpha.Domain;
+using DragonGlareAlpha.Domain.Player;
 
 namespace DragonGlareAlpha;
 
@@ -80,23 +81,28 @@ public partial class DragonGlareAlpha
             ? $"LV {player.Level}"
             : selectedEntry.Value.Type == ShopMenuEntryType.InventoryItem && selectedEntry.Value.InventoryItem is not null
                 ? selectedEntry.Value.InventoryItem.Value.Detail
-                : selectedEntry.Value.Product?.Consumable?.Description ?? $"LV {player.Level}";
+                : selectedEntry.Value.Product?.IsEquipment == true && selectedEntry.Value.Product.Equipment is not null
+                    ? $"{GetEquipmentSlotLabel(selectedEntry.Value.Product.Equipment.Slot)}: {GetCurrentEquipmentNameForSlot(selectedEntry.Value.Product.Equipment.Slot)}"
+                    : selectedEntry.Value.Product?.Consumable?.Description ?? $"LV {player.Level}";
         var detailLine2 = $"EXP {GetExperienceSummary()}";
         if (selectedEntry is not null &&
             selectedEntry.Value.Type == ShopMenuEntryType.Product &&
             selectedEntry.Value.Product is not null &&
             selectedEntry.Value.Product.IsEquipment)
         {
-            detailLine2 = selectedEntry.Value.Product.Equipment?.Slot == EquipmentSlot.Weapon
-                ? $"そうびで ATK {GetTotalAttack() - (GetEquippedWeapon()?.AttackBonus ?? 0) + selectedEntry.Value.Product.AttackBonus}"
-                : $"そうびで DEF {GetTotalDefense() - (GetEquippedArmor()?.DefenseBonus ?? 0) + selectedEntry.Value.Product.DefenseBonus}";
+            detailLine2 = selectedEntry.Value.Product.Equipment switch
+            {
+                WeaponDefinition weapon => $"そうびで ATK {battleService.GetPlayerAttack(player, weapon)}",
+                ArmorDefinition armor => $"そうびで DEF {battleService.GetPlayerDefense(player, armor)}",
+                _ => detailLine2
+            };
         }
 
         DrawWindow(g, shopInfoRect);
         DrawText(g, "ぶき:", shopInfoRect.X + 20, shopInfoRect.Y + 14, smallFont);
         DrawText(g, GetEquippedWeaponName(), new Rectangle(shopInfoRect.X + 94, shopInfoRect.Y + 14, 126, 20), smallFont, StringAlignment.Far);
-        DrawText(g, "ぼうぐ:", shopInfoRect.X + 20, shopInfoRect.Y + 36, smallFont);
-        DrawText(g, GetEquippedArmorName(), new Rectangle(shopInfoRect.X + 94, shopInfoRect.Y + 36, 126, 20), smallFont, StringAlignment.Far);
+        DrawText(g, "そうび:", shopInfoRect.X + 20, shopInfoRect.Y + 36, smallFont);
+        DrawText(g, GetEquippedArmorSummary(), new Rectangle(shopInfoRect.X + 94, shopInfoRect.Y + 36, 126, 20), smallFont, StringAlignment.Far);
         DrawText(g, $"ATK {GetTotalAttack()}  DEF {GetTotalDefense()}", new Rectangle(shopInfoRect.X + 20, shopInfoRect.Y + 58, 196, 20), smallFont);
         DrawText(g, detailLine1, new Rectangle(shopInfoRect.X + 20, shopInfoRect.Y + 80, 196, 20), smallFont);
         DrawText(g, detailLine2, new Rectangle(shopInfoRect.X + 20, shopInfoRect.Y + 92, 196, 20), smallFont);

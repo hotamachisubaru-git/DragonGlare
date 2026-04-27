@@ -48,7 +48,7 @@ public static class GameContent
     };
     public static readonly WeaponDefinition[] WeaponCatalog =
     [
-        new("stick", "ぼう", 16, 2),
+        new("stick", "ぼう", 16, 2), // 価格,攻撃力
         new("club", "こんぼう", 32, 4),
         new("bamboo_spear", "たけやり", 52, 6),
         new("thorn_club", "とげのぼう", 64, 7),
@@ -62,51 +62,51 @@ public static class GameContent
 
     public static readonly ArmorDefinition[] ArmorCatalog =
     [
-        new("cloth_tunic", "ぬののふく", 18, 1),
+        new("cloth_tunic", "ぬののふく", 18, 1), // 価格,防御力
         new("leather_armor", "かわのよろい", 48, 3),
         new("scale_vest", "うろこふく", 72, 4),
         new("bronze_mail", "どうよろい", 108, 6),
         new("iron_armor", "てつよろい", 152, 8),
         new("steel_armor", "はがねよろい", 224, 10),
         new("silver_mail", "ぎんむねあて", 336, 13),
-        new("dragon_mail", "りゅうよろい", 492, 16)
+        new("dragon_mail", "りゅうよろい", 492, 16),
+        new("leather_cap", "かわぼうし", 38, 1, EquipmentSlot.Head),
+        new("bronze_helm", "どうのかぶと", 112, 2, EquipmentSlot.Head),
+        new("steel_helm", "はがねかぶと", 238, 4, EquipmentSlot.Head),
+        new("leather_bracers", "かわのこて", 34, 1, EquipmentSlot.Arms),
+        new("bronze_gauntlets", "どうのこて", 104, 2, EquipmentSlot.Arms),
+        new("steel_gauntlets", "はがねのこて", 226, 4, EquipmentSlot.Arms),
+        new("leather_leggings", "かわレギンス", 42, 1, EquipmentSlot.Legs),
+        new("bronze_greaves", "どうレギンス", 116, 2, EquipmentSlot.Legs),
+        new("steel_greaves", "はがねレギンス", 232, 4, EquipmentSlot.Legs),
+        new("travel_boots", "たびのブーツ", 28, 1, EquipmentSlot.Feet),
+        new("bronze_boots", "どうのブーツ", 96, 2, EquipmentSlot.Feet),
+        new("steel_boots", "はがねブーツ", 212, 3, EquipmentSlot.Feet)
     ];
 
     public static readonly ConsumableDefinition[] ConsumableCatalog =
     [
-        new("healing_herb", "やくそう", "HPを 12かいふく", ConsumableEffectType.HealHp, 12, 10),
+        new("healing_herb", "やくそう", "HPを 12かいふく", ConsumableEffectType.HealHp, 12, 10), // 価格,回復量
         new("mana_seed", "まりょくのたね", "MPを 3かいふく", ConsumableEffectType.HealMp, 3, 24),
-        new("fire_orb", "ひのたま", "てきに 18ダメージ", ConsumableEffectType.DamageEnemy, 18, 36)
+        new("fire_orb", "ひのたま", "てきに 18ダメージ", ConsumableEffectType.DamageEnemy, 18, 36),
+        new("healing_bloom", "いやしぐさ", "HPを 28かいふく", ConsumableEffectType.HealHp, 28, 26),
+        new("ether_drop", "まりょくのみず", "MPを 7かいふく", ConsumableEffectType.HealMp, 7, 44),
+        new("thunder_orb", "いかずちだま", "てきに 32ダメージ", ConsumableEffectType.DamageEnemy, 32, 64),
+        new("royal_jelly", "おうじょのミツ", "HPを 60かいふく", ConsumableEffectType.HealHp, 60, 88)
     ];
 
     public static readonly ShopProductDefinition[] ShopCatalog =
-    [
-        new(Consumable: ConsumableCatalog[0]),
-        new(Equipment: WeaponCatalog[0]),
-        new(Equipment: ArmorCatalog[0]),
-        new(Consumable: ConsumableCatalog[1]),
-        new(Equipment: WeaponCatalog[1]),
-        new(Consumable: ConsumableCatalog[2]),
-        new(Equipment: ArmorCatalog[1]),
-        new(Equipment: WeaponCatalog[2]),
-        new(Equipment: WeaponCatalog[3]),
-        new(Equipment: ArmorCatalog[2]),
-        new(Equipment: WeaponCatalog[4]),
-        new(Equipment: ArmorCatalog[3]),
-        new(Equipment: WeaponCatalog[5]),
-        new(Equipment: ArmorCatalog[4]),
-        new(Equipment: WeaponCatalog[6]),
-        new(Equipment: ArmorCatalog[5]),
-        new(Equipment: WeaponCatalog[7]),
-        new(Equipment: ArmorCatalog[6]),
-        new(Equipment: WeaponCatalog[8]),
-        new(Equipment: ArmorCatalog[7]),
-        new(Equipment: WeaponCatalog[9])
-    ];
+        ConsumableCatalog
+            .Select(item => new ShopProductDefinition(Consumable: item))
+            .Concat(WeaponCatalog.Select(item => new ShopProductDefinition(Equipment: item)))
+            .Concat(ArmorCatalog.Select(item => new ShopProductDefinition(Equipment: item)))
+            .OrderBy(item => item.Price)
+            .ThenBy(item => item.Name, StringComparer.Ordinal)
+            .ToArray();
 
     public static readonly EnemyDefinition[] EnemyCatalog =
     [
-        new("horn_slime", "ホーンスライム", FieldMapId.Hub, 1, 2, 6, 18, 5, 1, 8, 12, new EnemyDropDefinition("healing_herb", 24)),
+        new("horn_slime", "ホーンスライム", FieldMapId.Hub, 1, 2, 6, 18, 5, 1, 8, 12, new EnemyDropDefinition("healing_herb", 24)), // Id, Name, Location, LevelRangeMin, LevelRangeMax, Rarity, MaxHp, Attack, Defense, ExpReward, GoldReward, Drop
         new("moss_toad", "モストード", FieldMapId.Hub, 1, 4, 4, 24, 7, 2, 12, 18, new EnemyDropDefinition("healing_herb", 18)),
         new("ember_bat", "エンバーバット", FieldMapId.Hub, 3, 6, 2, 30, 9, 3, 16, 24, new EnemyDropDefinition("mana_seed", 14)),
         new("iron_mite", "アイアンマイト", FieldMapId.Castle, 1, 4, 5, 26, 8, 3, 13, 20, new EnemyDropDefinition("healing_herb", 18)),

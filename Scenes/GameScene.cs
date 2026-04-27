@@ -159,7 +159,7 @@ namespace DragonGlare.Scenes
 
         private void TryMovePlayer(XnaPoint movement)
         {
-            var target = new XnaPoint(_playerTile.X + movement.X, _playerTile.Y + movement.Y);
+            var target = new XnaPoint(_player.TilePosition.X + movement.X, _player.TilePosition.Y + movement.Y);
             if (!_field.IsWalkable(target) || IsBlockedByFieldEvent(target))
             {
                 _notice = "そこへは すすめない。";

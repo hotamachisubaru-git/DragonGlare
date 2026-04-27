@@ -1,5 +1,5 @@
-using Microsoft.Xna.Framework;
 using DragonGlareAlpha.Domain;
+using XnaPoint = Microsoft.Xna.Framework.Point;
 
 namespace DragonGlareAlpha.Data
 {
@@ -9,7 +9,7 @@ namespace DragonGlareAlpha.Data
     public class SaveData
     {
         public FieldMapId MapId { get; set; }
-        public Point PlayerTile { get; set; }
+        public XnaPoint PlayerTile { get; set; }
         public PlayerFacingDirection PlayerFacingDirection { get; set; }
         public int PlayerCurrentHP { get; set; }
         public int PlayerMaxHP { get; set; }

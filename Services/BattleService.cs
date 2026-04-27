@@ -9,6 +9,14 @@ namespace DragonGlareAlpha.Services;
 public sealed class BattleService
 {
     private const int SpellCost = 2;
+    private static readonly EquipmentSlot[] ArmorSlots =
+    [
+        EquipmentSlot.Armor,
+        EquipmentSlot.Head,
+        EquipmentSlot.Arms,
+        EquipmentSlot.Legs,
+        EquipmentSlot.Feet
+    ];
 
     public BattleEncounter CreateEncounter(Random random, FieldMapId encounterMap, int playerLevel)
     {
@@ -39,39 +47,41 @@ public sealed class BattleService
         PlayerProgress player,
         BattleEncounter encounter,
         BattleActionType action,
-        WeaponDefinition? equippedWeapon,
-        ArmorDefinition? equippedArmor,
         ConsumableDefinition? selectedConsumable,
         IEquipmentDefinition? selectedEquipment,
         Random random)
     {
         return action switch
         {
-            BattleActionType.Attack => ResolveAttack(player, encounter, equippedWeapon, equippedArmor, random),
-            BattleActionType.Spell => ResolveSpell(player, encounter, equippedArmor, random),
-            BattleActionType.Defend => ResolveDefend(player, encounter, equippedArmor, random),
-            BattleActionType.Item => ResolveItem(player, encounter, selectedConsumable, equippedWeapon, equippedArmor, random),
-            BattleActionType.Equip => ResolveEquip(player, encounter, selectedEquipment, equippedArmor, random),
+            BattleActionType.Attack => ResolveAttack(player, encounter, random),
+            BattleActionType.Spell => ResolveSpell(player, encounter, random),
+            BattleActionType.Defend => ResolveDefend(player, encounter, random),
+            BattleActionType.Item => ResolveItem(player, encounter, selectedConsumable, random),
+            BattleActionType.Equip => ResolveEquip(player, encounter, selectedEquipment, random),
             BattleActionType.Run => ResolveEscape(),
             _ => Reject("こうどうできない。")
         };
     }
 
-    public int GetPlayerAttack(PlayerProgress player, WeaponDefinition? equippedWeapon)
+    public int GetPlayerAttack(PlayerProgress player, WeaponDefinition? equippedWeapon = null)
     {
-        return player.BaseAttack + player.Level + (equippedWeapon?.AttackBonus ?? 0);
+        var weapon = equippedWeapon ?? GetEquippedWeapon(player);
+        return player.BaseAttack + player.Level + (weapon?.AttackBonus ?? 0);
     }
 
-    public int GetPlayerDefense(PlayerProgress player, ArmorDefinition? equippedArmor)
+    public int GetPlayerDefense(PlayerProgress player, ArmorDefinition? replacementArmor = null)
     {
-        return player.BaseDefense + Math.Max(0, player.Level / 2) + (equippedArmor?.DefenseBonus ?? 0);
+        var defenseBonus = GetEquippedArmors(player)
+            .Where(armor => replacementArmor is null || armor.Slot != replacementArmor.Slot)
+            .Sum(armor => armor.DefenseBonus);
+
+        defenseBonus += replacementArmor?.DefenseBonus ?? 0;
+        return player.BaseDefense + Math.Max(0, player.Level / 2) + defenseBonus;
     }
 
     private BattleTurnResolution ResolveAttack(
         PlayerProgress player,
         BattleEncounter encounter,
-        WeaponDefinition? equippedWeapon,
-        ArmorDefinition? equippedArmor,
         Random random)
     {
         var steps = new List<BattleSequenceStep>
@@ -82,7 +92,7 @@ public sealed class BattleService
             }
         };
 
-        var damage = Math.Max(1, GetPlayerAttack(player, equippedWeapon) + random.Next(2, 6) - encounter.Enemy.Defense);
+        var damage = Math.Max(1, GetPlayerAttack(player) + random.Next(2, 6) - encounter.Enemy.Defense);
         encounter.CurrentHp = Math.Max(0, encounter.CurrentHp - damage);
         steps.Add(new BattleSequenceStep
         {
@@ -107,14 +117,13 @@ public sealed class BattleService
             };
         }
 
-        AppendEnemyCounter(player, encounter, equippedArmor, steps, random);
+        AppendEnemyCounter(player, encounter, steps, random);
         return BuildResolution(player, steps);
     }
 
     private BattleTurnResolution ResolveSpell(
         PlayerProgress player,
         BattleEncounter encounter,
-        ArmorDefinition? equippedArmor,
         Random random)
     {
         if (player.CurrentMp < SpellCost)
@@ -158,14 +167,13 @@ public sealed class BattleService
             };
         }
 
-        AppendEnemyCounter(player, encounter, equippedArmor, steps, random);
+        AppendEnemyCounter(player, encounter, steps, random);
         return BuildResolution(player, steps);
     }
 
     private BattleTurnResolution ResolveDefend(
         PlayerProgress player,
         BattleEncounter encounter,
-        ArmorDefinition? equippedArmor,
         Random random)
     {
         var steps = new List<BattleSequenceStep>
@@ -176,7 +184,7 @@ public sealed class BattleService
             }
         };
 
-        AppendEnemyCounter(player, encounter, equippedArmor, steps, random, isDefending: true);
+        AppendEnemyCounter(player, encounter, steps, random, isDefending: true);
         return BuildResolution(player, steps);
     }
 
@@ -184,8 +192,6 @@ public sealed class BattleService
         PlayerProgress player,
         BattleEncounter encounter,
         ConsumableDefinition? selectedConsumable,
-        WeaponDefinition? equippedWeapon,
-        ArmorDefinition? equippedArmor,
         Random random)
     {
         if (selectedConsumable is null)
@@ -226,7 +232,7 @@ public sealed class BattleService
                     VisualCue = BattleVisualCue.PlayerHeal,
                     AnimationFrames = 12
                 });
-                AppendEnemyCounter(player, encounter, equippedArmor, steps, random);
+                AppendEnemyCounter(player, encounter, steps, random);
                 return BuildResolution(player, steps);
             }
             case ConsumableEffectType.HealMp:
@@ -245,7 +251,7 @@ public sealed class BattleService
                     VisualCue = BattleVisualCue.MpRecover,
                     AnimationFrames = 12
                 });
-                AppendEnemyCounter(player, encounter, equippedArmor, steps, random);
+                AppendEnemyCounter(player, encounter, steps, random);
                 return BuildResolution(player, steps);
             }
             case ConsumableEffectType.DamageEnemy:
@@ -276,7 +282,7 @@ public sealed class BattleService
                     };
                 }
 
-                AppendEnemyCounter(player, encounter, equippedArmor, steps, random);
+                AppendEnemyCounter(player, encounter, steps, random);
                 return BuildResolution(player, steps);
             }
             default:
@@ -288,7 +294,6 @@ public sealed class BattleService
         PlayerProgress player,
         BattleEncounter encounter,
         IEquipmentDefinition? selectedEquipment,
-        ArmorDefinition? equippedArmor,
         Random random)
     {
         if (selectedEquipment is null)
@@ -301,24 +306,12 @@ public sealed class BattleService
             return Reject("その そうびは もっていない。");
         }
 
-        switch (selectedEquipment.Slot)
+        if (string.Equals(player.GetEquippedItemId(selectedEquipment.Slot), selectedEquipment.Id, StringComparison.Ordinal))
         {
-            case EquipmentSlot.Weapon when string.Equals(player.EquippedWeaponId, selectedEquipment.Id, StringComparison.Ordinal):
-            case EquipmentSlot.Armor when string.Equals(player.EquippedArmorId, selectedEquipment.Id, StringComparison.Ordinal):
-                return Reject($"{selectedEquipment.Name}は もう そうびしている。");
+            return Reject($"{selectedEquipment.Name}は もう そうびしている。");
         }
 
-        var nextArmor = equippedArmor;
-        switch (selectedEquipment.Slot)
-        {
-            case EquipmentSlot.Weapon:
-                player.EquippedWeaponId = selectedEquipment.Id;
-                break;
-            case EquipmentSlot.Armor:
-                player.EquippedArmorId = selectedEquipment.Id;
-                nextArmor = selectedEquipment as ArmorDefinition;
-                break;
-        }
+        player.SetEquippedItemId(selectedEquipment.Slot, selectedEquipment.Id);
 
         var steps = new List<BattleSequenceStep>
         {
@@ -328,7 +321,7 @@ public sealed class BattleService
             }
         };
 
-        AppendEnemyCounter(player, encounter, nextArmor, steps, random);
+        AppendEnemyCounter(player, encounter, steps, random);
         return BuildResolution(player, steps);
     }
 
@@ -352,7 +345,6 @@ public sealed class BattleService
     private void AppendEnemyCounter(
         PlayerProgress player,
         BattleEncounter encounter,
-        ArmorDefinition? equippedArmor,
         List<BattleSequenceStep> steps,
         Random random,
         bool isDefending = false)
@@ -362,7 +354,7 @@ public sealed class BattleService
             Message = $"{encounter.Enemy.Name}の こうげき！"
         });
 
-        var enemyDamage = Math.Max(1, encounter.Enemy.Attack + random.Next(1, 5) - GetPlayerDefense(player, equippedArmor));
+        var enemyDamage = Math.Max(1, encounter.Enemy.Attack + random.Next(1, 5) - GetPlayerDefense(player));
         if (isDefending)
         {
             enemyDamage = Math.Max(1, (int)Math.Ceiling(enemyDamage / 2f));
@@ -415,6 +407,23 @@ public sealed class BattleService
     private static string GetPlayerName(PlayerProgress player)
     {
         return string.IsNullOrWhiteSpace(player.Name) ? "ぼうけんしゃ" : player.Name;
+    }
+
+    private static WeaponDefinition? GetEquippedWeapon(PlayerProgress player)
+    {
+        return GameContent.GetWeaponById(player.EquippedWeaponId);
+    }
+
+    private static IEnumerable<ArmorDefinition> GetEquippedArmors(PlayerProgress player)
+    {
+        foreach (var slot in ArmorSlots)
+        {
+            var armor = GameContent.GetArmorById(player.GetEquippedItemId(slot));
+            if (armor is not null)
+            {
+                yield return armor;
+            }
+        }
     }
 
     private static EnemyDefinition SelectEnemyFromPool(Random random, IReadOnlyList<EnemyDefinition> pool)

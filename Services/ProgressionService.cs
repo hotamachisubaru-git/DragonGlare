@@ -215,14 +215,9 @@ public sealed class ProgressionService
 
     private static IEnumerable<string> GetSeizableEquipmentIds(PlayerProgress player)
     {
-        if (!string.IsNullOrWhiteSpace(player.EquippedWeaponId))
+        foreach (var itemId in player.GetEquippedItemIds())
         {
-            yield return player.EquippedWeaponId;
-        }
-
-        if (!string.IsNullOrWhiteSpace(player.EquippedArmorId))
-        {
-            yield return player.EquippedArmorId;
+            yield return itemId;
         }
     }
 }

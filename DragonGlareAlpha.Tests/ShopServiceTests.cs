@@ -16,9 +16,7 @@ public sealed class ShopServiceTests
         player.AddItem("stick");
 
         var weapon = GameContent.ShopCatalog.Single(item => item.Id == "bronze_sword");
-        var currentWeapon = GameContent.GetWeaponById(player.EquippedWeaponId);
-
-        var result = service.PurchaseProduct(player, weapon, currentWeapon, null);
+        var result = service.PurchaseProduct(player, weapon);
 
         Assert.True(result.Success);
         Assert.True(result.Equipped);
@@ -37,9 +35,7 @@ public sealed class ShopServiceTests
         player.AddItem("cloth_tunic");
 
         var armor = GameContent.ShopCatalog.Single(item => item.Id == "leather_armor");
-        var currentArmor = GameContent.GetArmorById(player.EquippedArmorId);
-
-        var result = service.PurchaseProduct(player, armor, null, currentArmor);
+        var result = service.PurchaseProduct(player, armor);
 
         Assert.True(result.Success);
         Assert.True(result.Equipped);
@@ -57,7 +53,7 @@ public sealed class ShopServiceTests
         player.AddItem("healing_herb", 2);
         var herb = GameContent.ShopCatalog.Single(item => item.Id == "healing_herb");
 
-        var result = service.PurchaseProduct(player, herb, null, null);
+        var result = service.PurchaseProduct(player, herb);
 
         Assert.True(result.Success);
         Assert.False(result.Equipped);
@@ -78,6 +74,26 @@ public sealed class ShopServiceTests
         Assert.True(result.Success);
         Assert.Equal(1, player.GetItemCount("healing_herb"));
         Assert.Equal(15, player.Gold);
+    }
+
+    [Fact]
+    public void PurchaseEquipment_AutoEquipsStrongerHeadGearAndTracksInventory()
+    {
+        var service = new ShopService();
+        var player = PlayerProgress.CreateDefault(new Point(0, 0));
+        player.Gold = 150;
+        player.EquippedHeadId = "leather_cap";
+        player.AddItem("leather_cap");
+
+        var helm = GameContent.ShopCatalog.Single(item => item.Id == "bronze_helm");
+
+        var result = service.PurchaseProduct(player, helm);
+
+        Assert.True(result.Success);
+        Assert.True(result.Equipped);
+        Assert.Equal("bronze_helm", player.EquippedHeadId);
+        Assert.Equal(1, player.GetItemCount("bronze_helm"));
+        Assert.Equal(38, player.Gold);
     }
 
     [Fact]

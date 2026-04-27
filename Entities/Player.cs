@@ -12,6 +12,8 @@ namespace DragonGlare.Entities
 
         public int MaxHP { get; set; } = 100;
 
+        public Microsoft.Xna.Framework.Point TilePosition { get; set; }
+
         public Player(Vector2 startPos)
         {
             Position = startPos;

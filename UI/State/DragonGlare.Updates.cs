@@ -478,7 +478,7 @@ public partial class DragonGlareAlpha
                 return;
         }
 
-        var result = battleService.ResolveTurn(player, currentEncounter, action, GetEquippedWeapon(), GetEquippedArmor(), null, null, random);
+        var result = battleService.ResolveTurn(player, currentEncounter, action, null, null, random);
         ApplyBattleResolution(result);
     }
 
@@ -541,8 +541,6 @@ public partial class DragonGlareAlpha
             player,
             currentEncounter,
             action,
-            GetEquippedWeapon(),
-            GetEquippedArmor(),
             selectedEntry.Consumable,
             selectedEntry.Equipment,
             random);
@@ -782,7 +780,7 @@ public partial class DragonGlareAlpha
             return;
         }
 
-        var purchaseResult = shopService.PurchaseProduct(player, selectedEntry.Product, GetEquippedWeapon(), GetEquippedArmor());
+        var purchaseResult = shopService.PurchaseProduct(player, selectedEntry.Product);
         shopMessage = purchaseResult.Message;
         if (purchaseResult.Success)
         {

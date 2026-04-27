@@ -10,6 +10,15 @@ namespace DragonGlareAlpha;
 
 public partial class DragonGlareAlpha
 {
+    private static readonly EquipmentSlot[] ArmorSlots =
+    [
+        EquipmentSlot.Armor,
+        EquipmentSlot.Head,
+        EquipmentSlot.Arms,
+        EquipmentSlot.Legs,
+        EquipmentSlot.Feet
+    ];
+
     private IEnumerable<FieldEventDefinition> GetFieldEvents(FieldMapId mapId)
     {
         return GameContent.FieldEvents.Where(fieldEvent => fieldEvent.MapId == mapId);
@@ -311,7 +320,12 @@ public partial class DragonGlareAlpha
 
     private ArmorDefinition? GetEquippedArmor()
     {
-        return GameContent.GetArmorById(player.EquippedArmorId);
+        return GetEquippedArmor(EquipmentSlot.Armor);
+    }
+
+    private ArmorDefinition? GetEquippedArmor(EquipmentSlot slot)
+    {
+        return GameContent.GetArmorById(player.GetEquippedItemId(slot));
     }
 
     private string GetDisplayPlayerName()
@@ -332,6 +346,49 @@ public partial class DragonGlareAlpha
     private string GetEquippedArmorName()
     {
         return GetEquippedArmor()?.Name ?? "なし";
+    }
+
+    private string GetCurrentEquipmentNameForSlot(EquipmentSlot slot)
+    {
+        return slot switch
+        {
+            EquipmentSlot.Weapon => GetEquippedWeaponName(),
+            _ => GetEquippedArmor(slot)?.Name ?? "なし"
+        };
+    }
+
+    private string GetEquipmentSlotLabel(EquipmentSlot slot)
+    {
+        if (selectedLanguage == UiLanguage.English)
+        {
+            return slot switch
+            {
+                EquipmentSlot.Weapon => "WEAPON",
+                EquipmentSlot.Armor => "BODY",
+                EquipmentSlot.Head => "HEAD",
+                EquipmentSlot.Arms => "ARMS",
+                EquipmentSlot.Legs => "LEGS",
+                EquipmentSlot.Feet => "BOOTS",
+                _ => "GEAR"
+            };
+        }
+
+        return slot switch
+        {
+            EquipmentSlot.Weapon => "ぶき",
+            EquipmentSlot.Armor => "よろい",
+            EquipmentSlot.Head => "あたま",
+            EquipmentSlot.Arms => "こて",
+            EquipmentSlot.Legs => "レギンス",
+            EquipmentSlot.Feet => "ブーツ",
+            _ => "そうび"
+        };
+    }
+
+    private string GetEquippedArmorSummary()
+    {
+        var equippedCount = ArmorSlots.Count(slot => !string.IsNullOrWhiteSpace(player.GetEquippedItemId(slot)));
+        return $"{equippedCount}/{ArmorSlots.Length}";
     }
 
     private IReadOnlyList<ShopInventoryEntry> GetSellableInventoryEntries()
@@ -390,7 +447,7 @@ public partial class DragonGlareAlpha
                 armor.AttackBonus,
                 armor.DefenseBonus,
                 count,
-                $"DEF+{armor.DefenseBonus}");
+                $"{GetEquipmentSlotLabel(armor.Slot)} DEF+{armor.DefenseBonus}");
         }
 
         return null;
@@ -505,12 +562,12 @@ public partial class DragonGlareAlpha
 
     private int GetTotalAttack()
     {
-        return battleService.GetPlayerAttack(player, GetEquippedWeapon());
+        return battleService.GetPlayerAttack(player);
     }
 
     private int GetTotalDefense()
     {
-        return battleService.GetPlayerDefense(player, GetEquippedArmor());
+        return battleService.GetPlayerDefense(player);
     }
 
     private string GetExperienceSummary()
@@ -662,7 +719,9 @@ public partial class DragonGlareAlpha
 
         var armorEntries = GameContent.ArmorCatalog
             .Where(item => player.GetItemCount(item.Id) > 0 &&
-                !string.Equals(player.EquippedArmorId, item.Id, StringComparison.Ordinal))
+                !string.Equals(player.GetEquippedItemId(item.Slot), item.Id, StringComparison.Ordinal))
+            .OrderBy(item => item.Slot)
+            .ThenBy(item => item.Price)
             .Select(item => new BattleSelectionEntry(
                 item.Name,
                 GetBattleEquipmentDetail(item),
@@ -706,12 +765,9 @@ public partial class DragonGlareAlpha
 
     private string GetBattleEquipmentDetail(IEquipmentDefinition equipment)
     {
-        return equipment.Slot switch
-        {
-            EquipmentSlot.Weapon => $"ATK {equipment.AttackBonus}{FormatSignedStat(equipment.AttackBonus - (GetEquippedWeapon()?.AttackBonus ?? 0))}",
-            EquipmentSlot.Armor => $"DEF {equipment.DefenseBonus}{FormatSignedStat(equipment.DefenseBonus - (GetEquippedArmor()?.DefenseBonus ?? 0))}",
-            _ => equipment.Name
-        };
+        return equipment.Slot == EquipmentSlot.Weapon
+            ? $"ATK {equipment.AttackBonus}{FormatSignedStat(equipment.AttackBonus - (GetEquippedWeapon()?.AttackBonus ?? 0))}"
+            : $"{GetEquipmentSlotLabel(equipment.Slot)} DEF {equipment.DefenseBonus}{FormatSignedStat(equipment.DefenseBonus - (GetEquippedArmor(equipment.Slot)?.DefenseBonus ?? 0))}";
     }
 
     private static string FormatSignedStat(int value)

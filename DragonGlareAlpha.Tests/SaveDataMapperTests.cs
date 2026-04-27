@@ -30,6 +30,8 @@ public sealed class SaveDataMapperTests
             LoanStepCounter = 5,
             EquippedWeaponId = "bronze_sword",
             EquippedArmorId = "leather_armor",
+            EquippedHeadId = "leather_cap",
+            EquippedFeetId = "travel_boots",
             Inventory =
             [
                 new InventoryEntry { ItemId = "bronze_sword", Quantity = 1 },
@@ -46,6 +48,8 @@ public sealed class SaveDataMapperTests
         Assert.Equal(7, restored.Player.Level);
         Assert.Equal("bronze_sword", restored.Player.EquippedWeaponId);
         Assert.Equal("leather_armor", restored.Player.EquippedArmorId);
+        Assert.Equal("leather_cap", restored.Player.EquippedHeadId);
+        Assert.Equal("travel_boots", restored.Player.EquippedFeetId);
         Assert.Equal(321, restored.Player.BankGold);
         Assert.Equal(120, restored.Player.LoanBalance);
         Assert.Equal(5, restored.Player.LoanStepCounter);
@@ -70,9 +74,13 @@ public sealed class SaveDataMapperTests
         player.LoanBalance = 222;
         player.LoanStepCounter = 9;
         player.EquippedWeaponId = "club";
+        player.EquippedHeadId = "leather_cap";
+        player.EquippedFeetId = "travel_boots";
         player.Inventory =
         [
-            new InventoryEntry { ItemId = "club", Quantity = 1 }
+            new InventoryEntry { ItemId = "club", Quantity = 1 },
+            new InventoryEntry { ItemId = "leather_cap", Quantity = 1 },
+            new InventoryEntry { ItemId = "travel_boots", Quantity = 1 }
         ];
 
         var saveData = SaveDataMapper.Create(player, UiLanguage.Japanese, FieldMapId.Castle, 2);
@@ -84,9 +92,11 @@ public sealed class SaveDataMapperTests
         Assert.Equal(4, saveData.PlayerX);
         Assert.Equal(5, saveData.PlayerY);
         Assert.Equal("club", saveData.EquippedWeaponId);
+        Assert.Equal("leather_cap", saveData.EquippedHeadId);
+        Assert.Equal("travel_boots", saveData.EquippedFeetId);
         Assert.Equal(777, saveData.BankGold);
         Assert.Equal(222, saveData.LoanBalance);
         Assert.Equal(9, saveData.LoanStepCounter);
-        Assert.Single(saveData.Inventory);
+        Assert.Equal(3, saveData.Inventory.Count);
     }
 }

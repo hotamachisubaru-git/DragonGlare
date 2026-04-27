@@ -7,11 +7,7 @@ namespace DragonGlareAlpha.Services;
 
 public sealed class ShopService
 {
-    public ShopTransactionResult PurchaseProduct(
-        PlayerProgress player,
-        ShopProductDefinition product,
-        WeaponDefinition? currentWeapon,
-        ArmorDefinition? currentArmor)
+    public ShopTransactionResult PurchaseProduct(PlayerProgress player, ShopProductDefinition product)
     {
         if (string.IsNullOrWhiteSpace(product.Id) || (product.Equipment is null && product.Consumable is null))
         {
@@ -40,6 +36,7 @@ public sealed class ShopService
         switch (equipment.Slot)
         {
             case EquipmentSlot.Weapon:
+                var currentWeapon = GameContent.GetWeaponById(player.EquippedWeaponId);
                 shouldEquip = currentWeapon is null || equipment.AttackBonus > currentWeapon.AttackBonus;
                 if (shouldEquip)
                 {
@@ -47,11 +44,12 @@ public sealed class ShopService
                 }
 
                 break;
-            case EquipmentSlot.Armor:
+            default:
+                var currentArmor = GameContent.GetArmorById(player.GetEquippedItemId(equipment.Slot));
                 shouldEquip = currentArmor is null || equipment.DefenseBonus > currentArmor.DefenseBonus;
                 if (shouldEquip)
                 {
-                    player.EquippedArmorId = equipment.Id;
+                    player.SetEquippedItemId(equipment.Slot, equipment.Id);
                 }
 
                 break;

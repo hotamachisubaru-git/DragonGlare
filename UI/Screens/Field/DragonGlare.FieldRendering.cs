@@ -28,7 +28,7 @@ public partial class DragonGlareAlpha
             DrawText(g, $"ATK {GetTotalAttack()}  DEF {GetTotalDefense()}", new Rectangle(458, 146, 160, 24), smallFont);
             DrawText(g, $"EXP {GetExperienceSummary()}", new Rectangle(458, 176, 160, 24), smallFont);
             DrawText(g, $"ぶき {GetEquippedWeaponName()}", new Rectangle(458, 206, 160, 24), smallFont);
-            DrawText(g, $"ぼうぐ {GetEquippedArmorName()}", new Rectangle(458, 234, 160, 24), smallFont);
+            DrawText(g, $"そうび {GetEquippedArmorSummary()}", new Rectangle(458, 234, 160, 24), smallFont);
         }
 
         if (isFieldDialogOpen)
