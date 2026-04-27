@@ -27,7 +27,6 @@ namespace DragonGlareAlpha;
 
 public partial class DragonGlareAlpha : Game
 {
-    private const string AppUserModelId = "DragonGlare.Alpha";
     private const int TileSize = 32;
     private const int ShopItemsPerPage = 6;
     private const int CompactFieldViewportWidthTiles = 13;
@@ -62,6 +61,7 @@ public partial class DragonGlareAlpha : Game
     private static readonly int LanguageOpeningTotalFrames = LanguageOpeningScript.Sum(line => line.DisplayFrames + line.GapFrames);
 
     private readonly GraphicsDeviceManager graphics;
+    private readonly WindowChromeService windowChrome;
     private SpriteBatch? spriteBatch;
     private Bitmap? frameBitmap;
     private Texture2D? frameTexture;
@@ -158,67 +158,16 @@ public partial class DragonGlareAlpha : Game
     private LaunchDisplayMode activeDisplayMode;
     private LaunchDisplayMode lastWindowedDisplayMode = LaunchDisplayMode.Window640x480;
     private int windowChromeRefreshFramesRemaining = 180;
-    private bool windowIconApplied;
-    private bool appUserModelIdApplied;
-
-    private enum ShopMenuEntryType
-    {
-        Product,
-        InventoryItem,
-        PreviousPage,
-        NextPage,
-        Quit
-    }
-
-    private enum PlayerFacingDirection
-    {
-        Left,
-        Right,
-        Up,
-        Down
-    }
-
-    private readonly record struct BattleSelectionEntry(
-        string Label,
-        string Detail,
-        string Badge,
-        ConsumableDefinition? Consumable = null,
-        IEquipmentDefinition? Equipment = null);
-
-    private readonly record struct ShopInventoryEntry(
-        string ItemId,
-        string Name,
-        int Price,
-        int AttackBonus,
-        int DefenseBonus,
-        int Count,
-        string Detail);
-
-    private readonly record struct ShopMenuEntry(
-        ShopMenuEntryType Type,
-        string Label,
-        ShopProductDefinition? Product = null,
-        ShopInventoryEntry? InventoryItem = null);
-
-    private readonly record struct BankAmountOption(
-        string Label,
-        int Amount,
-        bool UseMaximum = false,
-        bool Quit = false);
-
-    private readonly record struct OpeningNarrationLine(
-        string Text,
-        int DisplayFrames,
-        int GapFrames);
 
     private string LegacySaveFilePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DragonGlareAlpha", "save1.sav");
 
     public DragonGlareAlpha(LaunchSettings? launchSettings = null)
     {
         graphics = new GraphicsDeviceManager(this);
+        windowChrome = new WindowChromeService(Window, WindowTitle);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
-        ApplyWindowChrome(forceIcon: true);
+        windowChrome.Apply(forceIcon: true);
 
         this.launchSettings = launchSettings ?? new LaunchSettings();
         activeDisplayMode = this.launchSettings.DisplayMode;
@@ -228,7 +177,7 @@ public partial class DragonGlareAlpha : Game
         }
 
         ApplyDisplayMode();
-        ApplyWindowChrome(forceIcon: true);
+        windowChrome.Apply(forceIcon: true);
         LoadCustomFont();
         InitializeAudio();
         LoadFieldSprites();
@@ -239,7 +188,7 @@ public partial class DragonGlareAlpha : Game
     protected override void Initialize()
     {
         base.Initialize();
-        ApplyWindowChrome(forceIcon: true);
+        windowChrome.Apply(forceIcon: true);
     }
 
     protected override void LoadContent()
@@ -256,7 +205,7 @@ public partial class DragonGlareAlpha : Game
     {
         if (windowChromeRefreshFramesRemaining > 0)
         {
-            ApplyWindowChrome(forceIcon: !windowIconApplied);
+            windowChrome.Apply(forceIcon: !windowChrome.IsIconApplied);
             windowChromeRefreshFramesRemaining--;
         }
 
@@ -452,8 +401,8 @@ public partial class DragonGlareAlpha : Game
         }
 
         graphics.ApplyChanges();
-        windowIconApplied = false;
-        ApplyWindowChrome(forceIcon: true);
+        windowChrome.InvalidateIcon();
+        windowChrome.Apply(forceIcon: true);
     }
 
     public static string WindowTitle => GetWindowTitle();
@@ -479,138 +428,6 @@ public partial class DragonGlareAlpha : Game
             ? "DragonGlare Alpha"
             : $"DragonGlare Alpha {version}";
     }
-
-    private void ApplyWindowChrome(bool forceIcon = false)
-    {
-        Window.Title = WindowTitle;
-        ApplyAppUserModelId();
-
-        if (forceIcon || !windowIconApplied)
-        {
-            ApplyWindowIcon();
-        }
-    }
-
-    private void ApplyAppUserModelId()
-    {
-        if (appUserModelIdApplied || !OperatingSystem.IsWindows())
-        {
-            return;
-        }
-
-        if (SetCurrentProcessExplicitAppUserModelID(AppUserModelId) == 0)
-        {
-            appUserModelIdApplied = true;
-        }
-    }
-
-    private void ApplyWindowIcon()
-    {
-        if (!OperatingSystem.IsWindows() || Window.Handle == IntPtr.Zero)
-        {
-            return;
-        }
-
-        var iconPath = ResolveWindowIconPath();
-        if (iconPath is null)
-        {
-            return;
-        }
-
-        try
-        {
-            using var icon = new Icon(iconPath);
-            using var bitmap = icon.ToBitmap();
-            using var argbBitmap = new Bitmap(bitmap.Width, bitmap.Height, PixelFormat.Format32bppArgb);
-            using (var graphics = Graphics.FromImage(argbBitmap))
-            {
-                graphics.DrawImage(bitmap, 0, 0, bitmap.Width, bitmap.Height);
-            }
-
-            var rect = new System.Drawing.Rectangle(0, 0, argbBitmap.Width, argbBitmap.Height);
-            var data = argbBitmap.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-            try
-            {
-                var surface = SdlCreateRgbSurfaceFrom(
-                    data.Scan0,
-                    argbBitmap.Width,
-                    argbBitmap.Height,
-                    32,
-                    data.Stride,
-                    0x00ff0000,
-                    0x0000ff00,
-                    0x000000ff,
-                    0xff000000);
-
-                if (surface == IntPtr.Zero)
-                {
-                    return;
-                }
-
-                try
-                {
-                    SdlSetWindowIcon(Window.Handle, surface);
-                    windowIconApplied = true;
-                }
-                finally
-                {
-                    SdlFreeSurface(surface);
-                }
-            }
-            finally
-            {
-                argbBitmap.UnlockBits(data);
-            }
-        }
-        catch
-        {
-        }
-    }
-
-    private static string? ResolveWindowIconPath()
-    {
-        var candidates = new[]
-        {
-            Path.Combine(AppContext.BaseDirectory, "Dragon_glare.ico"),
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Dragon_glare.ico"),
-            Path.Combine(Directory.GetCurrentDirectory(), "Dragon_glare.ico"),
-            Path.Combine(AppContext.BaseDirectory, "Resources", "App", "dragon_glare.ico"),
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Resources", "App", "dragon_glare.ico"),
-            Path.Combine(Directory.GetCurrentDirectory(), "Resources", "App", "dragon_glare.ico")
-        };
-
-        foreach (var candidate in candidates)
-        {
-            var normalized = Path.GetFullPath(candidate);
-            if (File.Exists(normalized))
-            {
-                return normalized;
-            }
-        }
-
-        return null;
-    }
-
-    [DllImport("SDL2.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "SDL_CreateRGBSurfaceFrom")]
-    private static extern IntPtr SdlCreateRgbSurfaceFrom(
-        IntPtr pixels,
-        int width,
-        int height,
-        int depth,
-        int pitch,
-        uint rmask,
-        uint gmask,
-        uint bmask,
-        uint amask);
-
-    [DllImport("SDL2.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "SDL_SetWindowIcon")]
-    private static extern void SdlSetWindowIcon(IntPtr window, IntPtr icon);
-
-    [DllImport("SDL2.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "SDL_FreeSurface")]
-    private static extern void SdlFreeSurface(IntPtr surface);
-
-    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
-    private static extern int SetCurrentProcessExplicitAppUserModelID(string appId);
 
     private void ToggleFullscreen()
     {
