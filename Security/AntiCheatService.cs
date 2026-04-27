@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace DragonGlareAlpha.Security;
 
@@ -34,22 +35,51 @@ public sealed partial class AntiCheatService
         return new AntiCheatService().TryDetectViolation(out message);
     }
 
+    private static bool _isViolationDetected;
+    private static string _detectedMessage = string.Empty;
+    private static bool _isScanning;
+
     public bool TryDetectViolation(out string message)
     {
+        if (_isViolationDetected)
+        {
+            message = _detectedMessage;
+            return true;
+        }
+
         if (Debugger.IsAttached || IsDebuggerPresent() || IsRemoteDebuggerAttached())
         {
             message = "デバッガを検知したため起動を停止しました。";
             return true;
         }
 
-        if (TryFindSuspiciousProcess(out var processLabel))
-        {
-            message = $"不正ツールを検知したため終了します。\n検知対象: {processLabel}";
-            return true;
-        }
+        // 重いプロセス走査は非同期で裏側で回す
+        TriggerAsyncProcessScan();
 
         message = string.Empty;
         return false;
+    }
+
+    private void TriggerAsyncProcessScan()
+    {
+        if (_isScanning) return;
+
+        Task.Run(() =>
+        {
+            _isScanning = true;
+            try
+            {
+                if (TryFindSuspiciousProcess(out var processLabel))
+                {
+                    _detectedMessage = $"不正ツールを検知したため終了します。\n検知対象: {processLabel}";
+                    _isViolationDetected = true;
+                }
+            }
+            finally
+            {
+                _isScanning = false;
+            }
+        });
     }
 
     private static bool TryFindSuspiciousProcess(out string processLabel)
