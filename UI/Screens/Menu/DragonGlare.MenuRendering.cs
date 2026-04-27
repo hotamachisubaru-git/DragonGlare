@@ -172,16 +172,12 @@ public partial class DragonGlareAlpha
         DrawWindow(g, titleRect);
         DrawText(
             g,
-            saveSlotSelectionMode == SaveSlotSelectionMode.Save
-                ? "ぼうけんのしょを えらんでください"
-                : "よみこむ ぼうけんのしょを えらんでください",
+            GetSaveSlotSelectionTitleJapanese(),
             new Rectangle(126, 40, 388, 22),
             smallFont);
         DrawText(
             g,
-            saveSlotSelectionMode == SaveSlotSelectionMode.Save
-                ? "CHOOSE A SAVE SLOT"
-                : "CHOOSE A FILE TO LOAD",
+            GetSaveSlotSelectionTitleEnglish(),
             new Rectangle(126, 62, 388, 18),
             smallFont);
 
@@ -202,6 +198,11 @@ public partial class DragonGlareAlpha
             }
 
             DrawText(g, $"ぼうけんのしょ {slotNumber}", slotRect.X + 38, slotRect.Y + 10, smallFont);
+            var operationBadge = GetSaveSlotOperationBadge(slotNumber);
+            if (!string.IsNullOrWhiteSpace(operationBadge))
+            {
+                DrawText(g, operationBadge, new Rectangle(slotRect.Right - 134, slotRect.Y + 10, 96, 16), smallFont, StringAlignment.Far);
+            }
 
             switch (summary.State)
             {
@@ -226,9 +227,7 @@ public partial class DragonGlareAlpha
         DrawWindow(g, helpRect);
         DrawText(
             g,
-            saveSlotSelectionMode == SaveSlotSelectionMode.Save
-                ? "ENTER: きろく  ESC: なまえにもどる"
-                : "ENTER: よみこむ  ESC: モードにもどる",
+            GetSaveSlotSelectionHelpText(),
             new Rectangle(136, 420, 368, 18),
             smallFont);
 
@@ -273,6 +272,63 @@ public partial class DragonGlareAlpha
             1 => "前回のつづきから\nはじめる。",
             2 => "データを別の枠へ\nうつす。",
             3 => "いらないデータを\nけす。",
+            _ => string.Empty
+        };
+    }
+
+    private string GetSaveSlotSelectionTitleJapanese()
+    {
+        return saveSlotSelectionMode switch
+        {
+            SaveSlotSelectionMode.Save => "ぼうけんのしょを えらんでください",
+            SaveSlotSelectionMode.Load => "よみこむ ぼうけんのしょを えらんでください",
+            SaveSlotSelectionMode.CopySource => "うつす ぼうけんのしょを えらんでください",
+            SaveSlotSelectionMode.CopyDestination => "うつしさきを えらんでください",
+            SaveSlotSelectionMode.DeleteSelect => "けす ぼうけんのしょを えらんでください",
+            SaveSlotSelectionMode.DeleteConfirm => "ほんとうに けしますか？",
+            _ => string.Empty
+        };
+    }
+
+    private string GetSaveSlotSelectionTitleEnglish()
+    {
+        return saveSlotSelectionMode switch
+        {
+            SaveSlotSelectionMode.Save => "CHOOSE A SAVE SLOT",
+            SaveSlotSelectionMode.Load => "CHOOSE A FILE TO LOAD",
+            SaveSlotSelectionMode.CopySource => "CHOOSE A FILE TO COPY",
+            SaveSlotSelectionMode.CopyDestination => "CHOOSE A DESTINATION",
+            SaveSlotSelectionMode.DeleteSelect => "CHOOSE A FILE TO DELETE",
+            SaveSlotSelectionMode.DeleteConfirm => "CONFIRM DELETE",
+            _ => string.Empty
+        };
+    }
+
+    private string GetSaveSlotSelectionHelpText()
+    {
+        return saveSlotSelectionMode switch
+        {
+            SaveSlotSelectionMode.Save => "ENTER: きろく  ESC: なまえにもどる",
+            SaveSlotSelectionMode.Load => "ENTER: よみこむ  ESC: モードにもどる",
+            SaveSlotSelectionMode.CopySource => "ENTER: うつすもと  ESC: モードにもどる",
+            SaveSlotSelectionMode.CopyDestination => "ENTER: うつす  ESC: もどる",
+            SaveSlotSelectionMode.DeleteSelect => "ENTER: けすデータ  ESC: モードにもどる",
+            SaveSlotSelectionMode.DeleteConfirm => "ENTER: けす  ESC: やめる",
+            _ => string.Empty
+        };
+    }
+
+    private string GetSaveSlotOperationBadge(int slotNumber)
+    {
+        if (slotNumber != dataOperationSourceSlot)
+        {
+            return string.Empty;
+        }
+
+        return saveSlotSelectionMode switch
+        {
+            SaveSlotSelectionMode.CopyDestination => "うつすもと",
+            SaveSlotSelectionMode.DeleteConfirm => "けすデータ",
             _ => string.Empty
         };
     }

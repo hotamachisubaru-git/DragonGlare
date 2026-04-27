@@ -16,7 +16,11 @@ public enum GameState
 public enum SaveSlotSelectionMode
 {
     Save,
-    Load
+    Load,
+    CopySource,
+    CopyDestination,
+    DeleteSelect,
+    DeleteConfirm
 }
 
 public enum ShopPhase

@@ -73,11 +73,20 @@ public partial class DragonGlareAlpha
     private void OpenSaveSlotSelection(SaveSlotSelectionMode mode)
     {
         saveSlotSelectionMode = mode;
+        dataOperationSourceSlot = 0;
         RefreshSaveSlotSummaries();
         saveSlotCursor = Math.Clamp(activeSaveSlot - 1, 0, SaveService.SlotCount - 1);
         if (mode == SaveSlotSelectionMode.Save && activeSaveSlot == 0)
         {
             saveSlotCursor = 0;
+        }
+        else if (mode == SaveSlotSelectionMode.CopySource)
+        {
+            saveSlotCursor = GetFirstOccupiedSaveSlotIndex();
+        }
+        else if (mode == SaveSlotSelectionMode.DeleteSelect)
+        {
+            saveSlotCursor = GetFirstDeletableSaveSlotIndex();
         }
 
         menuNotice = string.Empty;
@@ -88,6 +97,32 @@ public partial class DragonGlareAlpha
     private void RefreshSaveSlotSummaries()
     {
         saveSlotSummaries = saveService.GetSlotSummaries();
+    }
+
+    private int GetFirstOccupiedSaveSlotIndex()
+    {
+        for (var index = 0; index < saveSlotSummaries.Count; index++)
+        {
+            if (saveSlotSummaries[index].State == SaveSlotState.Occupied)
+            {
+                return index;
+            }
+        }
+
+        return 0;
+    }
+
+    private int GetFirstDeletableSaveSlotIndex()
+    {
+        for (var index = 0; index < saveSlotSummaries.Count; index++)
+        {
+            if (saveSlotSummaries[index].State != SaveSlotState.Empty)
+            {
+                return index;
+            }
+        }
+
+        return 0;
     }
 
     private void ShowTransientNotice(string message, int frames = 180)

@@ -163,4 +163,81 @@ public sealed class SaveServiceTests
             }
         }
     }
+
+    [Fact]
+    public void CopySlot_ReencryptsDataForDestinationAndKeepsSource()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        var service = new SaveService(tempDirectory);
+
+        try
+        {
+            service.SaveSlot(1, new SaveData
+            {
+                Language = "ja",
+                Name = "コピー元",
+                CurrentFieldMap = FieldMapId.Field,
+                Level = 5,
+                Gold = 999
+            });
+
+            var copied = service.CopySlot(1, 2);
+            var sourceLoaded = service.TryLoadSlot(1, out var source);
+            var destinationLoaded = service.TryLoadSlot(2, out var destination);
+
+            Assert.True(copied);
+            Assert.True(sourceLoaded);
+            Assert.True(destinationLoaded);
+            Assert.NotNull(source);
+            Assert.NotNull(destination);
+            Assert.Equal(1, source!.SlotNumber);
+            Assert.Equal(2, destination!.SlotNumber);
+            Assert.Equal("コピー元", destination.Name);
+            Assert.Equal(FieldMapId.Field, destination.CurrentFieldMap);
+            Assert.Equal(5, destination.Level);
+            Assert.Equal(999, destination.Gold);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory))
+            {
+                Directory.Delete(tempDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void DeleteSlot_RemovesExistingDataAndReportsMissingSlot()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        var service = new SaveService(tempDirectory);
+
+        try
+        {
+            service.SaveSlot(1, new SaveData
+            {
+                Language = "ja",
+                Name = "けすデータ",
+                Level = 2
+            });
+
+            var deleted = service.DeleteSlot(1);
+            var deletedAgain = service.DeleteSlot(1);
+            var loaded = service.TryLoadSlot(1, out var saveData);
+
+            Assert.True(deleted);
+            Assert.False(deletedAgain);
+            Assert.False(loaded);
+            Assert.Null(saveData);
+            Assert.Equal(SaveLoadFailureReason.NotFound, service.LastFailureReason);
+            Assert.False(File.Exists(service.GetSlotPath(1)));
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory))
+            {
+                Directory.Delete(tempDirectory, recursive: true);
+            }
+        }
+    }
 }

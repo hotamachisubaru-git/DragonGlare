@@ -101,6 +101,45 @@ public sealed class SaveService
         File.Move(tempPath, path, overwrite: true);
     }
 
+    public bool CopySlot(int sourceSlotNumber, int destinationSlotNumber)
+    {
+        ValidateSlotNumber(sourceSlotNumber);
+        ValidateSlotNumber(destinationSlotNumber);
+        if (sourceSlotNumber == destinationSlotNumber)
+        {
+            throw new ArgumentException("sourceSlotNumber and destinationSlotNumber must be different.");
+        }
+
+        if (!TryLoadSlot(sourceSlotNumber, out var saveData) || saveData is null)
+        {
+            return false;
+        }
+
+        SaveSlot(destinationSlotNumber, saveData);
+        return true;
+    }
+
+    public bool DeleteSlot(int slotNumber)
+    {
+        ValidateSlotNumber(slotNumber);
+
+        var path = GetSlotPath(slotNumber);
+        var deleted = false;
+        if (File.Exists(path))
+        {
+            File.Delete(path);
+            deleted = true;
+        }
+
+        var tempPath = $"{path}.tmp";
+        if (File.Exists(tempPath))
+        {
+            File.Delete(tempPath);
+        }
+
+        return deleted;
+    }
+
     public bool TryMigrateLegacySave(string legacyPath, int slotNumber = 1)
     {
         ValidateSlotNumber(slotNumber);

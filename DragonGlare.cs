@@ -128,6 +128,7 @@ public partial class DragonGlareAlpha : Game
     private int bankItemCursor;
     private BankPhase bankPhase = BankPhase.Welcome;
     private SaveSlotSelectionMode saveSlotSelectionMode = SaveSlotSelectionMode.Save;
+    private int dataOperationSourceSlot;
     private string battleMessage = DefaultBattleMessage;
     private string[] battleMessageLines = [];
     private int battleMessageVisibleLines;
