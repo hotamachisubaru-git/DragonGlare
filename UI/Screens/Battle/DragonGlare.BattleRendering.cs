@@ -5,6 +5,11 @@ namespace DragonGlareAlpha;
 
 public partial class DragonGlareAlpha
 {
+    private static readonly Color BattleTopWindowBackgroundColor = Color.FromArgb(35, 33, 50);
+    private static readonly Color BattleMessageWindowFallbackColor = Color.FromArgb(10, 28, 36);
+    private static readonly Color BattleMessageWindowTintColor = Color.FromArgb(150, 8, 24, 34);
+    private static readonly Rectangle BattleMessageWindowBackdropSourceRect = new(0, 160, 256, 64);
+
     private void DrawBattle(Graphics g)
     {
         DrawBattleBackdrop(g);
@@ -21,10 +26,10 @@ public partial class DragonGlareAlpha
     private void DrawBattleTopUi(Graphics g)
     {
         var commandWindowRect = new Rectangle(2, 42, 272, 140);
-        var statusWindowRect = new Rectangle(284, 42, 354, 140);
+        var statusWindowRect = new Rectangle(278, 42, 360, 140);
 
-        DrawBattleFrameWindow(g, commandWindowRect);
-        DrawBattleFrameWindow(g, statusWindowRect);
+        DrawBattleFrameWindow(g, commandWindowRect, BattleTopWindowBackgroundColor);
+        DrawBattleFrameWindow(g, statusWindowRect, BattleTopWindowBackgroundColor);
 
         if (battleFlowState == BattleFlowState.Intro)
         {
@@ -46,7 +51,8 @@ public partial class DragonGlareAlpha
     private void DrawBattleMessageWindow(Graphics g)
     {
         var messageWindowRect = new Rectangle(2, 326, 636, 130);
-        DrawBattleFrameWindow(g, messageWindowRect);
+        DrawBattleMessageWindowBackground(g, messageWindowRect);
+        DrawBattleWindowBorder(g, messageWindowRect);
         DrawBattleMessagePane(g, Rectangle.Inflate(messageWindowRect, -20, -16), string.Empty);
     }
 
@@ -141,13 +147,18 @@ public partial class DragonGlareAlpha
         var classLabel = selectedLanguage == UiLanguage.English ? "HERO" : "ゆうしゃ";
         const int lineHeight = 30;
         const int leftColumnWidth = 126;
-        var rightColumnX = rect.X + 156;
-        var rightColumnWidth = rect.Right - rightColumnX;
+        const int inlineStatGap = 32;
+        var statX = rect.X + 8;
+        var mpY = rect.Y + (lineHeight * 2) + 8;
+        var mpText = $"MP:{player.CurrentMp}";
+        var exText = $"EX:{player.Experience}";
+        var exX = statX + MeasureTextWidth(g, mpText, smallFont) + inlineStatGap;
+        var exColumnWidth = rect.Right - exX;
 
-        DrawText(g, $"{GetDisplayPlayerName()}  :  {classLabel}", new Rectangle(rect.X + 8, rect.Y + 2, rect.Width - 16, 24), smallFont);
-        DrawText(g, $"HP:{player.CurrentHp}", new Rectangle(rect.X + 8, rect.Y + lineHeight + 6, leftColumnWidth, 24), smallFont);
-        DrawText(g, $"MP:{player.CurrentMp}", new Rectangle(rect.X + 8, rect.Y + (lineHeight * 2) + 8, leftColumnWidth, 24), smallFont);
-        DrawText(g, $"EX:{player.Experience}", new Rectangle(rightColumnX, rect.Y + (lineHeight * 2) + 8, rightColumnWidth, 24), smallFont);
+        DrawText(g, $"{GetDisplayPlayerName()}  :  {classLabel}", new Rectangle(statX, rect.Y + 2, rect.Width - 16, 24), smallFont);
+        DrawText(g, $"HP:{player.CurrentHp}", new Rectangle(statX, rect.Y + lineHeight + 6, leftColumnWidth, 24), smallFont);
+        DrawText(g, mpText, new Rectangle(statX, mpY, leftColumnWidth, 24), smallFont);
+        DrawText(g, exText, new Rectangle(exX, mpY, exColumnWidth, 24), smallFont);
     }
 
     private void DrawBattleLowerUi(Graphics g)
@@ -311,19 +322,46 @@ public partial class DragonGlareAlpha
             wrap: true);
     }
 
-    private static void DrawBattleFrameWindow(Graphics g, Rectangle rect)
+    private static void DrawBattleFrameWindow(Graphics g, Rectangle rect, Color backgroundColor)
     {
         using var shadowBrush = new SolidBrush(Color.FromArgb(92, 0, 0, 0));
-        using var backgroundBrush = new SolidBrush(Color.Black);
+        using var backgroundBrush = new SolidBrush(backgroundColor);
+
+        g.FillRectangle(shadowBrush, rect.X + 4, rect.Y + 4, rect.Width, rect.Height);
+        g.FillRectangle(backgroundBrush, rect);
+        DrawBattleWindowBorder(g, rect);
+    }
+
+    private static void DrawBattleWindowBorder(Graphics g, Rectangle rect)
+    {
         using var outerPen = new Pen(Color.FromArgb(42, 70, 142), 3);
         using var middlePen = new Pen(Color.FromArgb(36, 124, 208), 2);
         using var innerPen = new Pen(Color.FromArgb(26, 42, 84), 2);
 
-        g.FillRectangle(shadowBrush, rect.X + 4, rect.Y + 4, rect.Width, rect.Height);
-        g.FillRectangle(backgroundBrush, rect);
         g.DrawRectangle(outerPen, rect.X, rect.Y, rect.Width - 1, rect.Height - 1);
         g.DrawRectangle(middlePen, rect.X + 4, rect.Y + 4, rect.Width - 9, rect.Height - 9);
         g.DrawRectangle(innerPen, rect.X + 8, rect.Y + 8, rect.Width - 17, rect.Height - 17);
+    }
+
+    private void DrawBattleMessageWindowBackground(Graphics g, Rectangle rect)
+    {
+        var backdrop = GetUiImage("SFC_battlefieldFrame1.png");
+        if (backdrop is not null)
+        {
+            var state = g.Save();
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+            g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
+            g.DrawImage(backdrop, rect, BattleMessageWindowBackdropSourceRect, GraphicsUnit.Pixel);
+            g.Restore(state);
+        }
+        else
+        {
+            using var fallbackBrush = new SolidBrush(BattleMessageWindowFallbackColor);
+            g.FillRectangle(fallbackBrush, rect);
+        }
+
+        using var tintBrush = new SolidBrush(BattleMessageWindowTintColor);
+        g.FillRectangle(tintBrush, rect);
     }
 
     private static void DrawBattleWindowSeparator(Graphics g, int x, int y, int width)

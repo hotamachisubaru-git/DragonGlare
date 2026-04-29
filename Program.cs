@@ -10,19 +10,21 @@ static class Program
     [STAThread]
     static void Main()
     {
+        WindowChromeService.ApplyProcessAppUserModelId();
+
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
 
         var platformSupportService = new PlatformSupportService();
         if (platformSupportService.TryDetectUnsupportedPlatform(out var platformMessage))
         {
-            MessageBox.Show(platformMessage, "DragonGlare Alpha", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+            MessageBox.Show(platformMessage, AppMetadata.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Stop);
             return;
         }
 
         if (AntiCheatService.TryDetectStartupViolation(out var message))
         {
-            MessageBox.Show(message, "DragonGlare Alpha", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+            MessageBox.Show(message, AppMetadata.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Stop);
             return;
         }
 

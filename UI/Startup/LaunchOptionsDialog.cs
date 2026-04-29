@@ -16,14 +16,14 @@ internal sealed class LaunchOptionsDialog : Form
     {
         SelectedSettings = initialSettings;
 
-        Text = "DragonGlare Alpha";
+        Text = AppMetadata.WindowTitle;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         StartPosition = FormStartPosition.CenterScreen;
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = false;
         ClientSize = new Size(260, 184);
-        Text = CreateCenteredCaption("DragonGlare Alpha");
+        Text = CreateCenteredCaption(AppMetadata.WindowTitle);
 
         const string titleText = "ウィンドウモードを選択してください";
         var optionX = Math.Max(0, (ClientSize.Width - TextRenderer.MeasureText(

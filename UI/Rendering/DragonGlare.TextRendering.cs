@@ -18,7 +18,7 @@ public partial class DragonGlareAlpha
     {
         if (selected)
         {
-            DrawSelectionMarker(g, x - 28, y + 10);
+            DrawSelectionMarker(g, x - 28, y + 1);
         }
 
         DrawText(g, text, x, y);

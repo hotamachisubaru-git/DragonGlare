@@ -12,18 +12,18 @@ public partial class DragonGlareAlpha
         const int itemRowHeight = 22;
         const int listStartY = 62;
 
-        var shopHelpRect = new Rectangle(32, 20, 242, 112);
+        var shopHelpRect = new Rectangle(32, 20, 242, 120);
         var shopListRect = new Rectangle(304, 20, 316, 274);
-        var shopInfoRect = new Rectangle(32, 152, 242, 112);
+        var shopInfoRect = new Rectangle(32, 146, 242, 154);
         var shopMessageRect = new Rectangle(70, 304, 498, 140);
         var visibleEntries = GetShopVisibleEntries();
 
         DrawWindow(g, shopHelpRect);
         if (shopPhase == ShopPhase.Welcome)
         {
-            DrawOption(g, shopPromptCursor == 0, 84, 48, "かう");
-            DrawOption(g, shopPromptCursor == 1, 84, 82, "うる");
-            DrawOption(g, shopPromptCursor == 2, 84, 116, "やめる");
+            DrawOption(g, shopPromptCursor == 0, 84, 44, "かう");
+            DrawOption(g, shopPromptCursor == 1, 84, 72, "うる");
+            DrawOption(g, shopPromptCursor == 2, 84, 100, "やめる");
         }
         else
         {
@@ -99,15 +99,24 @@ public partial class DragonGlareAlpha
         }
 
         DrawWindow(g, shopInfoRect);
-        DrawText(g, "ぶき:", shopInfoRect.X + 20, shopInfoRect.Y + 14, smallFont);
-        DrawText(g, GetEquippedWeaponName(), new Rectangle(shopInfoRect.X + 94, shopInfoRect.Y + 14, 126, 20), smallFont, StringAlignment.Far);
-        DrawText(g, "そうび:", shopInfoRect.X + 20, shopInfoRect.Y + 36, smallFont);
-        DrawText(g, GetEquippedArmorSummary(), new Rectangle(shopInfoRect.X + 94, shopInfoRect.Y + 36, 126, 20), smallFont, StringAlignment.Far);
-        DrawText(g, $"ATK {GetTotalAttack()}  DEF {GetTotalDefense()}", new Rectangle(shopInfoRect.X + 20, shopInfoRect.Y + 58, 196, 20), smallFont);
-        DrawText(g, detailLine1, new Rectangle(shopInfoRect.X + 20, shopInfoRect.Y + 80, 196, 20), smallFont);
-        DrawText(g, detailLine2, new Rectangle(shopInfoRect.X + 20, shopInfoRect.Y + 92, 196, 20), smallFont);
+        var equipmentLineY = shopInfoRect.Y + 5;
+        DrawShopEquipmentSlot(g, shopInfoRect, EquipmentSlot.Weapon, equipmentLineY);
+        DrawShopEquipmentSlot(g, shopInfoRect, EquipmentSlot.Head, equipmentLineY + 16);
+        DrawShopEquipmentSlot(g, shopInfoRect, EquipmentSlot.Armor, equipmentLineY + 32);
+        DrawShopEquipmentSlot(g, shopInfoRect, EquipmentSlot.Arms, equipmentLineY + 48);
+        DrawShopEquipmentSlot(g, shopInfoRect, EquipmentSlot.Legs, equipmentLineY + 64);
+        DrawShopEquipmentSlot(g, shopInfoRect, EquipmentSlot.Feet, equipmentLineY + 80);
+        DrawText(g, $"ATK {GetTotalAttack()}  DEF {GetTotalDefense()}", new Rectangle(shopInfoRect.X + 20, equipmentLineY + 98, 202, 16), smallFont);
+        DrawText(g, detailLine1, new Rectangle(shopInfoRect.X + 20, equipmentLineY + 114, 202, 16), smallFont);
+        DrawText(g, detailLine2, new Rectangle(shopInfoRect.X + 20, equipmentLineY + 130, 202, 16), smallFont);
 
         DrawWindow(g, shopMessageRect);
         DrawText(g, shopMessage, Rectangle.Inflate(shopMessageRect, -24, -24), smallFont, wrap: true);
+    }
+
+    private void DrawShopEquipmentSlot(Graphics g, Rectangle panelRect, EquipmentSlot slot, int y)
+    {
+        DrawText(g, $"{GetEquipmentSlotLabel(slot)}:", new Rectangle(panelRect.X + 16, y, 84, 16), smallFont);
+        DrawText(g, GetCurrentEquipmentNameForSlot(slot), new Rectangle(panelRect.X + 100, y, 122, 16), smallFont, StringAlignment.Far);
     }
 }

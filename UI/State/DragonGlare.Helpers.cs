@@ -399,10 +399,10 @@ public partial class DragonGlareAlpha
             return slot switch
             {
                 EquipmentSlot.Weapon => "WEAPON",
-                EquipmentSlot.Armor => "BODY",
+                EquipmentSlot.Armor => "CHEST",
                 EquipmentSlot.Head => "HEAD",
-                EquipmentSlot.Arms => "ARMS",
-                EquipmentSlot.Legs => "LEGS",
+                EquipmentSlot.Arms => "GAUNTLET",
+                EquipmentSlot.Legs => "LEGGINGS",
                 EquipmentSlot.Feet => "BOOTS",
                 _ => "GEAR"
             };
@@ -411,7 +411,7 @@ public partial class DragonGlareAlpha
         return slot switch
         {
             EquipmentSlot.Weapon => "ぶき",
-            EquipmentSlot.Armor => "よろい",
+            EquipmentSlot.Armor => "むねあて",
             EquipmentSlot.Head => "あたま",
             EquipmentSlot.Arms => "こて",
             EquipmentSlot.Legs => "レギンス",

@@ -14,8 +14,8 @@
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>DragonGlare Alpha</AssemblyName>
-    <AppVersion>1.0.2</AppVersion>
-    <AppDisplayVersion>Alpha 1.0.2</AppDisplayVersion>
+    <AppVersion>1.0.4</AppVersion>
+    <AppDisplayVersion>Alpha 1.0.4</AppDisplayVersion>
     <Version>$(AppVersion)</Version>
     <AssemblyVersion>$(AppVersion)</AssemblyVersion>
     <FileVersion>$(AppVersion)</FileVersion>

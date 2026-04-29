@@ -3,7 +3,6 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Drawing.Text;
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using DragonGlareAlpha.Domain;
@@ -410,29 +409,7 @@ public partial class DragonGlareAlpha : Game
         windowChrome.Apply(forceIcon: true);
     }
 
-    public static string WindowTitle => GetWindowTitle();
-
-    private static string GetWindowTitle()
-    {
-        var version = typeof(DragonGlareAlpha).Assembly
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-            ?.InformationalVersion;
-
-        if (string.IsNullOrWhiteSpace(version))
-        {
-            version = typeof(DragonGlareAlpha).Assembly.GetName().Version?.ToString(3);
-        }
-
-        var metadataIndex = version?.IndexOf('+') ?? -1;
-        if (metadataIndex > 0)
-        {
-            version = version![..metadataIndex];
-        }
-
-        return string.IsNullOrWhiteSpace(version)
-            ? "DragonGlare Alpha"
-            : $"DragonGlare Alpha {version}";
-    }
+    public static string WindowTitle => AppMetadata.WindowTitle;
 
     private void ToggleFullscreen()
     {

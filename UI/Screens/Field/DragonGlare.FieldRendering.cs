@@ -24,29 +24,33 @@ public partial class DragonGlareAlpha
             DrawText(g, $"MP {player.CurrentMp}/{player.MaxMp}", new Rectangle(458, 72, 160, 24), smallFont);
             DrawText(g, $"G {player.Gold}", new Rectangle(458, 96, 160, 24), smallFont);
 
-            DrawWindow(g, new Rectangle(446, 132, 186, 148));
+            var equipmentRect = new Rectangle(446, 132, 186, 180);
+            DrawWindow(g, equipmentRect);
             DrawText(g, $"ATK {GetTotalAttack()}  DEF {GetTotalDefense()}", new Rectangle(458, 146, 160, 24), smallFont);
-            DrawText(g, $"EXP {GetExperienceSummary()}", new Rectangle(458, 176, 160, 24), smallFont);
-            DrawText(g, $"ぶき {GetEquippedWeaponName()}", new Rectangle(458, 206, 160, 24), smallFont);
-            DrawText(g, $"そうび {GetEquippedArmorSummary()}", new Rectangle(458, 234, 160, 24), smallFont);
+            DrawText(g, $"EXP {GetExperienceSummary()}", new Rectangle(458, 168, 160, 24), smallFont);
+            DrawFieldEquipmentSlot(g, equipmentRect, "ぶき", EquipmentSlot.Weapon, 196);
+            DrawFieldEquipmentSlot(g, equipmentRect, "あたま", EquipmentSlot.Head, 212);
+            DrawFieldEquipmentSlot(g, equipmentRect, "むね", EquipmentSlot.Armor, 228);
+            DrawFieldEquipmentSlot(g, equipmentRect, "こて", EquipmentSlot.Arms, 244);
+            DrawFieldEquipmentSlot(g, equipmentRect, "レギンス", EquipmentSlot.Legs, 260);
+            DrawFieldEquipmentSlot(g, equipmentRect, "ブーツ", EquipmentSlot.Feet, 276);
         }
 
         if (isFieldDialogOpen)
         {
             DrawWindow(g, FieldLayout.DialogWindow);
             var portrait = GetNpcPortrait(activeFieldDialogPortraitAssetName);
-            var portraitFrameRect = new Rectangle(FieldLayout.DialogWindow.X + 16, FieldLayout.DialogWindow.Y + 16, 96, 96);
+            var portraitRect = new Rectangle(FieldLayout.DialogWindow.X + 16, FieldLayout.DialogWindow.Y + 16, 96, 96);
             var textRect = portrait is null
                 ? new Rectangle(72, 346, 494, 68)
-                : new Rectangle(portraitFrameRect.Right + 18, 346, 566 - (portraitFrameRect.Right + 18), 68);
+                : new Rectangle(portraitRect.Right + 18, 346, 566 - (portraitRect.Right + 18), 68);
             var footerRect = portrait is null
                 ? new Rectangle(72, 414, 494, 20)
-                : new Rectangle(portraitFrameRect.Right + 18, 414, 566 - (portraitFrameRect.Right + 18), 20);
+                : new Rectangle(portraitRect.Right + 18, 414, 566 - (portraitRect.Right + 18), 20);
 
             if (portrait is not null)
             {
-                DrawWindow(g, portraitFrameRect);
-                DrawPortraitCover(g, portrait, Rectangle.Inflate(portraitFrameRect, -6, -6));
+                DrawPortraitCover(g, portrait, portraitRect);
             }
 
             DrawText(g, GetCurrentFieldDialogPage(), textRect, smallFont, wrap: true);
@@ -59,6 +63,12 @@ public partial class DragonGlareAlpha
                 smallFont,
                 StringAlignment.Far);
         }
+    }
+
+    private void DrawFieldEquipmentSlot(Graphics g, Rectangle panelRect, string label, EquipmentSlot slot, int y)
+    {
+        DrawText(g, label, new Rectangle(panelRect.X + 12, y, 58, 16), smallFont);
+        DrawText(g, GetCurrentEquipmentNameForSlot(slot), new Rectangle(panelRect.X + 72, y, 100, 16), smallFont, StringAlignment.Far);
     }
 
     private void DrawFieldScene(Graphics g)
