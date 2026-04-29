@@ -1,7 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net9.0-windows10.0.17763.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.14393.0</SupportedOSPlatformVersion>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
     <RollForward>Major</RollForward>
     <PublishReadyToRun>false</PublishReadyToRun>
     <TieredCompilation>false</TieredCompilation>
@@ -10,15 +14,16 @@
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>DragonGlare Alpha</AssemblyName>
-    <AppVersion>1.6.1</AppVersion>
+    <AppVersion>1.0.1</AppVersion>
+    <AppDisplayVersion>Alpha 1.0.1</AppDisplayVersion>
     <Version>$(AppVersion)</Version>
-    <AssemblyVersion>$(AppVersion).0</AssemblyVersion>
+    <AssemblyVersion>$(AppVersion)</AssemblyVersion>
     <FileVersion>$(AppVersion)</FileVersion>
     <InformationalVersion>$(AppVersion)</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-    <AssemblyTitle>DragonGlare Alpha $(AppVersion)</AssemblyTitle>
-    <Title>DragonGlare Alpha $(AppVersion)</Title>
+    <AssemblyTitle>DragonGlare $(AppDisplayVersion)</AssemblyTitle>
+    <Title>DragonGlare $(AppDisplayVersion)</Title>
     <Product>DragonGlare Alpha</Product>
     <!-- 親ディレクトリのobjフォルダなどを拾わないようにする -->
     <EnableDefaultItems>false</EnableDefaultItems>

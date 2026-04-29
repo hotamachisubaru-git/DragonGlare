@@ -75,6 +75,7 @@ public partial class DragonGlareAlpha : Game
     private readonly Dictionary<BgmTrack, Uri> bgmUris = [];
     private readonly Dictionary<SoundEffect, Uri> seUris = [];
     private readonly Dictionary<string, Image> npcSprites = [];
+    private readonly Dictionary<string, Image> enemySprites = [];
     private readonly Dictionary<string, Image> npcPortraits = [];
     private readonly Dictionary<string, Image> uiImages = [];
     private readonly Dictionary<PlayerFacingDirection, Image> heroSprites = [];
@@ -134,6 +135,7 @@ public partial class DragonGlareAlpha : Game
     private int battleMessageVisibleLines;
     private int battleMessageLineTimer;
     private const int BattleMessageLineDelayFrames = 30;
+    private const int BattleIntroDurationFrames = 90;
     private string shopMessage = ShopWelcomeMessage;
     private string bankMessage = BankWelcomeMessage;
     private BgmTrack? currentBgmTrack;
@@ -150,6 +152,7 @@ public partial class DragonGlareAlpha : Game
     private int encounterTransitionFrames;
     private int fieldEncounterStepsRemaining = 7;
     private int enemyHitFlashFramesRemaining;
+    private int battleIntroFramesRemaining;
     private BattleEncounter? pendingEncounter;
     private IReadOnlyList<string> activeFieldDialogPages = [];
     private int activeFieldDialogPageIndex;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using DragonGlareAlpha.Data;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using SpriteFontPlus;
@@ -35,6 +36,7 @@ namespace DragonGlare.Managers
             TryLoadTexture(graphicsDevice, content.RootDirectory, "young-5", "Portraits", "NPC", "young-5.png");
             TryLoadTexture(graphicsDevice, content.RootDirectory, "castle-guard-4", "Portraits", "NPC", "castle-guard-4.png");
             TryLoadTexture(graphicsDevice, content.RootDirectory, "mihari-3", "Portraits", "NPC", "mihari-3.png");
+            LoadEnemyTextures(graphicsDevice, content.RootDirectory);
 
             MainFont = LoadFont(graphicsDevice, content.RootDirectory);
         }
@@ -59,6 +61,24 @@ namespace DragonGlare.Managers
 
             using var stream = File.OpenRead(path);
             Textures[key] = Texture2D.FromStream(graphicsDevice, stream);
+        }
+
+        private static void LoadEnemyTextures(GraphicsDevice graphicsDevice, string rootDirectory)
+        {
+            foreach (var enemy in GameContent.EnemyCatalog)
+            {
+                if (string.IsNullOrWhiteSpace(enemy.SpriteAssetName))
+                {
+                    continue;
+                }
+
+                var key = Path.GetFileNameWithoutExtension(enemy.SpriteAssetName);
+                var path = GetAssetPath(rootDirectory, ["Sprites", "Enemies", enemy.SpriteAssetName]);
+                if (path is not null)
+                {
+                    TryLoadPreparedBitmapTexture(graphicsDevice, key, path, targetHeight: 176);
+                }
+            }
         }
 
         private static void TryLoadHeroTexture(GraphicsDevice graphicsDevice, string rootDirectory)

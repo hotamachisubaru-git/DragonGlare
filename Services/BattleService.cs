@@ -9,6 +9,7 @@ namespace DragonGlareAlpha.Services;
 public sealed class BattleService
 {
     private const int SpellCost = 2;
+    private const int MinimumEncounterPoolSize = 2;
     private static readonly EquipmentSlot[] ArmorSlots =
     [
         EquipmentSlot.Armor,
@@ -40,7 +41,20 @@ public sealed class BattleService
             .Where(enemy => playerLevel >= enemy.MinRecommendedLevel && playerLevel <= enemy.MaxRecommendedLevel)
             .ToArray();
 
-        return levelPool.Length > 0 ? levelPool : mapPool;
+        var targetPoolSize = Math.Min(MinimumEncounterPoolSize, mapPool.Length);
+        if (levelPool.Length >= targetPoolSize)
+        {
+            return levelPool;
+        }
+
+        return levelPool
+            .Concat(mapPool
+                .Except(levelPool)
+                .OrderBy(enemy => GetRecommendedLevelDistance(enemy, playerLevel))
+                .ThenBy(enemy => enemy.MinRecommendedLevel)
+                .ThenBy(enemy => enemy.Id, StringComparer.Ordinal))
+            .Take(targetPoolSize)
+            .ToArray();
     }
 
     public BattleTurnResolution ResolveTurn(
@@ -445,5 +459,17 @@ public sealed class BattleService
         }
 
         return pool[^1];
+    }
+
+    private static int GetRecommendedLevelDistance(EnemyDefinition enemy, int playerLevel)
+    {
+        if (playerLevel < enemy.MinRecommendedLevel)
+        {
+            return enemy.MinRecommendedLevel - playerLevel;
+        }
+
+        return playerLevel > enemy.MaxRecommendedLevel
+            ? playerLevel - enemy.MaxRecommendedLevel
+            : 0;
     }
 }

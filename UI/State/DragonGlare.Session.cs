@@ -58,6 +58,7 @@ public partial class DragonGlareAlpha
         battleMessageLines = [];
         battleMessageVisibleLines = 0;
         battleMessageLineTimer = 0;
+        battleIntroFramesRemaining = 0;
     }
 
     private void ResetShopState(string? message = null)

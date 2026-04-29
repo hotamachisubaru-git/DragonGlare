@@ -43,6 +43,8 @@ public partial class DragonGlareAlpha
         languageOpeningLineIndex = 0;
         languageOpeningLineFrame = 0;
         languageOpeningFinished = false;
+        languageOpeningLastSourceX = -1;
+        languageOpeningLastSourceY = -1;
         // 新規開始時はOP後に言語選択へ進む。
         skipLanguageSelectionPrompt = false;
         nameCursorRow = 0;

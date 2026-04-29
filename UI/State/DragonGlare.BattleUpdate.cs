@@ -35,10 +35,16 @@ public partial class DragonGlareAlpha
 
         if (battleFlowState == BattleFlowState.Intro)
         {
-            if (WasConfirmPressed())
+            if (battleIntroFramesRemaining > 0)
             {
+                battleIntroFramesRemaining--;
+            }
+
+            if (battleIntroFramesRemaining <= 0 || WasConfirmPressed())
+            {
+                battleIntroFramesRemaining = 0;
                 battleFlowState = BattleFlowState.CommandSelection;
-                battleMessage = GetBattleCommandPromptMessage();
+                battleMessage = GetBattleOpeningCommandMessage();
             }
 
             return;
@@ -243,7 +249,7 @@ public partial class DragonGlareAlpha
                 battleMessage = resultMessage;
                 break;
             default:
-                battleMessage = resultMessage;
+                battleMessage = $"{resultMessage}\n{GetBattleCommandPromptMessage()}";
                 battleFlowState = BattleFlowState.CommandSelection;
                 PersistProgress();
                 break;
@@ -288,6 +294,7 @@ public partial class DragonGlareAlpha
         pendingEncounter = null;
         ResetBattleSelectionState();
         battleFlowState = BattleFlowState.Intro;
+        battleIntroFramesRemaining = BattleIntroDurationFrames;
         battleMessage = GetBattleEncounterMessage(currentEncounter.Enemy.Name);
         ChangeGameState(GameState.Battle);
     }

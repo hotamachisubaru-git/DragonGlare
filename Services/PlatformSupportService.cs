@@ -4,7 +4,7 @@ namespace DragonGlareAlpha.Services;
 
 public sealed class PlatformSupportService
 {
-    public const int Windows11BuildNumber = 22000;
+    public const int MinimumWindows10BuildNumber = 14393;
 
     public bool TryDetectUnsupportedPlatform(out string message)
     {
@@ -35,7 +35,7 @@ public sealed class PlatformSupportService
             : osDescription.Trim();
 
         message =
-            "このアプリは Windows 11 x64 専用です。" +
+            "このアプリは Windows 10 x64 以上専用です。" +
             $"\n現在の環境: {normalizedDescription}" +
             $"\nアーキテクチャ: {osArchitecture}" +
             $"\nOSビルド: {version.Build}" +
@@ -55,9 +55,9 @@ public sealed class PlatformSupportService
             return "x64 以外のアーキテクチャでは起動できません。";
         }
 
-        if (version.Build < Windows11BuildNumber)
+        if (version.Major < 10 || (version.Major == 10 && version.Build < MinimumWindows10BuildNumber))
         {
-            return $"Windows 11 の最小ビルド ({Windows11BuildNumber}) を満たしていません。";
+            return $"Windows 10 の最小ビルド ({MinimumWindows10BuildNumber}) を満たしていません。";
         }
 
         return null;

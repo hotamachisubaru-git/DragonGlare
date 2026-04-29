@@ -216,6 +216,30 @@ public sealed class BattleAndProgressionTests
     }
 
     [Fact]
+    public void GetEncounterPool_WhenOnlyOneEnemyMatchesLevel_IncludesNearbyEnemy()
+    {
+        var service = new BattleService();
+
+        var pool = service.GetEncounterPool(FieldMapId.Field, 2);
+
+        Assert.Contains(pool, enemy => enemy.Id == "bog_lizard");
+        Assert.Contains(pool, enemy => enemy.Id == "stone_wolf");
+        Assert.True(pool.Count >= 2);
+    }
+
+    [Fact]
+    public void GetEncounterPool_WhenNoEnemyMatchesLevel_UsesNearestMapEnemies()
+    {
+        var service = new BattleService();
+
+        var pool = service.GetEncounterPool(FieldMapId.Field, 1);
+
+        Assert.Contains(pool, enemy => enemy.Id == "bog_lizard");
+        Assert.Contains(pool, enemy => enemy.Id == "stone_wolf");
+        Assert.DoesNotContain(pool, enemy => enemy.Id == "ancient_wyrm");
+    }
+
+    [Fact]
     public void ApplyBattleRewards_WhenDropRollSucceeds_AddsDroppedItem()
     {
         var progression = new ProgressionService();

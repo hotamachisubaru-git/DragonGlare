@@ -88,6 +88,27 @@ public partial class DragonGlareAlpha
         return sprite;
     }
 
+    private Image? GetEnemySprite(string? spriteAssetName)
+    {
+        if (string.IsNullOrWhiteSpace(spriteAssetName))
+        {
+            return null;
+        }
+
+        if (enemySprites.TryGetValue(spriteAssetName, out var cachedSprite))
+        {
+            return cachedSprite;
+        }
+
+        var sprite = LoadPreparedEnemySprite(spriteAssetName);
+        if (sprite is not null)
+        {
+            enemySprites[spriteAssetName] = sprite;
+        }
+
+        return sprite;
+    }
+
     private Image? GetNpcPortrait(string? portraitAssetName)
     {
         if (string.IsNullOrWhiteSpace(portraitAssetName))
@@ -145,6 +166,42 @@ public partial class DragonGlareAlpha
         catch
         {
             return null;
+        }
+    }
+
+    private static Image? LoadPreparedEnemySprite(string fileName)
+    {
+        var source = LoadSprite(Path.Combine("Sprites", "Enemies"), fileName);
+        if (source is not Bitmap sourceBitmap)
+        {
+            return source;
+        }
+
+        try
+        {
+            var crop = FindLargestForegroundRegionBounds(
+                sourceBitmap,
+                alphaThreshold: 8,
+                minimumPixelCount: 24,
+                out var selectedForeground);
+            if (crop.Width <= 0 || crop.Height <= 0)
+            {
+                crop = FindOpaqueBounds(sourceBitmap, alphaThreshold: 8);
+                selectedForeground = Enumerable.Repeat(true, sourceBitmap.Width * sourceBitmap.Height).ToArray();
+            }
+
+            if (crop.Width <= 0 || crop.Height <= 0)
+            {
+                return new Bitmap(sourceBitmap);
+            }
+
+            using var extracted = ExtractForegroundSprite(sourceBitmap, crop, selectedForeground);
+            var targetHeight = Math.Clamp(extracted.Height, 96, 176);
+            return ResizeSprite(extracted, targetHeight);
+        }
+        finally
+        {
+            sourceBitmap.Dispose();
         }
     }
 
@@ -401,6 +458,245 @@ public partial class DragonGlareAlpha
             .FirstOrDefault();
     }
 
+    private static Rectangle FindLargestForegroundRegionBounds(
+        Bitmap bitmap,
+        byte alphaThreshold,
+        int minimumPixelCount,
+        out bool[] selectedForeground)
+    {
+        var width = bitmap.Width;
+        var height = bitmap.Height;
+        var foreground = BuildForegroundMask(bitmap, alphaThreshold);
+        var visited = new bool[foreground.Length];
+        var queue = new Queue<int>();
+        var component = new List<int>();
+        var bestComponent = new List<int>();
+        var bestBounds = Rectangle.Empty;
+
+        for (var y = 0; y < height; y++)
+        {
+            for (var x = 0; x < width; x++)
+            {
+                var index = (y * width) + x;
+                if (!foreground[index] || visited[index])
+                {
+                    continue;
+                }
+
+                visited[index] = true;
+                queue.Enqueue(index);
+                component.Clear();
+
+                var minX = x;
+                var minY = y;
+                var maxX = x;
+                var maxY = y;
+
+                while (queue.Count > 0)
+                {
+                    var current = queue.Dequeue();
+                    component.Add(current);
+
+                    var currentX = current % width;
+                    var currentY = current / width;
+                    minX = Math.Min(minX, currentX);
+                    minY = Math.Min(minY, currentY);
+                    maxX = Math.Max(maxX, currentX);
+                    maxY = Math.Max(maxY, currentY);
+
+                    for (var offsetY = -1; offsetY <= 1; offsetY++)
+                    {
+                        for (var offsetX = -1; offsetX <= 1; offsetX++)
+                        {
+                            if (offsetX == 0 && offsetY == 0)
+                            {
+                                continue;
+                            }
+
+                            var nextX = currentX + offsetX;
+                            var nextY = currentY + offsetY;
+                            if (nextX < 0 || nextY < 0 || nextX >= width || nextY >= height)
+                            {
+                                continue;
+                            }
+
+                            var nextIndex = (nextY * width) + nextX;
+                            if (!foreground[nextIndex] || visited[nextIndex])
+                            {
+                                continue;
+                            }
+
+                            visited[nextIndex] = true;
+                            queue.Enqueue(nextIndex);
+                        }
+                    }
+                }
+
+                if (component.Count < minimumPixelCount || component.Count <= bestComponent.Count)
+                {
+                    continue;
+                }
+
+                bestComponent = [.. component];
+                bestBounds = Rectangle.FromLTRB(minX, minY, maxX + 1, maxY + 1);
+            }
+        }
+
+        selectedForeground = new bool[foreground.Length];
+        foreach (var index in bestComponent)
+        {
+            selectedForeground[index] = true;
+        }
+
+        return bestBounds;
+    }
+
+    private static bool[] BuildForegroundMask(Bitmap bitmap, byte alphaThreshold)
+    {
+        var width = bitmap.Width;
+        var height = bitmap.Height;
+        var backgroundCandidates = new bool[width * height];
+        var borderBackground = new bool[width * height];
+        var references = GetBackgroundReferenceColors(bitmap);
+
+        for (var y = 0; y < height; y++)
+        {
+            for (var x = 0; x < width; x++)
+            {
+                var pixel = bitmap.GetPixel(x, y);
+                backgroundCandidates[(y * width) + x] = IsBackgroundCandidate(pixel, references, alphaThreshold);
+            }
+        }
+
+        var queue = new Queue<int>();
+        void EnqueueBorderPixel(int x, int y)
+        {
+            var index = (y * width) + x;
+            if (!backgroundCandidates[index] || borderBackground[index])
+            {
+                return;
+            }
+
+            borderBackground[index] = true;
+            queue.Enqueue(index);
+        }
+
+        for (var x = 0; x < width; x++)
+        {
+            EnqueueBorderPixel(x, 0);
+            EnqueueBorderPixel(x, height - 1);
+        }
+
+        for (var y = 0; y < height; y++)
+        {
+            EnqueueBorderPixel(0, y);
+            EnqueueBorderPixel(width - 1, y);
+        }
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            var currentX = current % width;
+            var currentY = current / width;
+
+            for (var offsetY = -1; offsetY <= 1; offsetY++)
+            {
+                for (var offsetX = -1; offsetX <= 1; offsetX++)
+                {
+                    if (offsetX == 0 && offsetY == 0)
+                    {
+                        continue;
+                    }
+
+                    var nextX = currentX + offsetX;
+                    var nextY = currentY + offsetY;
+                    if (nextX < 0 || nextY < 0 || nextX >= width || nextY >= height)
+                    {
+                        continue;
+                    }
+
+                    var nextIndex = (nextY * width) + nextX;
+                    if (!backgroundCandidates[nextIndex] || borderBackground[nextIndex])
+                    {
+                        continue;
+                    }
+
+                    borderBackground[nextIndex] = true;
+                    queue.Enqueue(nextIndex);
+                }
+            }
+        }
+
+        var foreground = new bool[width * height];
+        for (var index = 0; index < foreground.Length; index++)
+        {
+            foreground[index] = !borderBackground[index];
+        }
+
+        return foreground;
+    }
+
+    private static Color[] GetBackgroundReferenceColors(Bitmap bitmap)
+    {
+        var maxX = bitmap.Width - 1;
+        var maxY = bitmap.Height - 1;
+        return
+        [
+            bitmap.GetPixel(0, 0),
+            bitmap.GetPixel(maxX, 0),
+            bitmap.GetPixel(0, maxY),
+            bitmap.GetPixel(maxX, maxY),
+            bitmap.GetPixel(bitmap.Width / 2, 0),
+            bitmap.GetPixel(bitmap.Width / 2, maxY),
+            bitmap.GetPixel(0, bitmap.Height / 2),
+            bitmap.GetPixel(maxX, bitmap.Height / 2)
+        ];
+    }
+
+    private static bool IsBackgroundCandidate(Color pixel, IReadOnlyList<Color> references, byte alphaThreshold)
+    {
+        if (pixel.A < alphaThreshold)
+        {
+            return true;
+        }
+
+        return references.Any(reference =>
+            reference.A >= alphaThreshold &&
+            GetColorDistanceSquared(pixel, reference) <= 52 * 52);
+    }
+
+    private static int GetColorDistanceSquared(Color left, Color right)
+    {
+        var red = left.R - right.R;
+        var green = left.G - right.G;
+        var blue = left.B - right.B;
+        return (red * red) + (green * green) + (blue * blue);
+    }
+
+    private static Bitmap ExtractForegroundSprite(Bitmap source, Rectangle crop, bool[] selectedForeground)
+    {
+        var output = new Bitmap(crop.Width, crop.Height, PixelFormat.Format32bppPArgb);
+        for (var y = 0; y < crop.Height; y++)
+        {
+            for (var x = 0; x < crop.Width; x++)
+            {
+                var sourceX = crop.X + x;
+                var sourceY = crop.Y + y;
+                var sourceIndex = (sourceY * source.Width) + sourceX;
+                if (selectedForeground.Length > sourceIndex && selectedForeground[sourceIndex])
+                {
+                    output.SetPixel(x, y, source.GetPixel(sourceX, sourceY));
+                }
+                else
+                {
+                    output.SetPixel(x, y, Color.Transparent);
+                }
+            }
+        }
+
+        return output;
+    }
+
     private static List<(Rectangle Bounds, int PixelCount)> FindOpaqueRegions(Bitmap bitmap, byte alphaThreshold, int minimumPixelCount)
     {
         var width = bitmap.Width;
@@ -512,6 +808,13 @@ public partial class DragonGlareAlpha
         }
 
         npcSprites.Clear();
+
+        foreach (var sprite in enemySprites.Values)
+        {
+            sprite.Dispose();
+        }
+
+        enemySprites.Clear();
 
         foreach (var portrait in npcPortraits.Values)
         {

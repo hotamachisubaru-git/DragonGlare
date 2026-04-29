@@ -9,16 +9,45 @@ public partial class DragonGlareAlpha
     {
         DrawBattleBackdrop(g);
 
-        var statusRect = new Rectangle(22, 18, 148, 126);
-        DrawWindow(g, statusRect);
-        DrawBattleStatusWindow(g, statusRect);
-
         if (ShouldDrawBattleEnemySprite())
         {
-            DrawBattleEnemy(g, new Point(320, 226));
+            DrawBattleEnemy(g, new Point(320, 266));
         }
 
-        DrawBattleLowerUi(g);
+        DrawBattleTopUi(g);
+        DrawBattleMessageWindow(g);
+    }
+
+    private void DrawBattleTopUi(Graphics g)
+    {
+        var commandWindowRect = new Rectangle(2, 42, 272, 140);
+        var statusWindowRect = new Rectangle(284, 42, 354, 140);
+
+        DrawBattleFrameWindow(g, commandWindowRect);
+        DrawBattleFrameWindow(g, statusWindowRect);
+
+        if (battleFlowState == BattleFlowState.Intro)
+        {
+            return;
+        }
+
+        if (battleFlowState == BattleFlowState.CommandSelection)
+        {
+            DrawBattleCommandWindow(g, Rectangle.Inflate(commandWindowRect, -18, -16));
+        }
+        else if (battleFlowState is BattleFlowState.ItemSelection or BattleFlowState.EquipmentSelection)
+        {
+            DrawBattleSelectionPane(g, Rectangle.Inflate(commandWindowRect, -16, -14));
+        }
+
+        DrawBattleStatusWindow(g, Rectangle.Inflate(statusWindowRect, -18, -16));
+    }
+
+    private void DrawBattleMessageWindow(Graphics g)
+    {
+        var messageWindowRect = new Rectangle(2, 326, 636, 130);
+        DrawBattleFrameWindow(g, messageWindowRect);
+        DrawBattleMessagePane(g, Rectangle.Inflate(messageWindowRect, -20, -16), string.Empty);
     }
 
     private void DrawEncounterTransition(Graphics g)
@@ -76,6 +105,13 @@ public partial class DragonGlareAlpha
         var bobOffset = (int)Math.Round(Math.Sin(frameCounter / 7d) * 3);
         center = new Point(center.X, center.Y + bobOffset);
 
+        var enemySprite = GetEnemySprite(currentEncounter?.Enemy.SpriteAssetName);
+        if (enemySprite is not null)
+        {
+            DrawBattleEnemySprite(g, enemySprite, center);
+            return;
+        }
+
         if (string.Equals(currentEncounter?.Enemy.Id, "moss_toad", StringComparison.Ordinal))
         {
             DrawMossToadEnemy(g, center);
@@ -102,16 +138,16 @@ public partial class DragonGlareAlpha
 
     private void DrawBattleStatusWindow(Graphics g, Rectangle rect)
     {
-        var contentRect = Rectangle.Inflate(rect, -16, -12);
-        var lineHeight = 20;
-        var lineWidth = contentRect.Width;
+        var classLabel = selectedLanguage == UiLanguage.English ? "HERO" : "ゆうしゃ";
+        const int lineHeight = 30;
+        const int leftColumnWidth = 126;
+        var rightColumnX = rect.X + 156;
+        var rightColumnWidth = rect.Right - rightColumnX;
 
-        DrawText(g, GetDisplayPlayerName(), new Rectangle(contentRect.X, contentRect.Y, lineWidth, 20), smallFont);
-        DrawText(g, $"Lv.{player.Level}", new Rectangle(contentRect.X, contentRect.Y, lineWidth, 20), smallFont, StringAlignment.Far);
-        DrawText(g, $"HP {player.CurrentHp}/{player.MaxHp}", new Rectangle(contentRect.X, contentRect.Y + lineHeight, lineWidth, 20), smallFont);
-        DrawText(g, $"MP {player.CurrentMp}/{player.MaxMp}", new Rectangle(contentRect.X, contentRect.Y + (lineHeight * 2), lineWidth, 20), smallFont);
-        DrawText(g, $"ATK {GetTotalAttack()}", new Rectangle(contentRect.X, contentRect.Y + (lineHeight * 3), lineWidth, 20), smallFont);
-        DrawText(g, $"DEF {GetTotalDefense()}", new Rectangle(contentRect.X, contentRect.Y + (lineHeight * 4), lineWidth, 20), smallFont);
+        DrawText(g, $"{GetDisplayPlayerName()}  :  {classLabel}", new Rectangle(rect.X + 8, rect.Y + 2, rect.Width - 16, 24), smallFont);
+        DrawText(g, $"HP:{player.CurrentHp}", new Rectangle(rect.X + 8, rect.Y + lineHeight + 6, leftColumnWidth, 24), smallFont);
+        DrawText(g, $"MP:{player.CurrentMp}", new Rectangle(rect.X + 8, rect.Y + (lineHeight * 2) + 8, leftColumnWidth, 24), smallFont);
+        DrawText(g, $"EX:{player.Experience}", new Rectangle(rightColumnX, rect.Y + (lineHeight * 2) + 8, rightColumnWidth, 24), smallFont);
     }
 
     private void DrawBattleLowerUi(Graphics g)
@@ -167,7 +203,6 @@ public partial class DragonGlareAlpha
     {
         var commandCellWidth = rect.Width / GetBattleCommandColumnCount();
         var commandCellHeight = rect.Height / GetBattleCommandRowCount();
-        using var highlightBrush = new SolidBrush(Color.FromArgb(44, 54, 116, 196));
 
         for (var row = 0; row < GetBattleCommandRowCount(); row++)
         {
@@ -180,8 +215,7 @@ public partial class DragonGlareAlpha
                     commandCellHeight);
                 if (battleCursorRow == row && battleCursorColumn == column)
                 {
-                    g.FillRectangle(highlightBrush, cellRect.X + 2, cellRect.Y + 2, cellRect.Width - 4, cellRect.Height - 4);
-                    DrawBattleSelectionPointer(g, cellRect.X + 2, cellRect.Y + (cellRect.Height / 2) - 7);
+                    DrawBattleSelectionPointer(g, cellRect.X + 2, cellRect.Y + (cellRect.Height / 2) - 8);
                 }
 
                 DrawText(
@@ -244,8 +278,14 @@ public partial class DragonGlareAlpha
 
     private void DrawBattleMessagePane(Graphics g, Rectangle rect, string footer)
     {
-        var footerHeight = footer.Contains('\n') ? 38 : 20;
-        var textRect = new Rectangle(rect.X, rect.Y, rect.Width, Math.Max(20, rect.Height - (footerHeight + 8)));
+        var footerHeight = string.IsNullOrWhiteSpace(footer)
+            ? 0
+            : footer.Contains('\n') ? 38 : 20;
+        var textRect = new Rectangle(
+            rect.X,
+            rect.Y,
+            rect.Width,
+            footerHeight == 0 ? rect.Height : Math.Max(20, rect.Height - (footerHeight + 8)));
         
         string displayMessage = battleMessage;
         // バトルのリザルト等でアニメーション表示が有効な場合
@@ -269,6 +309,21 @@ public partial class DragonGlareAlpha
             smallFont,
             StringAlignment.Far,
             wrap: true);
+    }
+
+    private static void DrawBattleFrameWindow(Graphics g, Rectangle rect)
+    {
+        using var shadowBrush = new SolidBrush(Color.FromArgb(92, 0, 0, 0));
+        using var backgroundBrush = new SolidBrush(Color.Black);
+        using var outerPen = new Pen(Color.FromArgb(42, 70, 142), 3);
+        using var middlePen = new Pen(Color.FromArgb(36, 124, 208), 2);
+        using var innerPen = new Pen(Color.FromArgb(26, 42, 84), 2);
+
+        g.FillRectangle(shadowBrush, rect.X + 4, rect.Y + 4, rect.Width, rect.Height);
+        g.FillRectangle(backgroundBrush, rect);
+        g.DrawRectangle(outerPen, rect.X, rect.Y, rect.Width - 1, rect.Height - 1);
+        g.DrawRectangle(middlePen, rect.X + 4, rect.Y + 4, rect.Width - 9, rect.Height - 9);
+        g.DrawRectangle(innerPen, rect.X + 8, rect.Y + 8, rect.Width - 17, rect.Height - 17);
     }
 
     private static void DrawBattleWindowSeparator(Graphics g, int x, int y, int width)
@@ -463,6 +518,33 @@ public partial class DragonGlareAlpha
             g.FillRectangle(trimBrush, x + 8, topTrimRect.Y + 6, 2, 2);
             g.FillRectangle(trimBrush, x + 8, topTrimRect.Y + 14, 2, 2);
         }
+    }
+
+    private static void DrawBattleEnemySprite(Graphics g, Image sprite, Point center)
+    {
+        const int maxWidth = 250;
+        const int maxHeight = 136;
+        var scale = Math.Min(maxWidth / (float)sprite.Width, maxHeight / (float)sprite.Height);
+        scale = Math.Min(scale, 1.1f);
+
+        var width = Math.Max(1, (int)Math.Round(sprite.Width * scale));
+        var height = Math.Max(1, (int)Math.Round(sprite.Height * scale));
+        var bottom = center.Y + 56;
+        var destination = new Rectangle(center.X - (width / 2), bottom - height, width, height);
+
+        using var shadowBrush = new SolidBrush(Color.FromArgb(96, 0, 0, 0));
+        g.FillEllipse(
+            shadowBrush,
+            center.X - Math.Max(34, width / 3),
+            bottom - 8,
+            Math.Max(68, (width * 2) / 3),
+            14);
+
+        var state = g.Save();
+        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+        g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
+        g.DrawImage(sprite, destination);
+        g.Restore(state);
     }
 
     private static void DrawDefaultBattleEnemy(Graphics g, Point center)

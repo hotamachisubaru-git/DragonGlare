@@ -28,23 +28,23 @@ public static class GameContent
 
     public static readonly string[,] JapaneseBattleCommandLabels =
     {
-        { "こうげき", "じゅもん" },
-        { "ぼうぎょ", "どうぐ" },
-        { "そうび", "にげる" }
+        { "たたかう", "どうぐ" },
+        { "まもる", "そうび" },
+        { "じゅもん", "にげる" }
     };
 
     public static readonly string[,] EnglishBattleCommandLabels =
     {
-        { "ATTACK", "SPELL" },
-        { "GUARD", "ITEM" },
-        { "EQUIP", "RUN" }
+        { "ATTACK", "ITEM" },
+        { "GUARD", "EQUIP" },
+        { "SPELL", "RUN" }
     };
 
     public static readonly BattleActionType[,] BattleCommandGrid =
     {
-        { BattleActionType.Attack, BattleActionType.Spell },
-        { BattleActionType.Defend, BattleActionType.Item },
-        { BattleActionType.Equip, BattleActionType.Run }
+        { BattleActionType.Attack, BattleActionType.Item },
+        { BattleActionType.Defend, BattleActionType.Equip },
+        { BattleActionType.Spell, BattleActionType.Run }
     };
     public static readonly WeaponDefinition[] WeaponCatalog =
     [
@@ -106,18 +106,18 @@ public static class GameContent
 
     public static readonly EnemyDefinition[] EnemyCatalog =
     [
-        new("horn_slime", "ホーンスライム", FieldMapId.Hub, 1, 2, 6, 18, 5, 1, 8, 12, new EnemyDropDefinition("healing_herb", 24)), // Id, Name, Location, LevelRangeMin, LevelRangeMax, Rarity, MaxHp, Attack, Defense, ExpReward, GoldReward, Drop
-        new("moss_toad", "モストード", FieldMapId.Hub, 1, 4, 4, 24, 7, 2, 12, 18, new EnemyDropDefinition("healing_herb", 18)),
-        new("ember_bat", "エンバーバット", FieldMapId.Hub, 3, 6, 2, 30, 9, 3, 16, 24, new EnemyDropDefinition("mana_seed", 14)),
-        new("iron_mite", "アイアンマイト", FieldMapId.Castle, 1, 4, 5, 26, 8, 3, 13, 20, new EnemyDropDefinition("healing_herb", 18)),
-        new("night_shade", "ナイトシェイド", FieldMapId.Castle, 3, 7, 3, 38, 11, 5, 24, 34, new EnemyDropDefinition("mana_seed", 15)),
-        new("bell_armor", "ベルアーマー", FieldMapId.Castle, 5, 10, 2, 50, 14, 7, 38, 54, new EnemyDropDefinition("fire_orb", 12)),
-        new("bog_lizard", "ボグリザード", FieldMapId.Field, 2, 5, 5, 34, 10, 4, 20, 28, new EnemyDropDefinition("healing_herb", 18)),
-        new("stone_wolf", "ストーンウルフ", FieldMapId.Field, 4, 8, 4, 46, 14, 7, 34, 46, new EnemyDropDefinition("mana_seed", 15)),
-        new("dragon_pup", "ドラゴンパピー", FieldMapId.Field, 6, 11, 3, 58, 18, 9, 48, 68, new EnemyDropDefinition("fire_orb", 12)),
-        new("wyvern_scout", "ワイバーンスカウト", FieldMapId.Field, 9, 15, 3, 72, 21, 11, 66, 96, new EnemyDropDefinition("mana_seed", 10)),
-        new("lava_drake", "ラヴァドレイク", FieldMapId.Field, 13, 99, 2, 90, 25, 13, 88, 132, new EnemyDropDefinition("fire_orb", 15)),
-        new("ancient_wyrm", "エンシェントワーム", FieldMapId.Field, 18, 99, 1, 112, 29, 15, 120, 180, new EnemyDropDefinition("mana_seed", 12))
+        new("horn_slime", "ホーンスライム", FieldMapId.Hub, 1, 2, 6, 18, 5, 1, 8, 12, new EnemyDropDefinition("healing_herb", 24), SpriteAssetName: "horn_slime.png"), // Id, Name, Location, LevelRangeMin, LevelRangeMax, Rarity, MaxHp, Attack, Defense, ExpReward, GoldReward, Drop, SpriteAssetName
+        new("moss_toad", "モストード", FieldMapId.Hub, 1, 4, 4, 24, 7, 2, 12, 18, new EnemyDropDefinition("healing_herb", 18), SpriteAssetName: "moss_toad.png"),
+        new("ember_bat", "エンバーバット", FieldMapId.Hub, 3, 6, 2, 30, 9, 3, 16, 24, new EnemyDropDefinition("mana_seed", 14), SpriteAssetName: "ember_bat.png"),
+        new("iron_mite", "アイアンマイト", FieldMapId.Castle, 1, 4, 5, 26, 8, 3, 13, 20, new EnemyDropDefinition("healing_herb", 18), SpriteAssetName: "iron_mite.png"),
+        new("night_shade", "ナイトシェイド", FieldMapId.Castle, 3, 7, 3, 38, 11, 5, 24, 34, new EnemyDropDefinition("mana_seed", 15), SpriteAssetName: "night_shade.png"),
+        new("bell_armor", "ベルアーマー", FieldMapId.Castle, 5, 10, 2, 50, 14, 7, 38, 54, new EnemyDropDefinition("fire_orb", 12), SpriteAssetName: "bell_armor.png"),
+        new("bog_lizard", "ボグリザード", FieldMapId.Field, 2, 5, 5, 34, 10, 4, 20, 28, new EnemyDropDefinition("healing_herb", 18), SpriteAssetName: "enemy_slime.png"),
+        new("stone_wolf", "ストーンウルフ", FieldMapId.Field, 4, 8, 4, 46, 14, 7, 34, 46, new EnemyDropDefinition("mana_seed", 15), SpriteAssetName: "stone_wolf.png"),
+        new("dragon_pup", "ドラゴンパピー", FieldMapId.Field, 6, 11, 3, 58, 18, 9, 48, 68, new EnemyDropDefinition("fire_orb", 12), SpriteAssetName: "dragon_pup.png"),
+        new("wyvern_scout", "ワイバーンスカウト", FieldMapId.Field, 9, 15, 3, 72, 21, 11, 66, 96, new EnemyDropDefinition("mana_seed", 10), SpriteAssetName: "wyvern_scout.png"),
+        new("lava_drake", "ラヴァドレイク", FieldMapId.Field, 13, 99, 2, 90, 25, 13, 88, 132, new EnemyDropDefinition("fire_orb", 15), SpriteAssetName: "lava_drake.png"),
+        new("ancient_wyrm", "エンシェントワーム", FieldMapId.Field, 18, 99, 1, 112, 29, 15, 120, 180, new EnemyDropDefinition("mana_seed", 12), SpriteAssetName: "ancient_wyrm.png")
     ];
 
     public static readonly FieldTransitionDefinition[] FieldTransitions =

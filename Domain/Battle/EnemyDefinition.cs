@@ -14,4 +14,5 @@ public sealed record EnemyDefinition(
     int Defense,
     int ExperienceReward,
     int GoldReward,
-    EnemyDropDefinition? Drop = null);
+    EnemyDropDefinition? Drop = null,
+    string? SpriteAssetName = null);

@@ -650,16 +650,22 @@ public partial class DragonGlareAlpha
     private string GetBattleEncounterMessage(string enemyName)
     {
         return selectedLanguage == UiLanguage.English
-            ? $"{enemyName} appears!"
-            : $"{enemyName}が あらわれた！";
+            ? $"{enemyName} is watching you!"
+            : $"{enemyName}はこちらをみている！";
     }
 
     private string GetBattleCommandPromptMessage()
     {
-        var playerName = GetDisplayPlayerName();
         return selectedLanguage == UiLanguage.English
-            ? $"What will {playerName} do?"
-            : $"{playerName}は どうする？";
+            ? "What will you do?"
+            : "どうする？";
+    }
+
+    private string GetBattleOpeningCommandMessage()
+    {
+        return currentEncounter is null
+            ? GetBattleCommandPromptMessage()
+            : $"{GetBattleEncounterMessage(currentEncounter.Enemy.Name)}\n{GetBattleCommandPromptMessage()}";
     }
 
     private string GetBattleItemPromptMessage()
