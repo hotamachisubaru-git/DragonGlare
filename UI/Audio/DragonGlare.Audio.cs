@@ -56,6 +56,7 @@ public partial class DragonGlareAlpha
     private void InitializeAudio()
     {
         RegisterBgm(BgmTrack.MainMenu, "main_menu", "glare");
+        RegisterBgm(BgmTrack.Prologue, "prologue02", "prologue2");
         RegisterBgm(BgmTrack.Field, "field");
         RegisterBgm(BgmTrack.Castle, "castle");
         RegisterBgm(BgmTrack.Battle, "battle");
@@ -257,6 +258,10 @@ public partial class DragonGlareAlpha
     private void UpdateBgm()
     {
         var desiredTrack = GetDesiredBgmTrack();
+        if (desiredTrack == BgmTrack.Prologue && prologueBgmCompleted)
+        {
+            return;
+        }
 
         if (currentBgmTrack == desiredTrack && bgmOutput is not null)
         {
@@ -350,6 +355,13 @@ public partial class DragonGlareAlpha
                 return;
             }
 
+            if (currentBgmTrack == BgmTrack.Prologue)
+            {
+                prologueBgmCompleted = true;
+                StopBgmLocked();
+                return;
+            }
+
             bgmReader.Position = 0;
             bgmOutput.Play();
         }
@@ -386,6 +398,7 @@ public partial class DragonGlareAlpha
     {
         return gameState switch
         {
+            GameState.LanguageSelection when !languageOpeningFinished => BgmTrack.Prologue,
             GameState.Battle => BgmTrack.Battle,
             GameState.ShopBuy => BgmTrack.Shop,
             GameState.Bank => BgmTrack.Shop,

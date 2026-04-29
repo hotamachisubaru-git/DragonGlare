@@ -40,25 +40,26 @@ public partial class DragonGlareAlpha : Game
     private const int BattleSelectionVisibleRows = 4;
     private const int OpeningSourceViewportWidth = 256;
     private const int OpeningSourceViewportHeight = 240;
+    private const int LanguageOpeningAudioFrames = 2978;
     private const int SceneFadeOutDuration = 40;
     private static readonly System.Drawing.Point PlayerStartTile = new(3, 12);
     private static readonly OpeningNarrationLine[] LanguageOpeningScript =
     [
-        new("遠い昔。", 180, 40),
-        new("世界には五つの大地があった。", 180, 40),
-        new("その時代では、争いがなく。\n皆が平和に満ちていた。", 260, 50),
-        new("そして、それぞれの大地で\n違う神が崇められていたという。", 320, 50),
-        new("しかし", 90, 120),
-        new("平和は長くは続かなかった。", 250, 50),
-        new("争いによって、日の大地は\n跡形もなく崩れ落ちてしまった。", 290, 50),
-        new("そして、世界には暗い月しか\n上らなくなってしまった。", 280, 50),
-        new("次から次へと世界は\n闇に満ちていった。", 250, 50),
-        new("ついには、世界の中心となる光の大地が\n愚かな争いにより、闇に沈んでいった。", 340, 60),
-        new("やがて、光の神は\n闇に飲み込まれ", 220, 50),
-        new("世界にある万物が\n人々を襲うようにしてしまった。", 270, 50),
-        new("世界は、いつしか光を失い\n闇が世界を司るようになった。", 300, 0)
+        new("遠い昔。", 138, 31),
+        new("世界には五つの大地があった。", 138, 31),
+        new("その時代では、争いがなく。\n皆が平和に満ちていた。", 199, 38),
+        new("そして、それぞれの大地で\n違う神が崇められていたという。", 245, 38),
+        new("しかし", 69, 92),
+        new("平和は長くは続かなかった。", 192, 38),
+        new("争いによって、日の大地は\n跡形もなく崩れ落ちてしまった。", 222, 38),
+        new("そして、世界には暗い月しか\n上らなくなってしまった。", 214, 38),
+        new("次から次へと世界は\n闇に満ちていった。", 191, 38),
+        new("ついには、世界の中心となる光の大地が\n愚かな争いにより、闇に沈んでいった。", 260, 46),
+        new("やがて、光の神は\n闇に飲み込まれ", 169, 38),
+        new("世界にある万物が\n人々を襲うようにしてしまった。", 207, 38),
+        new("世界は、いつしか光を失い\n闇が世界を司るようになった。", 230, 0)
     ];
-    private static readonly int LanguageOpeningTotalFrames = LanguageOpeningScript.Sum(line => line.DisplayFrames + line.GapFrames);
+    private static readonly int LanguageOpeningTotalFrames = LanguageOpeningAudioFrames;
 
     private readonly GraphicsDeviceManager graphics;
     private readonly WindowChromeService windowChrome;
@@ -139,6 +140,7 @@ public partial class DragonGlareAlpha : Game
     private string shopMessage = ShopWelcomeMessage;
     private string bankMessage = BankWelcomeMessage;
     private BgmTrack? currentBgmTrack;
+    private bool prologueBgmCompleted;
     private string menuNotice = string.Empty;
     private int menuNoticeFrames;
     private int languageOpeningElapsedFrames;

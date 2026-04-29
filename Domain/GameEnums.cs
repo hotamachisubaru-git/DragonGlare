@@ -64,6 +64,7 @@ public enum FieldMapId
 public enum BgmTrack
 {
     MainMenu,
+    Prologue,
     Field,
     Castle,
     Battle,
