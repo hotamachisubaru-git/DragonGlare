@@ -18,13 +18,13 @@ static class Program
         var platformSupportService = new PlatformSupportService();
         if (platformSupportService.TryDetectUnsupportedPlatform(out var platformMessage))
         {
-            MessageBox.Show(platformMessage, AppMetadata.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Stop);
+            MessageBox.Show(platformMessage, DragonGlareAlpha.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Stop);
             return;
         }
 
         if (AntiCheatService.TryDetectStartupViolation(out var message))
         {
-            MessageBox.Show(message, AppMetadata.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Stop);
+            MessageBox.Show(message, DragonGlareAlpha.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Stop);
             return;
         }
 

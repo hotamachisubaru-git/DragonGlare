@@ -1,4 +1,4 @@
-﻿using DragonGlareAlpha.Domain;
+﻿﻿using DragonGlareAlpha.Domain;
 using DragonGlareAlpha.Domain.Battle;
 using DragonGlareAlpha.Domain.Commerce;
 using DragonGlareAlpha.Domain.Field;
@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using SpriteFontPlus;
 using DragonGlareAlpha.Data;
@@ -30,7 +31,9 @@ public record struct OpeningNarrationLine(string Text, int DisplayFrames, int Ga
 
 public class DragonGlareGame : Game
 {
-    public const string WindowTitle = "DragonGlare Alpha";
+    public static string WindowTitle => 
+        typeof(DragonGlareGame).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion 
+        ?? "DragonGlare Alpha";
 
     private GraphicsDeviceManager _graphics;
     private SpriteBatch? _spriteBatch;

@@ -15,15 +15,15 @@
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>DragonGlare Alpha</AssemblyName>
     <AppVersion>1.0.4</AppVersion>
-    <AppDisplayVersion>Alpha 1.0.4</AppDisplayVersion>
+    <AppDisplayVersion>DragonGlare Alpha $(AppVersion)</AppDisplayVersion>
     <Version>$(AppVersion)</Version>
     <AssemblyVersion>$(AppVersion)</AssemblyVersion>
     <FileVersion>$(AppVersion)</FileVersion>
-    <InformationalVersion>$(AppVersion)</InformationalVersion>
+    <InformationalVersion>$(AppDisplayVersion)</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-    <AssemblyTitle>DragonGlare $(AppDisplayVersion)</AssemblyTitle>
-    <Title>DragonGlare $(AppDisplayVersion)</Title>
+    <AssemblyTitle>$(AppDisplayVersion)</AssemblyTitle>
+    <Title>$(AppDisplayVersion)</Title>
     <Product>DragonGlare Alpha</Product>
     <!-- 親ディレクトリのobjフォルダなどを拾わないようにする -->
     <EnableDefaultItems>false</EnableDefaultItems>
