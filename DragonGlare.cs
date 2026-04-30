@@ -21,6 +21,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using XnaColor = Microsoft.Xna.Framework.Color;
 using XnaRectangle = Microsoft.Xna.Framework.Rectangle;
+using XnaButtonState = Microsoft.Xna.Framework.Input.ButtonState;
 using XnaKeys = Microsoft.Xna.Framework.Input.Keys;
 
 namespace DragonGlareAlpha;
@@ -42,6 +43,7 @@ public partial class DragonGlareAlpha : Game
     private const int OpeningSourceViewportHeight = 240;
     private const int LanguageOpeningAudioFrames = 2978;
     private const int SceneFadeOutDuration = 40;
+    private const float GamepadThumbStickThreshold = 0.5f;
     private static readonly System.Drawing.Point PlayerStartTile = new(3, 12);
     private static readonly OpeningNarrationLine[] LanguageOpeningScript =
     [
@@ -90,7 +92,8 @@ public partial class DragonGlareAlpha : Game
     private readonly BankService bankService = new();
     private readonly FieldEventService fieldEventService = new();
     private readonly FieldTransitionService fieldTransitionService = new();
-    private readonly LaunchSettings launchSettings;
+    private readonly LaunchSettingsService launchSettingsService = new();
+    private LaunchSettings launchSettings;
 
     private Font uiFont = new(UiTypography.DefaultFontFamilyName, UiTypography.FontPixelSize, GraphicsUnit.Pixel);
     private Font smallFont = new(UiTypography.DefaultFontFamilyName, UiTypography.FontPixelSize, GraphicsUnit.Pixel);
@@ -176,6 +179,7 @@ public partial class DragonGlareAlpha : Game
 
         this.launchSettings = launchSettings ?? new LaunchSettings();
         activeDisplayMode = this.launchSettings.DisplayMode;
+        optionsCursor = (int)activeDisplayMode;
         if (activeDisplayMode != LaunchDisplayMode.Fullscreen)
         {
             lastWindowedDisplayMode = activeDisplayMode;
@@ -186,6 +190,9 @@ public partial class DragonGlareAlpha : Game
         LoadCustomFont();
         InitializeAudio();
         LoadFieldSprites();
+
+        gameState = this.launchSettings.PromptOnStartup ? GameState.StartupOptions : GameState.ModeSelect;
+
         saveService.TryMigrateLegacySave(LegacySaveFilePath);
         RefreshSaveSlotSummaries();
     }
@@ -216,7 +223,7 @@ public partial class DragonGlareAlpha : Game
 
         try
         {
-            PollKeyboard();
+            PollInput();
             UpdateGame();
         }
         catch (TamperDetectedException ex)
@@ -272,6 +279,9 @@ public partial class DragonGlareAlpha : Game
 
         switch (gameState)
         {
+            case GameState.StartupOptions:
+                DrawStartupOptions(g);
+                break;
             case GameState.ModeSelect:
                 DrawModeSelect(g);
                 break;
@@ -323,11 +333,13 @@ public partial class DragonGlareAlpha : Game
         }
     }
 
-    private void PollKeyboard()
+    private void PollInput()
     {
-        var state = Keyboard.GetState();
+        var kTranslateState = Keyboard.GetState();
         var nextHeld = new HashSet<XnaKeys>();
-        foreach (var xnaKey in state.GetPressedKeys())
+
+        // キーボード入力の処理
+        foreach (var xnaKey in kTranslateState.GetPressedKeys())
         {
             nextHeld.Add(xnaKey);
             if (!heldKeys.Contains(xnaKey))
@@ -340,10 +352,45 @@ public partial class DragonGlareAlpha : Game
             }
         }
 
+        // ゲームパッド入力の処理
+        var padState = GamePad.GetState(PlayerIndex.One, GamePadDeadZone.IndependentAxes);
+        if (padState.IsConnected)
+        {
+            // 十字キーまたは左スティックを方向キーにマップ
+            MapGamepadToKey(padState.DPad.Up == XnaButtonState.Pressed || padState.ThumbSticks.Left.Y > GamepadThumbStickThreshold, XnaKeys.Up, nextHeld);
+            MapGamepadToKey(padState.DPad.Down == XnaButtonState.Pressed || padState.ThumbSticks.Left.Y < -GamepadThumbStickThreshold, XnaKeys.Down, nextHeld);
+            MapGamepadToKey(padState.DPad.Left == XnaButtonState.Pressed || padState.ThumbSticks.Left.X < -GamepadThumbStickThreshold, XnaKeys.Left, nextHeld);
+            MapGamepadToKey(padState.DPad.Right == XnaButtonState.Pressed || padState.ThumbSticks.Left.X > GamepadThumbStickThreshold, XnaKeys.Right, nextHeld);
+
+            // ボタンを決定・キャンセルにマップ
+            MapGamepadToKey(padState.Buttons.A == XnaButtonState.Pressed || padState.Buttons.Start == XnaButtonState.Pressed, XnaKeys.Enter, nextHeld);
+            MapGamepadToKey(padState.Buttons.B == XnaButtonState.Pressed || padState.Buttons.Back == XnaButtonState.Pressed, XnaKeys.Escape, nextHeld);
+            MapGamepadToKey(padState.Buttons.X == XnaButtonState.Pressed, XnaKeys.X, nextHeld);
+            MapGamepadToKey(padState.Buttons.X == XnaButtonState.Pressed, XnaKeys.Back, nextHeld);
+            MapGamepadToKey(padState.Buttons.Y == XnaButtonState.Pressed, XnaKeys.Z, nextHeld);
+            MapGamepadToKey(padState.Buttons.LeftShoulder == XnaButtonState.Pressed, XnaKeys.B, nextHeld);
+            MapGamepadToKey(padState.Buttons.RightShoulder == XnaButtonState.Pressed, XnaKeys.V, nextHeld);
+        }
+
         heldKeys.Clear();
         foreach (var key in nextHeld)
         {
             heldKeys.Add(key);
+        }
+    }
+
+    /// <summary>
+    /// ゲームパッドの状態を仮想キーに変換し、入力バッファに追加します
+    /// </summary>
+    private void MapGamepadToKey(bool isPressed, XnaKeys mappedKey, HashSet<XnaKeys> nextHeld)
+    {
+        if (isPressed)
+        {
+            nextHeld.Add(mappedKey);
+            if (!heldKeys.Contains(mappedKey))
+            {
+                pressedKeys.Add(mappedKey);
+            }
         }
     }
 
@@ -408,6 +455,60 @@ public partial class DragonGlareAlpha : Game
         graphics.ApplyChanges();
         windowChrome.InvalidateIcon();
         windowChrome.Apply(forceIcon: true);
+    }
+
+    private void UpdateStartupOptions()
+    {
+        if (WasPressed(XnaKeys.Up) || WasPressed(XnaKeys.W))
+        {
+            optionsCursor = Math.Max(0, optionsCursor - 1);
+        }
+        else if (WasPressed(XnaKeys.Down) || WasPressed(XnaKeys.S))
+        {
+            optionsCursor = Math.Min(5, optionsCursor + 1);
+        }
+
+        if (!WasPrimaryConfirmPressed())
+        {
+            return;
+        }
+
+        if (optionsCursor < 4)
+        {
+            SetStartupDisplayMode((LaunchDisplayMode)optionsCursor);
+            return;
+        }
+
+        if (optionsCursor == 4)
+        {
+            UpdateLaunchSettings(activeDisplayMode, !launchSettings.PromptOnStartup);
+            return;
+        }
+
+        SaveLaunchSettings();
+        ChangeGameState(GameState.ModeSelect);
+    }
+
+    private void SetStartupDisplayMode(LaunchDisplayMode displayMode)
+    {
+        activeDisplayMode = displayMode;
+        UpdateLaunchSettings(displayMode, launchSettings.PromptOnStartup);
+        ApplyDisplayMode();
+    }
+
+    private void UpdateLaunchSettings(LaunchDisplayMode displayMode, bool promptOnStartup)
+    {
+        launchSettings = new LaunchSettings
+        {
+            DisplayMode = displayMode,
+            PromptOnStartup = promptOnStartup
+        };
+    }
+
+    private void SaveLaunchSettings()
+    {
+        UpdateLaunchSettings(activeDisplayMode, launchSettings.PromptOnStartup);
+        launchSettingsService.Save(launchSettings);
     }
 
     public static string WindowTitle => 

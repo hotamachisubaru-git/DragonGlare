@@ -128,14 +128,19 @@ public partial class DragonGlareAlpha
 
     private bool WasPressed(Keys key) => pressedKeys.Contains(key);
 
+    private bool WasPrimaryConfirmPressed()
+    {
+        return WasPressed(Keys.Enter) || WasPressed(Keys.Z);
+    }
+
     private bool WasConfirmPressed()
     {
-        return WasPressed(Keys.Enter) || WasPressed(Keys.Z) || WasPressed(Keys.X);
+        return WasPrimaryConfirmPressed() || WasPressed(Keys.X);
     }
 
     private bool WasShopConfirmPressed()
     {
-        return WasPressed(Keys.Enter) || WasPressed(Keys.Z);
+        return WasPrimaryConfirmPressed();
     }
 
     private bool WasShopBackPressed()
@@ -145,7 +150,7 @@ public partial class DragonGlareAlpha
 
     private bool WasBattleSubmenuConfirmPressed()
     {
-        return WasPressed(Keys.Enter) || WasPressed(Keys.Z);
+        return WasPrimaryConfirmPressed();
     }
 
     private bool WasBattleSubmenuBackPressed()
@@ -155,7 +160,7 @@ public partial class DragonGlareAlpha
 
     private bool WasFieldInteractPressed()
     {
-        return WasPressed(Keys.Enter) || WasPressed(Keys.Z);
+        return WasPrimaryConfirmPressed();
     }
 
 }

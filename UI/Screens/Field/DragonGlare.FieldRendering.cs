@@ -57,8 +57,8 @@ public partial class DragonGlareAlpha
             DrawText(
                 g,
                 activeFieldDialogPageIndex < activeFieldDialogPages.Count - 1
-                    ? (selectedLanguage == UiLanguage.Japanese ? "Z: つぎへ" : "Z: NEXT")
-                    : (selectedLanguage == UiLanguage.Japanese ? "Z / ESC: とじる" : "Z / ESC: CLOSE"),
+                    ? (selectedLanguage == UiLanguage.Japanese ? "A/Y/Z: つぎへ" : "A/Y/Z: NEXT")
+                    : (selectedLanguage == UiLanguage.Japanese ? "A/Y/Z / B/ESC: とじる" : "A/Y/Z / B/ESC: CLOSE"),
                 footerRect,
                 smallFont,
                 StringAlignment.Far);

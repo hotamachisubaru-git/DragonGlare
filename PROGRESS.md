@@ -1,11 +1,11 @@
 # DragonGlareAlpha 進捗メモ
 
-更新日: 2026-04-29
+更新日: 2026-04-30
 
 ## 現状サマリー
 
 - `DragonGlareAlpha` は `DragonGlare.MonoGame.csproj` を基準に管理する MonoGame / Windows 向けRPG風プロトタイプです。
-- 現在のアプリバージョンは `1.0.4` です。
+- 現在のアプリバージョンは `1.1.0` です。
 - 画面遷移は「モード選択 → 言語選択 → 名前入力 → フィールド → バトル / ショップ / 銀行」まで実装済みです。
 - 武器、むねあて、あたま、こて、レギンス、ブーツの装備スロットを保持し、戦闘計算とセーブデータに反映します。
 
@@ -27,7 +27,15 @@
 
 - `DragonGlare.MonoGame.csproj` の `AppVersion` と `AppDisplayVersion` を `1.0.2` から `1.0.3` に更新。
 - `DragonGlare.MonoGame.csproj` の `AppVersion` と `AppDisplayVersion` を `1.0.3` から `1.0.4` に更新。
-- 今後、変更を加えた場合は `.csproj` のバージョンを `0.0.1` ずつ増やします。
+- ゲームパッド対応に合わせて `DragonGlare.MonoGame.csproj` と `DragonGlare.Core.csproj` の `AppVersion` を `1.1.0` に更新。
+- 今後、変更内容に応じて `.csproj` のバージョンを更新します。
+
+### ゲームパッド対応
+
+- 十字キー / 左スティックを移動・メニュー選択に対応。
+- A / Start を決定、B / Back をキャンセル、X をステータス / 削除、Y を決定系の補助入力に割り当て。
+- LB をバトル、RB をショップのショートカットとして追加。
+- ゲーム内の操作説明と看板テキストをゲームパッド表記に更新。
 
 ## 実装済み機能
 

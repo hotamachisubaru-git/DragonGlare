@@ -11,21 +11,21 @@ public partial class DragonGlareAlpha
     {
         return (selectedLanguage, key) switch
         {
-            (UiLanguage.Japanese, "fieldHelpLine1") => "やじるし / WASD: いどう",
-            (UiLanguage.English, "fieldHelpLine1") => "ARROWS / WASD: MOVE",
-            (UiLanguage.Japanese, "fieldHelpLine2") => "Z: はなす・しらべる   X: ステータス",
-            (UiLanguage.English, "fieldHelpLine2") => "Z: TALK / CHECK   X: STATUS",
+            (UiLanguage.Japanese, "fieldHelpLine1") => "十字/LS/WASD: いどう",
+            (UiLanguage.English, "fieldHelpLine1") => "D-PAD/LS/WASD: MOVE",
+            (UiLanguage.Japanese, "fieldHelpLine2") => "A/Y/Z: はなす・しらべる   X: ステータス",
+            (UiLanguage.English, "fieldHelpLine2") => "A/Y/Z: TALK / CHECK   X: STATUS",
             (UiLanguage.Japanese, "fieldHelpLine3") => currentFieldMap switch
             {
-                FieldMapId.Castle => "B: バトル   V: ショップ   いま: しろ",
-                FieldMapId.Field => "B: バトル   V: ショップ   いま: フィールド",
-                _ => "B: バトル   V: ショップ   いま: ハブ"
+                FieldMapId.Castle => "LB/Bキー: バトル   RB/Vキー: ショップ   いま: しろ",
+                FieldMapId.Field => "LB/Bキー: バトル   RB/Vキー: ショップ   いま: フィールド",
+                _ => "LB/Bキー: バトル   RB/Vキー: ショップ   いま: ハブ"
             },
             (UiLanguage.English, "fieldHelpLine3") => currentFieldMap switch
             {
-                FieldMapId.Castle => "B: BATTLE   V: SHOP   AREA: CASTLE",
-                FieldMapId.Field => "B: BATTLE   V: SHOP   AREA: FIELD",
-                _ => "B: BATTLE   V: SHOP   AREA: HUB"
+                FieldMapId.Castle => "LB/B KEY: BATTLE   RB/V KEY: SHOP   AREA: CASTLE",
+                FieldMapId.Field => "LB/B KEY: BATTLE   RB/V KEY: SHOP   AREA: FIELD",
+                _ => "LB/B KEY: BATTLE   RB/V KEY: SHOP   AREA: HUB"
             },
             (UiLanguage.Japanese, "areaField") => "フィールドBGM: SFC_field",
             (UiLanguage.English, "areaField") => "FIELD BGM: SFC_field",

@@ -220,11 +220,11 @@ public static class GameContent
             FieldEventActionType.Dialogue,
             [
                 "たてふだだ。\nXで ステータスをひらける。",
-                "Bで バトル、Vで ショップ。\nZで イベントを よめる。"
+                "Bキー/LBで バトル、Vキー/RBで ショップ。\nZやAで イベントを よめる。"
             ],
             [
                 "A sign reads:\nPress X to open STATUS.",
-                "Press B for battle, V for shop,\nand Z to inspect events."
+                "B key/LB starts battle, V key/RB opens shop.\nPress Z or A to inspect events."
             ]),
         new(
             "healing_spring",

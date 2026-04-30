@@ -699,15 +699,15 @@ public partial class DragonGlareAlpha
     private string GetBattleCommandHelpMessage()
     {
         return selectedLanguage == UiLanguage.English
-            ? "ARROWS/WASD: CHOOSE\nENTER/Z: OK  ESC: RUN"
-            : "やじるし/WASD: せんたく\nENTER/Z: けってい  ESC: にげる";
+            ? "D-PAD/LS/WASD: CHOOSE\nA/Y/ENTER/Z: OK  B/ESC: RUN"
+            : "十字/LS/WASD: せんたく\nA/Y/ENTER/Z: けってい  B/ESC: にげる";
     }
 
     private string GetBattleSubmenuHelpMessage()
     {
         return selectedLanguage == UiLanguage.English
-            ? "ARROWS/WASD: CHOOSE\nENTER/Z: OK  ESC/X: BACK"
-            : "やじるし/WASD: せんたく\nENTER/Z: けってい  ESC/X: もどる";
+            ? "D-PAD/LS/WASD: CHOOSE\nA/Y/ENTER/Z: OK  B/X/ESC: BACK"
+            : "十字/LS/WASD: せんたく\nA/Y/ENTER/Z: けってい  B/X/ESC: もどる";
     }
 
     private string GetBattleSelectionTitle()

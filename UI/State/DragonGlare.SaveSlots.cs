@@ -26,7 +26,7 @@ public partial class DragonGlareAlpha
             return;
         }
 
-        if (!WasPressed(Keys.Enter))
+        if (!WasPrimaryConfirmPressed())
         {
             return;
         }

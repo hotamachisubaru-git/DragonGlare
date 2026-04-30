@@ -188,7 +188,7 @@ public partial class DragonGlareAlpha
         DrawBattleMessagePane(
             g,
             resultRect,
-            selectedLanguage == UiLanguage.English ? "ENTER / Z / X: NEXT" : "ENTER / Z / X: つぎへ");
+            selectedLanguage == UiLanguage.English ? "A / Y / X / ENTER / Z: NEXT" : "A / Y / X / ENTER / Z: つぎへ");
     }
 
     private void DrawBattleSelectionPane(Graphics g, Rectangle rect)

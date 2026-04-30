@@ -9,6 +9,7 @@ namespace DragonGlare.Core;
 /// </summary>
 public enum GameState
 {
+    StartupOptions,
     ModeSelect,
     Field,
     Battle,

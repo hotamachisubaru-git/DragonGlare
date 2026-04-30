@@ -25,9 +25,9 @@ public partial class DragonGlareAlpha
         }
         else
         {
-            DrawText(g, "↑↓: せんたく", new Rectangle(54, 50, 188, 24), smallFont);
-            DrawText(g, "Z: けってい", new Rectangle(54, 78, 188, 24), smallFont);
-            DrawText(g, "ESC(X): もどる", new Rectangle(54, 106, 188, 24), smallFont);
+            DrawText(g, "十字/LS: せんたく", new Rectangle(54, 50, 188, 24), smallFont);
+            DrawText(g, "A/Y/Z: けってい", new Rectangle(54, 78, 188, 24), smallFont);
+            DrawText(g, "B/X/ESC: もどる", new Rectangle(54, 106, 188, 24), smallFont);
         }
 
         DrawWindow(g, listRect);

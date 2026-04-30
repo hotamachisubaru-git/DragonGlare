@@ -27,9 +27,9 @@ public partial class DragonGlareAlpha
         }
         else
         {
-            DrawText(g, "↑↓: せんたく", new Rectangle(54, 50, 188, 24), smallFont);
-            DrawText(g, shopPhase == ShopPhase.BuyList ? "Z: こうにゅう" : "Z: ばいきゃく", new Rectangle(54, 78, 188, 24), smallFont);
-            DrawText(g, "ESC(X): もどる", new Rectangle(54, 106, 188, 24), smallFont);
+            DrawText(g, "十字/LS: せんたく", new Rectangle(54, 50, 188, 24), smallFont);
+            DrawText(g, shopPhase == ShopPhase.BuyList ? "A/Y/Z: こうにゅう" : "A/Y/Z: ばいきゃく", new Rectangle(54, 78, 188, 24), smallFont);
+            DrawText(g, "B/X/ESC: もどる", new Rectangle(54, 106, 188, 24), smallFont);
         }
 
         DrawWindow(g, shopListRect);

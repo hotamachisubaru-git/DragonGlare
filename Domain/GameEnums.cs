@@ -2,6 +2,7 @@ namespace DragonGlareAlpha.Domain;
 
 public enum GameState
 {
+    StartupOptions,
     ModeSelect,
     LanguageSelection,
     NameInput,

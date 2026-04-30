@@ -27,6 +27,9 @@ public partial class DragonGlareAlpha
 
         switch (gameState)
         {
+            case GameState.StartupOptions:
+                UpdateStartupOptions();
+                break;
             case GameState.ModeSelect:
                 UpdateModeSelect();
                 break;
@@ -152,7 +155,7 @@ public partial class DragonGlareAlpha
             modeCursor = Math.Min(3, modeCursor + 1);
         }
 
-        if (!WasPressed(Keys.Enter))
+        if (!WasPrimaryConfirmPressed())
         {
             return;
         }
@@ -191,7 +194,7 @@ public partial class DragonGlareAlpha
             languageCursor = 1;
         }
 
-        if (WasPressed(Keys.Enter))
+        if (WasPrimaryConfirmPressed())
         {
             selectedLanguage = languageCursor == 0 ? UiLanguage.Japanese : UiLanguage.English;
             player.Language = selectedLanguage;
@@ -213,6 +216,14 @@ public partial class DragonGlareAlpha
         {
             ChangeGameState(GameState.ModeSelect);
             return;
+        }
+
+        if (WasPrimaryConfirmPressed())
+        {
+            languageOpeningElapsedFrames = LanguageOpeningTotalFrames;
+            languageOpeningLineIndex = LanguageOpeningScript.Length;
+            languageOpeningLineFrame = 0;
+            languageOpeningFinished = true;
         }
 
         if (languageOpeningFinished || languageOpeningLineIndex >= LanguageOpeningScript.Length)
@@ -278,7 +289,7 @@ public partial class DragonGlareAlpha
             return;
         }
 
-        if (WasPressed(Keys.Enter))
+        if (WasPrimaryConfirmPressed())
         {
             AddSelectedCharacter();
         }

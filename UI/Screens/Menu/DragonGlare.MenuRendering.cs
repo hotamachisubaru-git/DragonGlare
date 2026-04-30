@@ -1,6 +1,7 @@
 using System.Drawing.Drawing2D;
 using DragonGlareAlpha.Data;
 using DragonGlareAlpha.Domain;
+using DragonGlareAlpha.Domain.Startup;
 using DragonGlareAlpha.Persistence;
 using System.Drawing.Text;
 
@@ -8,6 +9,39 @@ namespace DragonGlareAlpha;
 
 public partial class DragonGlareAlpha
 {
+    private int optionsCursor;
+
+    private void DrawStartupOptions(Graphics g)
+    {
+        g.Clear(Color.Black);
+        DrawWindow(g, new Rectangle(64, 40, 512, 400));
+
+        DrawText(g, "起動設定", 96, 70, uiFont);
+
+        var modes = new[] { "ウィンドウ 640x480（標準）", "ウィンドウ 1280x720（720p）", "ウィンドウ 1920x1080（1080p）", "フルスクリーン" };
+
+        DrawText(g, "画面モード:", 110, 120, smallFont);
+        for (int i = 0; i < modes.Length; i++)
+        {
+            var isSelected = (optionsCursor == i);
+            if (isSelected) DrawText(g, "▶", 120, 150 + (i * 30), smallFont);
+            var activeMarker = activeDisplayMode == (LaunchDisplayMode)i ? "[x]" : "[ ]";
+            DrawText(g, $"{activeMarker} {modes[i]}", 150, 150 + (i * 30), smallFont);
+        }
+
+        // Prompt toggle
+        bool isPromptSelected = (optionsCursor == 4);
+        if (isPromptSelected) DrawText(g, "▶", 120, 300, smallFont);
+        DrawText(g, $"次回もこの画面を表示: [{(launchSettings.PromptOnStartup ? "はい" : "いいえ")}]", 150, 300, smallFont);
+
+        // Start Button
+        bool isStartSelected = (optionsCursor == 5);
+        if (isStartSelected) DrawText(g, "▶", 240, 370, uiFont);
+        DrawText(g, "ゲームをはじめる", 250, 370, uiFont);
+
+        DrawText(g, "十字/LS: えらぶ  A/Y/Enter/Z: 変更・決定", 96, 410, smallFont);
+    }
+
     private void DrawModeSelect(Graphics g)
     {
         DrawMenuBackdrop(g);
@@ -91,7 +125,7 @@ public partial class DragonGlareAlpha
 
         DrawText(g, "げんごをえらんでください", 140, 276);
         DrawText(g, "CHOOSE A LANGUAGE", 140, 316);
-        DrawText(g, "ENTER/Z: けってい  ESC: もどる", 140, 356, smallFont);
+        DrawText(g, "A/Y/ENTER/Z: けってい  B/ESC: もどる", 140, 356, smallFont);
     }
 
     private void DrawLanguageSelectionLayout(Graphics g)
@@ -161,7 +195,14 @@ public partial class DragonGlareAlpha
         DrawText(g, "CHOOSE A NAME", 140, 338);
         DrawText(g, playerName.Length == 0 ? "..." : playerName.ToString(), 140, 384);
 
-        DrawText(g, selectedLanguage == UiLanguage.Japanese ? "ESC: もどる" : "ESC: BACK", 14, 442);
+        DrawText(
+            g,
+            selectedLanguage == UiLanguage.Japanese
+                ? "A/Y/Enter/Z: 入力  X/Back: けす  B/Esc: もどる"
+                : "A/Y/Enter/Z: INPUT  X/Back: DEL  B/Esc: BACK",
+            14,
+            442,
+            smallFont);
     }
 
     private void DrawSaveSlotSelection(Graphics g)
@@ -316,12 +357,12 @@ public partial class DragonGlareAlpha
     {
         return saveSlotSelectionMode switch
         {
-            SaveSlotSelectionMode.Save => "ENTER: きろく  ESC: なまえにもどる",
-            SaveSlotSelectionMode.Load => "ENTER: よみこむ  ESC: モードにもどる",
-            SaveSlotSelectionMode.CopySource => "ENTER: うつすもと  ESC: モードにもどる",
-            SaveSlotSelectionMode.CopyDestination => "ENTER: うつす  ESC: もどる",
-            SaveSlotSelectionMode.DeleteSelect => "ENTER: けすデータ  ESC: モードにもどる",
-            SaveSlotSelectionMode.DeleteConfirm => "ENTER: けす  ESC: やめる",
+            SaveSlotSelectionMode.Save => "A/Enter/Z: きろく  B/Esc: なまえにもどる",
+            SaveSlotSelectionMode.Load => "A/Enter/Z: よみこむ  B/Esc: モードにもどる",
+            SaveSlotSelectionMode.CopySource => "A/Enter/Z: うつすもと  B/Esc: モードにもどる",
+            SaveSlotSelectionMode.CopyDestination => "A/Enter/Z: うつす  B/Esc: もどる",
+            SaveSlotSelectionMode.DeleteSelect => "A/Enter/Z: けすデータ  B/Esc: モードにもどる",
+            SaveSlotSelectionMode.DeleteConfirm => "A/Enter/Z: けす  B/Esc: やめる",
             _ => string.Empty
         };
     }
