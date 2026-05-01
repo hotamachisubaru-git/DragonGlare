@@ -11,6 +11,7 @@ static class Program
     static void Main()
     {
         WindowChromeService.ApplyProcessAppUserModelId();
+        MuiCacheService.SyncCurrentExecutableMetadata();
 
         var platformSupportService = new PlatformSupportService();
         if (platformSupportService.TryDetectUnsupportedPlatform(out var platformMessage))

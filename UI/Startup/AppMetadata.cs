@@ -30,13 +30,21 @@ internal static class AppMetadata
 
     private static string GetVersion()
     {
-        var version = typeof(AppMetadata).Assembly
+        var assembly = typeof(AppMetadata).Assembly;
+        var version = assembly
+            .GetCustomAttribute<AssemblyFileVersionAttribute>()
+            ?.Version
+            ?? assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
             ?.InformationalVersion
-            ?? typeof(AppMetadata).Assembly.GetName().Version?.ToString(3)
+            ?? assembly.GetName().Version?.ToString(3)
             ?? string.Empty;
 
         var metadataIndex = version.IndexOf('+', StringComparison.Ordinal);
-        return metadataIndex > 0 ? version[..metadataIndex] : version;
+        version = metadataIndex > 0 ? version[..metadataIndex] : version;
+
+        return version.StartsWith(DisplayName, StringComparison.OrdinalIgnoreCase)
+            ? version[DisplayName.Length..].Trim()
+            : version;
     }
 }

@@ -1,6 +1,6 @@
 # DragonGlareAlpha 進捗メモ
 
-更新日: 2026-04-30
+更新日: 2026-05-01
 
 ## 現状サマリー
 
@@ -28,6 +28,7 @@
 - `DragonGlare.MonoGame.csproj` の `AppVersion` と `AppDisplayVersion` を `1.0.2` から `1.0.3` に更新。
 - `DragonGlare.MonoGame.csproj` の `AppVersion` と `AppDisplayVersion` を `1.0.3` から `1.0.4` に更新。
 - ゲームパッド対応に合わせて `DragonGlare.MonoGame.csproj` と `DragonGlare.Core.csproj` の `AppVersion` を `1.1.0` に更新。
+- アプリ起動時に MuiCache の `ApplicationCompany` と `FriendlyAppName` を現在のバージョン表示へ同期するよう変更。
 - 今後、変更内容に応じて `.csproj` のバージョンを更新します。
 
 ### ゲームパッド対応
