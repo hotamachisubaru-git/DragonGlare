@@ -39,6 +39,7 @@ public partial class DragonGlareAlpha : Game
     private const int FieldMovementAnimationDuration = 12;
     private const int EncounterTransitionDuration = 26;
     private const int BattleSelectionVisibleRows = 4;
+    private const int MaxPlayerNameLength = 6;
     private const int OpeningSourceViewportWidth = 256;
     private const int OpeningSourceViewportHeight = 240;
     private const int LanguageOpeningAudioFrames = 2978;

@@ -620,7 +620,7 @@ public partial class DragonGlareAlpha
     private string TrimPlayerName(string name)
     {
         var trimmed = string.IsNullOrWhiteSpace(name) ? string.Empty : name.Trim();
-        return trimmed.Length <= 10 ? trimmed : trimmed[..10];
+        return trimmed.Length <= MaxPlayerNameLength ? trimmed : trimmed[..MaxPlayerNameLength];
     }
 
     private void SyncPlayerNameBuffer(string name)

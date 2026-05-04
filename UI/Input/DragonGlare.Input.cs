@@ -40,7 +40,7 @@ public partial class DragonGlareAlpha
             return;
         }
 
-        if (playerName.Length < 10)
+        if (playerName.Length < MaxPlayerNameLength)
         {
             playerName.Append(selected);
         }

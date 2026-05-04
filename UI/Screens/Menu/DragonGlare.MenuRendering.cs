@@ -201,7 +201,7 @@ public partial class DragonGlareAlpha
                 ? "A/Y/Enter/Z: 入力  X/Back: けす  B/Esc: もどる"
                 : "A/Y/Enter/Z: INPUT  X/Back: DEL  B/Esc: BACK",
             14,
-            442,
+            458,
             smallFont);
     }
 

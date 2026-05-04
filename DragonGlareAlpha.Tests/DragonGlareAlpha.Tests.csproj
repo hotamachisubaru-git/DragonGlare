@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DragonGlare.MonoGame.csproj" />
+    <ProjectReference Include="..\DragonGlareAlpha.csproj" />
   </ItemGroup>
 
 </Project>

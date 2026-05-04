@@ -1,10 +1,10 @@
 # DragonGlareAlpha 進捗メモ
 
-更新日: 2026-05-01
+更新日: 2026-05-04
 
 ## 現状サマリー
 
-- `DragonGlareAlpha` は `DragonGlare.MonoGame.csproj` を基準に管理する MonoGame / Windows 向けRPG風プロトタイプです。
+- `DragonGlareAlpha` は `DragonGlareAlpha.csproj` を基準に管理する MonoGame / Windows 向けRPG風プロトタイプです。
 - 現在のアプリバージョンは `1.1.0` です。
 - 画面遷移は「モード選択 → 言語選択 → 名前入力 → フィールド → バトル / ショップ / 銀行」まで実装済みです。
 - 武器、むねあて、あたま、こて、レギンス、ブーツの装備スロットを保持し、戦闘計算とセーブデータに反映します。
@@ -25,9 +25,8 @@
 
 ### バージョン管理
 
-- `DragonGlare.MonoGame.csproj` の `AppVersion` と `AppDisplayVersion` を `1.0.2` から `1.0.3` に更新。
-- `DragonGlare.MonoGame.csproj` の `AppVersion` と `AppDisplayVersion` を `1.0.3` から `1.0.4` に更新。
-- ゲームパッド対応に合わせて `DragonGlare.MonoGame.csproj` と `DragonGlare.Core.csproj` の `AppVersion` を `1.1.0` に更新。
+- ゲームパッド対応に合わせて `AppVersion` を `1.1.0` に更新。
+- メインプロジェクトを `DragonGlareAlpha.csproj` に統一し、未参照の旧プロジェクト定義を削除。
 - アプリ起動時に MuiCache の `ApplicationCompany` と `FriendlyAppName` を現在のバージョン表示へ同期するよう変更。
 - 今後、変更内容に応じて `.csproj` のバージョンを更新します。
 

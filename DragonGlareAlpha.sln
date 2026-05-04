@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DragonGlare.MonoGame", "DragonGlare.MonoGame.csproj", "{CA10BFAD-C38D-DA7D-5DB8-0D666D31FC61}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DragonGlareAlpha", "DragonGlareAlpha.csproj", "{CA10BFAD-C38D-DA7D-5DB8-0D666D31FC61}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DragonGlareAlpha.Tests", "DragonGlareAlpha.Tests\DragonGlareAlpha.Tests.csproj", "{E0FF913A-31F7-4180-AB39-6BEA95B71949}"
 EndProject
