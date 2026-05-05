@@ -6,7 +6,8 @@ public sealed record WeaponDefinition(
     string Id,
     string Name,
     int Price,
-    int AttackBonus) : IEquipmentDefinition
+    int AttackBonus,
+    string EnglishName = "") : IEquipmentDefinition
 {
     public EquipmentSlot Slot => EquipmentSlot.Weapon;
 

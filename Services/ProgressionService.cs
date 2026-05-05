@@ -18,6 +18,7 @@ public sealed class ProgressionService
 
     public string ApplyBattleRewards(PlayerProgress player, EnemyDefinition enemy, Random random)
     {
+        var language = player.Language;
         var previousExperience = player.Experience;
         var previousGold = player.Gold;
         player.Experience = Math.Min(MaxLevelExperience, player.Experience + enemy.ExperienceReward);
@@ -27,7 +28,9 @@ public sealed class ProgressionService
 
         var messages = new List<string>
         {
-            $"{gainedExperience}けいけんち と {gainedGold}Gを えた！"
+            Text(language,
+                $"{gainedExperience}けいけんち と {gainedGold}Gを えた！",
+                $"Gained {gainedExperience} EXP and {gainedGold}G!")
         };
 
         if (TryAwardBattleDrop(player, enemy, random, out var dropMessage))
@@ -61,7 +64,9 @@ public sealed class ProgressionService
             player.CurrentHp = player.MaxHp;
             player.CurrentMp = player.MaxMp;
 
-            messages.Add($"{GetName(player)}は レベル{player.Level}に あがった！");
+            messages.Add(Text(language,
+                $"{GetName(player)}は レベル{player.Level}に あがった！",
+                $"{GetName(player)} reached level {player.Level}!"));
             messages.Add($"HP+{hpGain} MP+{mpGain} ATK+{attackGain} DEF+{defenseGain}");
         }
 
@@ -71,6 +76,7 @@ public sealed class ProgressionService
 
     public string ApplyDefeatPenalty(PlayerProgress player, Point respawnTile)
     {
+        var language = player.Language;
         var goldLoss = Math.Min(player.Gold, Math.Max(0, player.Gold / 5));
         player.Gold -= goldLoss;
         player.TilePosition = respawnTile;
@@ -82,13 +88,13 @@ public sealed class ProgressionService
         if (goldLoss == 0)
         {
             return string.IsNullOrWhiteSpace(debtPenaltyMessage)
-                ? "HPとMPを とりもどし\nスタートちてんに もどった。"
-                : $"HPとMPを とりもどし\nスタートちてんに もどった。\n{debtPenaltyMessage}";
+                ? Text(language, "HPとMPを とりもどし\nスタートちてんに もどった。", "Recovered HP and MP\nand returned to the start.")
+                : $"{Text(language, "HPとMPを とりもどし\nスタートちてんに もどった。", "Recovered HP and MP\nand returned to the start.")}\n{debtPenaltyMessage}";
         }
 
         return string.IsNullOrWhiteSpace(debtPenaltyMessage)
-            ? $"{goldLoss}Gを おとして\nスタートちてんに もどった。"
-            : $"{goldLoss}Gを おとして\nスタートちてんに もどった。\n{debtPenaltyMessage}";
+            ? Text(language, $"{goldLoss}Gを おとして\nスタートちてんに もどった。", $"Lost {goldLoss}G\nand returned to the start.")
+            : $"{Text(language, $"{goldLoss}Gを おとして\nスタートちてんに もどった。", $"Lost {goldLoss}G\nand returned to the start.")}\n{debtPenaltyMessage}";
     }
 
     public int GetExperienceIntoCurrentLevel(PlayerProgress player)
@@ -125,7 +131,12 @@ public sealed class ProgressionService
 
     private static string GetName(PlayerProgress player)
     {
-        return string.IsNullOrWhiteSpace(player.Name) ? "プレイヤー" : player.Name;
+        if (!string.IsNullOrWhiteSpace(player.Name))
+        {
+            return player.Name;
+        }
+
+        return player.Language == UiLanguage.English ? "Player" : "プレイヤー";
     }
 
     public void GrantPrototypeStarterItems(PlayerProgress player)
@@ -163,19 +174,25 @@ public sealed class ProgressionService
         }
 
         player.AddItem(enemy.Drop.ItemId, enemy.Drop.Quantity);
-        var itemName = GameContent.GetConsumableById(enemy.Drop.ItemId)?.Name
-            ?? GameContent.GetWeaponById(enemy.Drop.ItemId)?.Name
-            ?? GameContent.GetArmorById(enemy.Drop.ItemId)?.Name
-            ?? enemy.Drop.ItemId;
+        var itemName = GameContent.GetItemName(enemy.Drop.ItemId, player.Language);
+        if (string.IsNullOrWhiteSpace(itemName))
+        {
+            itemName = enemy.Drop.ItemId;
+        }
 
         dropMessage = enemy.Drop.Quantity > 1
-            ? $"{enemy.Name}は {itemName} x{enemy.Drop.Quantity}を おとした！"
-            : $"{enemy.Name}は {itemName}を おとした！";
+            ? Text(player.Language,
+                $"{GameContent.GetEnemyName(enemy, player.Language)}は {itemName} x{enemy.Drop.Quantity}を おとした！",
+                $"{GameContent.GetEnemyName(enemy, player.Language)} dropped {itemName} x{enemy.Drop.Quantity}!")
+            : Text(player.Language,
+                $"{GameContent.GetEnemyName(enemy, player.Language)}は {itemName}を おとした！",
+                $"{GameContent.GetEnemyName(enemy, player.Language)} dropped {itemName}!");
         return true;
     }
 
     private static string ApplyLoanPenalty(PlayerProgress player)
     {
+        var language = player.Language;
         if (player.LoanBalance <= 0)
         {
             return string.Empty;
@@ -191,7 +208,7 @@ public sealed class ProgressionService
             }
 
             player.LoanBalance = Math.Max(0, player.LoanBalance - sellPrice);
-            var itemName = GameContent.GetItemName(itemId);
+            var itemName = GameContent.GetItemName(itemId, language);
             if (!string.IsNullOrWhiteSpace(itemName))
             {
                 seizedItems.Add(itemName);
@@ -206,11 +223,15 @@ public sealed class ProgressionService
 
         if (seizedItems.Count == 0)
         {
-            return $"しゃっきん {player.LoanBalance}Gが のこったままだ。";
+            return Text(language,
+                $"しゃっきん {player.LoanBalance}Gが のこったままだ。",
+                $"Your {player.LoanBalance}G loan remains.");
         }
 
-        var seizedList = string.Join(" と ", seizedItems);
-        return $"しゃっきんの かたに\n{seizedList}を さしおさえられた。";
+        var seizedList = string.Join(language == UiLanguage.English ? " and " : " と ", seizedItems);
+        return Text(language,
+            $"しゃっきんの かたに\n{seizedList}を さしおさえられた。",
+            $"{seizedList} was seized\nto repay your loan.");
     }
 
     private static IEnumerable<string> GetSeizableEquipmentIds(PlayerProgress player)
@@ -219,5 +240,10 @@ public sealed class ProgressionService
         {
             yield return itemId;
         }
+    }
+
+    private static string Text(UiLanguage language, string japanese, string english)
+    {
+        return language == UiLanguage.English ? english : japanese;
     }
 }

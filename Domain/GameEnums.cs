@@ -82,6 +82,7 @@ public enum BattleFlowState
 {
     Intro,
     CommandSelection,
+    SpellSelection,
     ItemSelection,
     EquipmentSelection,
     Resolving,
@@ -118,7 +119,10 @@ public enum BattleVisualCue
     PlayerHeal,
     MpRecover,
     EnemyDefeat,
-    ItemUse
+    ItemUse,
+    EnemyStatus,
+    PlayerStatus,
+    PoisonTick
 }
 
 public enum ConsumableEffectType
@@ -126,6 +130,22 @@ public enum ConsumableEffectType
     HealHp,
     HealMp,
     DamageEnemy
+}
+
+public enum SpellEffectType
+{
+    DamageEnemy,
+    HealPlayer,
+    PoisonEnemy,
+    SleepEnemy,
+    CurePlayerStatus
+}
+
+public enum BattleStatusEffect
+{
+    None,
+    Poison,
+    Sleep
 }
 
 public enum FieldEventActionType

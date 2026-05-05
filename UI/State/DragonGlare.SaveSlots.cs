@@ -75,7 +75,7 @@ public partial class DragonGlareAlpha
     {
         if (!IsSaveSlotOccupied(selectedSlot))
         {
-            ShowTransientNotice("うつすデータがありません。");
+            ShowTransientNotice(Text("うつすデータがありません。", "No data to copy."));
             PlaySe(SoundEffect.Collision);
             return;
         }
@@ -83,7 +83,7 @@ public partial class DragonGlareAlpha
         dataOperationSourceSlot = selectedSlot;
         saveSlotSelectionMode = SaveSlotSelectionMode.CopyDestination;
         saveSlotCursor = GetDefaultCopyDestinationIndex(selectedSlot);
-        ShowTransientNotice($"ぼうけんのしょ {selectedSlot} を どこへうつしますか？", 240);
+        ShowTransientNotice(Text($"ぼうけんのしょ {selectedSlot} を どこへうつしますか？", $"Copy file {selectedSlot} to which slot?"), 240);
         PlaySe(SoundEffect.Dialog);
     }
 
@@ -93,14 +93,14 @@ public partial class DragonGlareAlpha
         if (sourceSlot is < 1 or > SaveService.SlotCount)
         {
             saveSlotSelectionMode = SaveSlotSelectionMode.CopySource;
-            ShowTransientNotice("うつすデータを えらびなおしてください。");
+            ShowTransientNotice(Text("うつすデータを えらびなおしてください。", "Choose copy data again."));
             PlaySe(SoundEffect.Collision);
             return;
         }
 
         if (selectedSlot == sourceSlot)
         {
-            ShowTransientNotice("同じ枠へは うつせません。");
+            ShowTransientNotice(Text("同じ枠へは うつせません。", "Cannot copy to the same slot."));
             PlaySe(SoundEffect.Collision);
             return;
         }
@@ -116,7 +116,7 @@ public partial class DragonGlareAlpha
             dataOperationSourceSlot = 0;
             saveSlotSelectionMode = SaveSlotSelectionMode.CopySource;
             saveSlotCursor = GetFirstOccupiedSaveSlotIndex();
-            ShowTransientNotice("SAVE DATA ERROR / データを処理できません");
+            ShowTransientNotice(Text("SAVE DATA ERROR / データを処理できません", "SAVE DATA ERROR"));
             PlaySe(SoundEffect.Collision);
             return;
         }
@@ -127,7 +127,7 @@ public partial class DragonGlareAlpha
             dataOperationSourceSlot = 0;
             saveSlotSelectionMode = SaveSlotSelectionMode.CopySource;
             saveSlotCursor = selectedSlot - 1;
-            ShowTransientNotice($"ぼうけんのしょ {sourceSlot} を {selectedSlot} にうつしました。", 240);
+            ShowTransientNotice(Text($"ぼうけんのしょ {sourceSlot} を {selectedSlot} にうつしました。", $"Copied file {sourceSlot} to {selectedSlot}."), 240);
             PlaySe(SoundEffect.Dialog);
             return;
         }
@@ -146,7 +146,7 @@ public partial class DragonGlareAlpha
         var summary = saveSlotSummaries.ElementAtOrDefault(selectedSlot - 1);
         if (summary is null || summary.State == SaveSlotState.Empty)
         {
-            ShowTransientNotice("けすデータがありません。");
+            ShowTransientNotice(Text("けすデータがありません。", "No data to delete."));
             PlaySe(SoundEffect.Collision);
             return;
         }
@@ -154,7 +154,7 @@ public partial class DragonGlareAlpha
         dataOperationSourceSlot = selectedSlot;
         saveSlotCursor = selectedSlot - 1;
         saveSlotSelectionMode = SaveSlotSelectionMode.DeleteConfirm;
-        ShowTransientNotice($"ぼうけんのしょ {selectedSlot} を けしますか？", 240);
+        ShowTransientNotice(Text($"ぼうけんのしょ {selectedSlot} を けしますか？", $"Delete file {selectedSlot}?"), 240);
         PlaySe(SoundEffect.Dialog);
     }
 
@@ -165,7 +165,7 @@ public partial class DragonGlareAlpha
         {
             dataOperationSourceSlot = 0;
             saveSlotSelectionMode = SaveSlotSelectionMode.DeleteSelect;
-            ShowTransientNotice("けすデータを えらびなおしてください。");
+            ShowTransientNotice(Text("けすデータを えらびなおしてください。", "Choose delete data again."));
             PlaySe(SoundEffect.Collision);
             return;
         }
@@ -180,7 +180,7 @@ public partial class DragonGlareAlpha
             RefreshSaveSlotSummaries();
             dataOperationSourceSlot = 0;
             saveSlotSelectionMode = SaveSlotSelectionMode.DeleteSelect;
-            ShowTransientNotice("SAVE DATA ERROR / データを処理できません");
+            ShowTransientNotice(Text("SAVE DATA ERROR / データを処理できません", "SAVE DATA ERROR"));
             PlaySe(SoundEffect.Collision);
             return;
         }
@@ -195,8 +195,8 @@ public partial class DragonGlareAlpha
         saveSlotSelectionMode = SaveSlotSelectionMode.DeleteSelect;
         saveSlotCursor = Math.Clamp(selectedSlot - 1, 0, SaveService.SlotCount - 1);
         ShowTransientNotice(deleted
-            ? $"ぼうけんのしょ {selectedSlot} を けしました。"
-            : "けすデータがありません。", 240);
+            ? Text($"ぼうけんのしょ {selectedSlot} を けしました。", $"Deleted file {selectedSlot}.")
+            : Text("けすデータがありません。", "No data to delete."), 240);
         PlaySe(deleted ? SoundEffect.Dialog : SoundEffect.Collision);
     }
 
@@ -233,8 +233,18 @@ public partial class DragonGlareAlpha
         return saveSlotSummaries.ElementAtOrDefault(slotNumber - 1)?.State == SaveSlotState.Occupied;
     }
 
-    private static string GetSaveLoadFailureMessage(SaveLoadFailureReason failureReason)
+    private string GetSaveLoadFailureMessage(SaveLoadFailureReason failureReason)
     {
+        if (selectedLanguage == UiLanguage.English)
+        {
+            return failureReason switch
+            {
+                SaveLoadFailureReason.InvalidSignature => "SAVE DATA INVALID",
+                SaveLoadFailureReason.InvalidFormat => "SAVE DATA ERROR",
+                _ => "NO SAVE DATA"
+            };
+        }
+
         return failureReason switch
         {
             SaveLoadFailureReason.InvalidSignature => "SAVE DATA INVALID / セーブデータが改ざんされています",
@@ -267,5 +277,10 @@ public partial class DragonGlareAlpha
         }
 
         return 0;
+    }
+
+    private string Text(string japanese, string english)
+    {
+        return selectedLanguage == UiLanguage.English ? english : japanese;
     }
 }

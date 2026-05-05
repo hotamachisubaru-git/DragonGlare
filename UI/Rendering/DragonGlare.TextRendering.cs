@@ -6,9 +6,8 @@ public partial class DragonGlareAlpha
 {
     private void DrawWindow(Graphics g, Rectangle rect)
     {
-        // ダイアログを「色なし（無地）」にするため、真っ黒の背景とシンプルな白い枠のみを描画します
-        using var backgroundBrush = new SolidBrush(Color.Black); // 無地の黒背景
-        using var borderPen = new Pen(Color.White, 1); // 1ピクセルの白枠
+        using var backgroundBrush = new SolidBrush(Color.Black);
+        using var borderPen = new Pen(Color.White, 1);
 
         g.FillRectangle(backgroundBrush, rect);
         g.DrawRectangle(borderPen, rect.X, rect.Y, rect.Width - 1, rect.Height - 1);

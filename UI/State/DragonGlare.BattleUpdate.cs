@@ -16,7 +16,6 @@ public partial class DragonGlareAlpha
             return;
         }
 
-        // バトルメッセージの1行ずつ表示アニメーション
         if (battleFlowState is BattleFlowState.Victory or BattleFlowState.Defeat or BattleFlowState.Escaped)
         {
             if (battleMessageLines.Length > 0 && battleMessageVisibleLines < battleMessageLines.Length)
@@ -50,7 +49,7 @@ public partial class DragonGlareAlpha
             return;
         }
 
-        if (battleFlowState is BattleFlowState.ItemSelection or BattleFlowState.EquipmentSelection)
+        if (battleFlowState is BattleFlowState.SpellSelection or BattleFlowState.ItemSelection or BattleFlowState.EquipmentSelection)
         {
             UpdateBattleSelectionMenu();
             return;
@@ -60,7 +59,6 @@ public partial class DragonGlareAlpha
         {
             if (WasConfirmPressed() || WasPressed(Keys.Escape))
             {
-                // メッセージ表示途中で決定ボタンが押されたら、全行を一気に表示する（スキップ）
                 if (battleMessageLines.Length > 0 && battleMessageVisibleLines < battleMessageLines.Length)
                 {
                     battleMessageVisibleLines = battleMessageLines.Length;
@@ -78,7 +76,7 @@ public partial class DragonGlareAlpha
 
         if (WasPressed(Keys.Escape))
         {
-            battleMessage = BattleEscapeMessage;
+            battleMessage = GetBattleEscapeMessage();
             battleFlowState = BattleFlowState.Escaped;
             PersistProgress();
             return;
@@ -92,6 +90,9 @@ public partial class DragonGlareAlpha
         var action = GameContent.BattleCommandGrid[battleCursorRow, battleCursorColumn];
         switch (action)
         {
+            case BattleActionType.Spell:
+                OpenBattleSelectionMenu(BattleFlowState.SpellSelection);
+                return;
             case BattleActionType.Item:
                 OpenBattleSelectionMenu(BattleFlowState.ItemSelection);
                 return;
@@ -129,9 +130,7 @@ public partial class DragonGlareAlpha
         var entries = GetActiveBattleSelectionEntries();
         if (entries.Count == 0)
         {
-            CloseBattleSelectionMenu(battleFlowState == BattleFlowState.ItemSelection
-                ? GetBattleNoItemsMessage()
-                : GetBattleNoEquipmentMessage());
+            CloseBattleSelectionMenu(GetBattleEmptySelectionMessage(battleFlowState));
             return;
         }
 
@@ -156,13 +155,17 @@ public partial class DragonGlareAlpha
         }
 
         var selectedEntry = entries[battleListCursor];
-        var action = battleFlowState == BattleFlowState.ItemSelection
-            ? BattleActionType.Item
-            : BattleActionType.Equip;
+        var action = battleFlowState switch
+        {
+            BattleFlowState.SpellSelection => BattleActionType.Spell,
+            BattleFlowState.ItemSelection => BattleActionType.Item,
+            _ => BattleActionType.Equip
+        };
         var result = battleService.ResolveTurn(
             player,
             currentEncounter,
             action,
+            selectedEntry.Spell,
             selectedEntry.Consumable,
             selectedEntry.Equipment,
             random);
@@ -197,15 +200,11 @@ public partial class DragonGlareAlpha
         var entries = GetActiveBattleSelectionEntries();
         if (entries.Count == 0)
         {
-            CloseBattleSelectionMenu(nextState == BattleFlowState.ItemSelection
-                ? GetBattleNoItemsMessage()
-                : GetBattleNoEquipmentMessage());
+            CloseBattleSelectionMenu(GetBattleEmptySelectionMessage(nextState));
             return;
         }
 
-        battleMessage = nextState == BattleFlowState.ItemSelection
-            ? GetBattleItemPromptMessage()
-            : GetBattleEquipmentPromptMessage();
+        battleMessage = GetBattleSelectionPromptMessage(nextState);
     }
 
     private void CloseBattleSelectionMenu(string? message = null)
@@ -255,9 +254,8 @@ public partial class DragonGlareAlpha
                 break;
         }
 
-        // メッセージを1行ずつ表示するための初期化
         battleMessageLines = battleMessage.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        battleMessageVisibleLines = 1; // 最初の1行だけは即座に表示
+        battleMessageVisibleLines = 1;
         battleMessageLineTimer = BattleMessageLineDelayFrames;
     }
 
@@ -269,7 +267,9 @@ public partial class DragonGlareAlpha
             return;
         }
 
-        message += $"\nかしつけの りそくが {addedInterest}G ふえた。";
+        message += selectedLanguage == UiLanguage.English
+            ? $"\nLoan interest increased by {addedInterest}G."
+            : $"\nかしつけの りそくが {addedInterest}G ふえた。";
     }
 
     private void UpdateEncounterTransition()
@@ -295,7 +295,7 @@ public partial class DragonGlareAlpha
         ResetBattleSelectionState();
         battleFlowState = BattleFlowState.Intro;
         battleIntroFramesRemaining = BattleIntroDurationFrames;
-        battleMessage = GetBattleEncounterMessage(currentEncounter.Enemy.Name);
+        battleMessage = GetBattleEncounterMessage(GameContent.GetEnemyName(currentEncounter.Enemy, selectedLanguage));
         ChangeGameState(GameState.Battle);
     }
 
@@ -312,26 +312,70 @@ public partial class DragonGlareAlpha
         {
             enemyHitFlashFramesRemaining--;
         }
+
+        if (battleSpellEffectFramesRemaining > 0)
+        {
+            battleSpellEffectFramesRemaining--;
+        }
+
+        if (playerHitFlashFramesRemaining > 0)
+        {
+            playerHitFlashFramesRemaining--;
+        }
+
+        if (battlePlayerHealFramesRemaining > 0)
+        {
+            battlePlayerHealFramesRemaining--;
+        }
+
+        if (battleStatusEffectFramesRemaining > 0)
+        {
+            battleStatusEffectFramesRemaining--;
+        }
     }
 
     private void ResetBattleVisualEffects()
     {
         enemyHitFlashFramesRemaining = 0;
+        battleSpellEffectFramesRemaining = 0;
+        playerHitFlashFramesRemaining = 0;
+        battlePlayerHealFramesRemaining = 0;
+        battleStatusEffectFramesRemaining = 0;
     }
 
     private void ApplyBattleVisualEffects(BattleTurnResolution result)
     {
         enemyHitFlashFramesRemaining = 0;
-        if (currentEncounter is null || currentEncounter.CurrentHp <= 0)
-        {
-            return;
-        }
+        battleSpellEffectFramesRemaining = 0;
+        playerHitFlashFramesRemaining = 0;
+        battlePlayerHealFramesRemaining = 0;
+        battleStatusEffectFramesRemaining = 0;
 
         foreach (var step in result.Steps)
         {
             if (step.VisualCue == BattleVisualCue.EnemyHit)
             {
                 enemyHitFlashFramesRemaining = Math.Max(enemyHitFlashFramesRemaining, step.AnimationFrames);
+            }
+
+            if (step.VisualCue == BattleVisualCue.SpellCast)
+            {
+                battleSpellEffectFramesRemaining = Math.Max(battleSpellEffectFramesRemaining, step.AnimationFrames);
+            }
+
+            if (step.VisualCue == BattleVisualCue.PlayerHit)
+            {
+                playerHitFlashFramesRemaining = Math.Max(playerHitFlashFramesRemaining, step.AnimationFrames);
+            }
+
+            if (step.VisualCue is BattleVisualCue.PlayerHeal or BattleVisualCue.MpRecover)
+            {
+                battlePlayerHealFramesRemaining = Math.Max(battlePlayerHealFramesRemaining, step.AnimationFrames);
+            }
+
+            if (step.VisualCue is BattleVisualCue.EnemyStatus or BattleVisualCue.PlayerStatus or BattleVisualCue.PoisonTick)
+            {
+                battleStatusEffectFramesRemaining = Math.Max(battleStatusEffectFramesRemaining, step.AnimationFrames);
             }
         }
     }

@@ -7,7 +7,8 @@ public sealed record ArmorDefinition(
     string Name,
     int Price,
     int DefenseBonus,
-    EquipmentSlot Slot = EquipmentSlot.Armor) : IEquipmentDefinition
+    EquipmentSlot Slot = EquipmentSlot.Armor,
+    string EnglishName = "") : IEquipmentDefinition
 {
     public int AttackBonus => 0;
 }

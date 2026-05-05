@@ -1,4 +1,5 @@
 using DragonGlareAlpha.Domain.Commerce;
+using DragonGlareAlpha.Domain.Battle;
 using DragonGlareAlpha.Domain.Items;
 using DragonGlareAlpha.Domain.Player;
 
@@ -27,6 +28,7 @@ public partial class DragonGlareAlpha
         string Label,
         string Detail,
         string Badge,
+        SpellDefinition? Spell = null,
         ConsumableDefinition? Consumable = null,
         IEquipmentDefinition? Equipment = null);
 

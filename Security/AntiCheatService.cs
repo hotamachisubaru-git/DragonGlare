@@ -53,7 +53,6 @@ public sealed partial class AntiCheatService
             return true;
         }
 
-        // 重いプロセス走査は非同期で裏側で回す
         TriggerAsyncProcessScan();
 
         message = string.Empty;

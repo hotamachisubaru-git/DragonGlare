@@ -9,8 +9,6 @@ namespace DragonGlareAlpha;
 
 public partial class DragonGlareAlpha
 {
-    private int optionsCursor;
-
     private void DrawStartupOptions(Graphics g)
     {
         g.Clear(Color.Black);
@@ -29,12 +27,10 @@ public partial class DragonGlareAlpha
             DrawText(g, $"{activeMarker} {modes[i]}", 150, 150 + (i * 30), smallFont);
         }
 
-        // Prompt toggle
         bool isPromptSelected = (optionsCursor == 4);
         if (isPromptSelected) DrawText(g, "▶", 120, 300, smallFont);
         DrawText(g, $"次回もこの画面を表示: [{(launchSettings.PromptOnStartup ? "はい" : "いいえ")}]", 150, 300, smallFont);
 
-        // Start Button
         bool isStartSelected = (optionsCursor == 5);
         if (isStartSelected) DrawText(g, "▶", 240, 370, uiFont);
         DrawText(g, "ゲームをはじめる", 250, 370, uiFont);
@@ -55,7 +51,6 @@ public partial class DragonGlareAlpha
         }
         else
         {
-            // レイアウト画像がない場合、デフォルトのウィンドウを描画
             DrawWindow(g, new Rectangle(96, 32, 184, 192));
             DrawWindow(g, new Rectangle(288, 32, 256, 192));
             DrawWindow(g, new Rectangle(96, 232, 448, 176));
@@ -63,10 +58,10 @@ public partial class DragonGlareAlpha
 
         var menuItems = new[]
         {
-            "はじめから",
-            "つづきから",
-            "データうつす",
-            "データけす"
+            selectedLanguage == UiLanguage.English ? "NEW GAME" : "はじめから",
+            selectedLanguage == UiLanguage.English ? "CONTINUE" : "つづきから",
+            selectedLanguage == UiLanguage.English ? "COPY DATA" : "データうつす",
+            selectedLanguage == UiLanguage.English ? "DELETE DATA" : "データけす"
         };
 
         var menuStartX = ScaleModeSelectX(layoutRect, 28);
@@ -98,7 +93,9 @@ public partial class DragonGlareAlpha
 
         DrawText(
             g,
-            string.IsNullOrWhiteSpace(menuNotice) ? "モードを選んでください。" : menuNotice,
+            string.IsNullOrWhiteSpace(menuNotice)
+                ? selectedLanguage == UiLanguage.English ? "Choose a mode." : "モードを選んでください。"
+                : menuNotice,
             new Rectangle(
                 ScaleModeSelectX(layoutRect, 24),
                 ScaleModeSelectY(layoutRect, 136),
@@ -191,8 +188,7 @@ public partial class DragonGlareAlpha
         }
 
         DrawWindow(g, new Rectangle(116, 270, 410, 180));
-        DrawText(g, "なまえをきめてください", 140, 300);
-        DrawText(g, "CHOOSE A NAME", 140, 338);
+        DrawText(g, selectedLanguage == UiLanguage.English ? "CHOOSE A NAME" : "なまえをきめてください", 140, 300);
         DrawText(g, playerName.Length == 0 ? "..." : playerName.ToString(), 140, 384);
 
         DrawText(
@@ -216,13 +212,8 @@ public partial class DragonGlareAlpha
         DrawWindow(g, titleRect);
         DrawText(
             g,
-            GetSaveSlotSelectionTitleJapanese(),
-            new Rectangle(titleRect.X + 32, titleRect.Y + 16, titleRect.Width - 64, 28),
-            smallFont);
-        DrawText(
-            g,
-            GetSaveSlotSelectionTitleEnglish(),
-            new Rectangle(titleRect.X + 32, titleRect.Y + 42, titleRect.Width - 64, 22),
+            GetSaveSlotSelectionTitle(),
+            new Rectangle(titleRect.X + 32, titleRect.Y + 24, titleRect.Width - 64, 24),
             smallFont);
 
         for (var index = 0; index < SaveService.SlotCount; index++)
@@ -241,7 +232,7 @@ public partial class DragonGlareAlpha
                 DrawSelectionMarker(g, slotRect.X + 14, slotRect.Y + 24);
             }
 
-            DrawText(g, $"ぼうけんのしょ {slotNumber}", slotRect.X + 38, slotRect.Y + 8, smallFont);
+            DrawText(g, selectedLanguage == UiLanguage.English ? $"FILE {slotNumber}" : $"ぼうけんのしょ {slotNumber}", slotRect.X + 38, slotRect.Y + 8, smallFont);
             var operationBadge = GetSaveSlotOperationBadge(slotNumber);
             if (!string.IsNullOrWhiteSpace(operationBadge))
             {
@@ -259,10 +250,10 @@ public partial class DragonGlareAlpha
                         smallFont);
                     break;
                 case SaveSlotState.Corrupted:
-                    DrawText(g, "BROKEN DATA / よみこめません", slotRect.X + 38, slotRect.Y + 30, smallFont);
+                    DrawText(g, selectedLanguage == UiLanguage.English ? "BROKEN DATA" : "BROKEN DATA / よみこめません", slotRect.X + 38, slotRect.Y + 30, smallFont);
                     break;
                 default:
-                    DrawText(g, "NO DATA / まだ きろくがありません", slotRect.X + 38, slotRect.Y + 30, smallFont);
+                    DrawText(g, selectedLanguage == UiLanguage.English ? "NO DATA" : "NO DATA / まだ きろくがありません", slotRect.X + 38, slotRect.Y + 30, smallFont);
                     break;
             }
         }
@@ -288,33 +279,40 @@ public partial class DragonGlareAlpha
         }
     }
 
-    // レイアウト矩形に基づいてモード選択のX座標をスケーリング
     private static int ScaleModeSelectX(Rectangle layoutRect, int sourceX)
     {
         return layoutRect.X + (int)Math.Round(sourceX * (layoutRect.Width / 256f));
     }
 
-    // レイアウト矩形に基づいてモード選択のY座標をスケーリング
     private static int ScaleModeSelectY(Rectangle layoutRect, int sourceY)
     {
         return layoutRect.Y + (int)Math.Round(sourceY * (layoutRect.Height / 240f));
     }
 
-    // レイアウト矩形に基づいてモード選択の幅をスケーリング
     private static int ScaleModeSelectWidth(Rectangle layoutRect, int sourceWidth)
     {
         return (int)Math.Round(sourceWidth * (layoutRect.Width / 256f));
     }
 
-    // レイアウト矩形に基づいてモード選択の高さをスケーリング
     private static int ScaleModeSelectHeight(Rectangle layoutRect, int sourceHeight)
     {
         return (int)Math.Round(sourceHeight * (layoutRect.Height / 240f));
     }
 
-    // モード選択カーソルの説明を取得
-    private static string GetModeSelectDescription(int cursor)
+    private string GetModeSelectDescription(int cursor)
     {
+        if (selectedLanguage == UiLanguage.English)
+        {
+            return cursor switch
+            {
+                0 => "Start a new\nadventure.",
+                1 => "Continue from\nsaved data.",
+                2 => "Copy data to\nanother slot.",
+                3 => "Delete unwanted\ndata.",
+                _ => string.Empty
+            };
+        }
+
         return cursor switch
         {
             0 => "ゲームを最初から\nはじめる。",
@@ -323,6 +321,13 @@ public partial class DragonGlareAlpha
             3 => "いらないデータを\nけす。",
             _ => string.Empty
         };
+    }
+
+    private string GetSaveSlotSelectionTitle()
+    {
+        return selectedLanguage == UiLanguage.English
+            ? GetSaveSlotSelectionTitleEnglish()
+            : GetSaveSlotSelectionTitleJapanese();
     }
 
     private string GetSaveSlotSelectionTitleJapanese()
@@ -355,6 +360,20 @@ public partial class DragonGlareAlpha
 
     private string GetSaveSlotSelectionHelpText()
     {
+        if (selectedLanguage == UiLanguage.English)
+        {
+            return saveSlotSelectionMode switch
+            {
+                SaveSlotSelectionMode.Save => "A/Enter/Z: SAVE  B/Esc: NAME",
+                SaveSlotSelectionMode.Load => "A/Enter/Z: LOAD  B/Esc: MODE",
+                SaveSlotSelectionMode.CopySource => "A/Enter/Z: SOURCE  B/Esc: MODE",
+                SaveSlotSelectionMode.CopyDestination => "A/Enter/Z: COPY  B/Esc: BACK",
+                SaveSlotSelectionMode.DeleteSelect => "A/Enter/Z: DELETE  B/Esc: MODE",
+                SaveSlotSelectionMode.DeleteConfirm => "A/Enter/Z: DELETE  B/Esc: CANCEL",
+                _ => string.Empty
+            };
+        }
+
         return saveSlotSelectionMode switch
         {
             SaveSlotSelectionMode.Save => "A/Enter/Z: きろく  B/Esc: なまえにもどる",
@@ -376,13 +395,12 @@ public partial class DragonGlareAlpha
 
         return saveSlotSelectionMode switch
         {
-            SaveSlotSelectionMode.CopyDestination => "うつすもと",
-            SaveSlotSelectionMode.DeleteConfirm => "けすデータ",
+            SaveSlotSelectionMode.CopyDestination => selectedLanguage == UiLanguage.English ? "SOURCE" : "うつすもと",
+            SaveSlotSelectionMode.DeleteConfirm => selectedLanguage == UiLanguage.English ? "DELETE" : "けすデータ",
             _ => string.Empty
         };
     }
 
-    // モード選択カーソルを描画
     private void DrawModeSelectCursor(Graphics g, int x, int y)
     {
         if ((frameCounter / 18) % 2 == 1)
@@ -393,7 +411,6 @@ public partial class DragonGlareAlpha
         DrawMenuCursorArrow(g, x, y);
     }
 
-    // 言語オープニングの背景を描画
     private void DrawLanguageOpeningBackdrop(Graphics g)
     {
         var openingImage = GetUiImage("SFC_opening.png");
@@ -452,7 +469,6 @@ public partial class DragonGlareAlpha
             height);
     }
 
-    // 言語オープニングのナレーションを描画
     private void DrawLanguageOpeningNarration(Graphics g)
     {
         var narration = GetCurrentLanguageOpeningText();
@@ -466,24 +482,19 @@ public partial class DragonGlareAlpha
         var totalHeight = lines.Count * UiTypography.LineHeight;
         var openingDestination = GetOpeningViewportDestination(OpeningSourceViewportWidth, OpeningSourceViewportHeight);
         
-        // 仮想キャンバス(256x240)の中央付近に配置。Y座標を完全に整数に固定。
         int startY = openingDestination.Y + 220 + Math.Max(0, (48 - totalHeight) / 2);
 
-        // ドットの崩れを防ぐため、一度等倍(1x)のビットマップにテキストを描画
         using var textBitmap = new Bitmap(UiCanvas.VirtualWidth, UiCanvas.VirtualHeight);
         using var textGraphics = Graphics.FromImage(textBitmap);
         
-        // テキスト用の Graphics 設定（スケールなし、等倍描画）
         textGraphics.TextRenderingHint = TextRenderingHint.SingleBitPerPixel;
         textGraphics.SmoothingMode = SmoothingMode.None;
         textGraphics.PixelOffsetMode = PixelOffsetMode.None;
         
-        var shadowColor = Color.FromArgb((int)Math.Round(255f * alpha), 0, 0, 0); // 完全な黒
+        var shadowColor = Color.FromArgb((int)Math.Round(255f * alpha), 0, 0, 0);
         using var shadowBrush = new SolidBrush(shadowColor);
         using var mainBrush = new SolidBrush(Color.FromArgb((int)Math.Round(255f * alpha), 255, 255, 255));
 
-        // StringFormatのセンタリングを使用せず、左揃えで描画（座標を手動計算するため）
-        // 動画と同じ十字4方向の1pxアウトライン
         var offsets = new[]
         {
             new Point(0, -1), new Point(-1, 0), new Point(1, 0), new Point(0, 1)
@@ -494,25 +505,20 @@ public partial class DragonGlareAlpha
             var line = lines[i];
             var y = startY + (i * UiTypography.LineHeight);
 
-            // テキストの幅を計測して、X座標を手動で計算する
             var textWidth = MeasureTextWidth(textGraphics, line, uiFont);
-            // 画面中央に配置するため、X座標を計算し、強制的に整数（ピクセルグリッド）に合わせる
             int x = openingDestination.X + (int)Math.Floor((openingDestination.Width - textWidth) / 2f);
 
-            // 細いアウトラインを描画（裏画面へ）
             foreach (var off in offsets)
             {
                 DrawTextLine(textGraphics, line, uiFont, shadowBrush, x + off.X, y + off.Y);
             }
 
-            // メインの白い文字（裏画面へ）
             DrawTextLine(textGraphics, line, uiFont, mainBrush, x, y);
         }
 
-        // 最後に、描画済みのビットマップを実際の画面（拡大スケール適用済み）に描画する。
         g.DrawImage(textBitmap, 0, 0, UiCanvas.VirtualWidth, UiCanvas.VirtualHeight);
     }
-    // 現在の言語オープニングテキストを取得
+
     private string GetCurrentLanguageOpeningText()
     {
         if (languageOpeningFinished || languageOpeningLineIndex >= LanguageOpeningScript.Length)
@@ -526,7 +532,6 @@ public partial class DragonGlareAlpha
             : string.Empty;
     }
 
-    // 言語オープニングナレーションのアルファ値を取得
     private float GetLanguageOpeningNarrationAlpha()
     {
         if (languageOpeningFinished || languageOpeningLineIndex >= LanguageOpeningScript.Length)

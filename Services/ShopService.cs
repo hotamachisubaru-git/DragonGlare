@@ -9,18 +9,20 @@ public sealed class ShopService
 {
     public ShopTransactionResult PurchaseProduct(PlayerProgress player, ShopProductDefinition product)
     {
+        var language = player.Language;
         if (string.IsNullOrWhiteSpace(product.Id) || (product.Equipment is null && product.Consumable is null))
         {
-            return new ShopTransactionResult(false, false, 0, "＊「その しょうひんは まだ あつかえない。」");
+            return new ShopTransactionResult(false, false, 0, Text(language, "＊「その しょうひんは まだ あつかえない。」", "* \"That item is not for sale yet.\""));
         }
 
         if (player.Gold < product.Price)
         {
-            return new ShopTransactionResult(false, false, 0, "＊「おかねが たりないね。」");
+            return new ShopTransactionResult(false, false, 0, Text(language, "＊「おかねが たりないね。」", "* \"You do not have enough gold.\""));
         }
 
         player.Gold -= product.Price;
         player.AddItem(product.Id);
+        var productName = GameContent.GetShopProductName(product, language);
 
         if (product.Consumable is not null)
         {
@@ -28,7 +30,9 @@ public sealed class ShopService
                 true,
                 false,
                 product.Price,
-                $"＊「{product.Name}を かった！\n　もちものに しまっておくよ。」");
+                Text(language,
+                    $"＊「{productName}を かった！\n　もちものに しまっておくよ。」",
+                    $"* \"Bought {productName}!\n  I put it in your bag.\""));
         }
 
         var equipment = product.Equipment!;
@@ -56,41 +60,55 @@ public sealed class ShopService
         }
 
         var message = shouldEquip
-            ? $"＊「{equipment.Name}を かった！\n　さっそく そうびしたぜ。」"
-            : $"＊「{equipment.Name}を かった！\n　もちものに いれておくよ。」";
+            ? Text(language,
+                $"＊「{productName}を かった！\n　さっそく そうびしたぜ。」",
+                $"* \"Bought {productName}!\n  You equipped it right away.\"")
+            : Text(language,
+                $"＊「{productName}を かった！\n　もちものに いれておくよ。」",
+                $"* \"Bought {productName}!\n  I put it in your bag.\"");
 
         return new ShopTransactionResult(true, shouldEquip, product.Price, message);
     }
 
     public ShopTransactionResult SellItem(PlayerProgress player, string? itemId)
     {
+        var language = player.Language;
         if (string.IsNullOrWhiteSpace(itemId) || player.GetItemCount(itemId) <= 0)
         {
-            return new ShopTransactionResult(false, false, 0, "＊「それは うれないみたいだ。」");
+            return new ShopTransactionResult(false, false, 0, Text(language, "＊「それは うれないみたいだ。」", "* \"I cannot buy that.\""));
         }
 
         var sellPrice = GameContent.GetSellPrice(itemId);
         if (sellPrice <= 0)
         {
-            return new ShopTransactionResult(false, false, 0, "＊「それは うれないみたいだ。」");
+            return new ShopTransactionResult(false, false, 0, Text(language, "＊「それは うれないみたいだ。」", "* \"I cannot buy that.\""));
         }
 
         var availableCapacity = PlayerProgress.MaxGoldValue - player.Gold;
         if (availableCapacity <= 0)
         {
-            return new ShopTransactionResult(false, false, 0, "＊「これいじょう おかねは もてないね。」");
+            return new ShopTransactionResult(false, false, 0, Text(language, "＊「これいじょう おかねは もてないね。」", "* \"You cannot carry any more gold.\""));
         }
 
         var gainedGold = Math.Min(sellPrice, availableCapacity);
-        var itemName = GameContent.GetItemName(itemId);
+        var itemName = GameContent.GetItemName(itemId, language);
         player.RemoveItem(itemId);
         player.Gold += gainedGold;
 
         var message = gainedGold == sellPrice
-            ? $"＊「{itemName}を うった！\n　{gainedGold}Gを てにいれた。」"
-            : $"＊「{itemName}を うった！\n　{gainedGold}Gだけ うけとった。」";
+            ? Text(language,
+                $"＊「{itemName}を うった！\n　{gainedGold}Gを てにいれた。」",
+                $"* \"Sold {itemName}!\n  You received {gainedGold}G.\"")
+            : Text(language,
+                $"＊「{itemName}を うった！\n　{gainedGold}Gだけ うけとった。」",
+                $"* \"Sold {itemName}!\n  You could only take {gainedGold}G.\"");
 
         return new ShopTransactionResult(true, false, gainedGold, message);
+    }
+
+    private static string Text(UiLanguage language, string japanese, string english)
+    {
+        return language == UiLanguage.English ? english : japanese;
     }
 }
 

@@ -8,4 +8,6 @@ public sealed record ConsumableDefinition(
     string Description,
     ConsumableEffectType EffectType,
     int Amount,
-    int Price);
+    int Price,
+    string EnglishName = "",
+    string EnglishDescription = "");

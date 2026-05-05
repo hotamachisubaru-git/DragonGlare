@@ -19,6 +19,70 @@ public partial class DragonGlareAlpha
     private const string BankReturnMessage = "＊「ほかに ようじは あるかい？」";
     private const string BankFarewellMessage = "＊「またの ごりようを。」";
 
+    private string GetDefaultBattleMessage()
+    {
+        return selectedLanguage == UiLanguage.English ? "A monster appeared!" : DefaultBattleMessage;
+    }
+
+    private string GetBattleEscapeMessage()
+    {
+        return selectedLanguage == UiLanguage.English ? "You got away safely!" : BattleEscapeMessage;
+    }
+
+    private string GetShopWelcomeMessage()
+    {
+        return selectedLanguage == UiLanguage.English ? "* \"Welcome!\n  What do you need?\"" : ShopWelcomeMessage;
+    }
+
+    private string GetShopBrowseMessage()
+    {
+        return selectedLanguage == UiLanguage.English ? "* \"What will you buy?\"" : ShopBrowseMessage;
+    }
+
+    private string GetShopSellBrowseMessage()
+    {
+        return selectedLanguage == UiLanguage.English ? "* \"What will you sell?\"" : ShopSellBrowseMessage;
+    }
+
+    private string GetShopReturnMessage()
+    {
+        return selectedLanguage == UiLanguage.English ? "* \"Anything else?\"" : ShopReturnMessage;
+    }
+
+    private string GetShopFarewellMessage()
+    {
+        return selectedLanguage == UiLanguage.English ? "* \"Come again!\"" : ShopFarewellMessage;
+    }
+
+    private string GetBankWelcomeMessage()
+    {
+        return selectedLanguage == UiLanguage.English ? "* \"Welcome to the bank.\n  How can I help?\"" : BankWelcomeMessage;
+    }
+
+    private string GetBankDepositMessage()
+    {
+        return selectedLanguage == UiLanguage.English
+            ? "* \"How much will you deposit?\n  Loans are repaid first.\""
+            : BankDepositMessage;
+    }
+
+    private string GetBankWithdrawMessage()
+    {
+        return selectedLanguage == UiLanguage.English ? "* \"How much will you withdraw?\"" : BankWithdrawMessage;
+    }
+
+    private string GetBankBorrowMessage()
+    {
+        return selectedLanguage == UiLanguage.English
+            ? "* \"How much will you borrow?\n  Watch the interest.\""
+            : BankBorrowMessage;
+    }
+
+    private string GetBankReturnMessage()
+    {
+        return selectedLanguage == UiLanguage.English ? "* \"Anything else?\"" : BankReturnMessage;
+    }
+
     private void ApplyExplorationSession(PlayerProgress nextPlayer, FieldMapId mapId)
     {
         player = nextPlayer;
@@ -54,7 +118,7 @@ public partial class DragonGlareAlpha
         pendingEncounter = null;
         encounterTransitionFrames = 0;
         ResetBattleSelectionState();
-        battleMessage = message ?? DefaultBattleMessage;
+        battleMessage = message ?? GetDefaultBattleMessage();
         battleMessageLines = [];
         battleMessageVisibleLines = 0;
         battleMessageLineTimer = 0;
@@ -66,21 +130,21 @@ public partial class DragonGlareAlpha
         shopPhase = ShopPhase.Welcome;
         shopPromptCursor = 0;
         ResetShopListSelection();
-        shopMessage = message ?? ShopWelcomeMessage;
+        shopMessage = message ?? GetShopWelcomeMessage();
     }
 
     private void OpenShopBuyCatalog()
     {
         shopPhase = ShopPhase.BuyList;
         ResetShopListSelection();
-        shopMessage = ShopBrowseMessage;
+        shopMessage = GetShopBrowseMessage();
     }
 
     private void OpenShopSellCatalog()
     {
         shopPhase = ShopPhase.SellList;
         ResetShopListSelection();
-        shopMessage = ShopSellBrowseMessage;
+        shopMessage = GetShopSellBrowseMessage();
     }
 
     private void ReturnToShopPrompt(string message)
@@ -95,8 +159,8 @@ public partial class DragonGlareAlpha
     {
         ResetShopListSelection(shopPageIndex + pageDelta);
         shopMessage = shopPhase == ShopPhase.SellList
-            ? ShopSellBrowseMessage
-            : ShopBrowseMessage;
+            ? GetShopSellBrowseMessage()
+            : GetShopBrowseMessage();
     }
 
     private void ResetBankState(string? message = null)
@@ -104,7 +168,7 @@ public partial class DragonGlareAlpha
         bankPhase = BankPhase.Welcome;
         bankPromptCursor = 0;
         bankItemCursor = 0;
-        bankMessage = message ?? BankWelcomeMessage;
+        bankMessage = message ?? GetBankWelcomeMessage();
     }
 
     private void OpenBankList(BankPhase nextPhase)
@@ -113,10 +177,10 @@ public partial class DragonGlareAlpha
         bankItemCursor = 0;
         bankMessage = nextPhase switch
         {
-            BankPhase.DepositList => BankDepositMessage,
-            BankPhase.WithdrawList => BankWithdrawMessage,
-            BankPhase.BorrowList => BankBorrowMessage,
-            _ => BankWelcomeMessage
+            BankPhase.DepositList => GetBankDepositMessage(),
+            BankPhase.WithdrawList => GetBankWithdrawMessage(),
+            BankPhase.BorrowList => GetBankBorrowMessage(),
+            _ => GetBankWelcomeMessage()
         };
     }
 

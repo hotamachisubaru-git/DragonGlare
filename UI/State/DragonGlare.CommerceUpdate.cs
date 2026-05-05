@@ -59,7 +59,7 @@ public partial class DragonGlareAlpha
 
         if (WasShopBackPressed())
         {
-            ReturnToShopPrompt(ShopReturnMessage);
+            ReturnToShopPrompt(GetShopReturnMessage());
             return;
         }
 
@@ -83,7 +83,7 @@ public partial class DragonGlareAlpha
 
         if (selectedEntry.Type == ShopMenuEntryType.Quit)
         {
-            ReturnToShopPrompt(ShopFarewellMessage);
+            ReturnToShopPrompt(GetShopFarewellMessage());
             return;
         }
 
@@ -185,7 +185,7 @@ public partial class DragonGlareAlpha
 
         if (WasShopBackPressed())
         {
-            ReturnToBankPrompt(BankReturnMessage);
+            ReturnToBankPrompt(GetBankReturnMessage());
             return;
         }
 
@@ -197,7 +197,7 @@ public partial class DragonGlareAlpha
         var selectedOption = options[bankItemCursor];
         if (selectedOption.Quit)
         {
-            ReturnToBankPrompt(BankReturnMessage);
+            ReturnToBankPrompt(GetBankReturnMessage());
             return;
         }
 
@@ -207,7 +207,7 @@ public partial class DragonGlareAlpha
             BankPhase.DepositList => bankService.Deposit(player, amount),
             BankPhase.WithdrawList => bankService.Withdraw(player, amount),
             BankPhase.BorrowList => bankService.Borrow(player, amount),
-            _ => new BankTransactionResult(false, 0, 0, BankReturnMessage)
+            _ => new BankTransactionResult(false, 0, 0, GetBankReturnMessage())
         };
 
         bankMessage = result.Message;

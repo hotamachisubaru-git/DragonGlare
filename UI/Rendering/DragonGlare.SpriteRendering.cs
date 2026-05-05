@@ -323,9 +323,6 @@ public partial class DragonGlareAlpha
                 return false;
             }
 
-            // hero_4.png layout (actual observed layout):
-            // top-left = left, top-right = right, bottom-left = up, bottom-right = down
-            // This mapping fixes the orientation bug where left/right were swapped.
             LoadHeroSpriteFromSheet(spriteSheet, PlayerFacingDirection.Left, new Rectangle(0, 0, cellWidth, cellHeight));
             LoadHeroSpriteFromSheet(spriteSheet, PlayerFacingDirection.Right, new Rectangle(cellWidth, 0, cellWidth, cellHeight));
             LoadHeroSpriteFromSheet(spriteSheet, PlayerFacingDirection.Up, new Rectangle(0, cellHeight, cellWidth, cellHeight));

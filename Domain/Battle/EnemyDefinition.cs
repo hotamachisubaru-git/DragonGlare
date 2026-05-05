@@ -15,4 +15,8 @@ public sealed record EnemyDefinition(
     int ExperienceReward,
     int GoldReward,
     EnemyDropDefinition? Drop = null,
-    string? SpriteAssetName = null);
+    string? SpriteAssetName = null,
+    string EnglishName = "",
+    BattleStatusEffect AttackStatusEffect = BattleStatusEffect.None,
+    int AttackStatusChancePercent = 0,
+    int AttackStatusTurns = 0);

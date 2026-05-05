@@ -18,25 +18,25 @@ public partial class DragonGlareAlpha
         DrawWindow(g, helpRect);
         if (bankPhase == BankPhase.Welcome)
         {
-            DrawOption(g, bankPromptCursor == 0, 84, 44, "あずける");
-            DrawOption(g, bankPromptCursor == 1, 84, 72, "ひきだす");
-            DrawOption(g, bankPromptCursor == 2, 84, 100, "かりる");
-            DrawOption(g, bankPromptCursor == 3, 84, 128, "やめる");
+            DrawOption(g, bankPromptCursor == 0, 84, 44, selectedLanguage == UiLanguage.English ? "DEPOSIT" : "あずける");
+            DrawOption(g, bankPromptCursor == 1, 84, 72, selectedLanguage == UiLanguage.English ? "WITHDRAW" : "ひきだす");
+            DrawOption(g, bankPromptCursor == 2, 84, 100, selectedLanguage == UiLanguage.English ? "BORROW" : "かりる");
+            DrawOption(g, bankPromptCursor == 3, 84, 128, selectedLanguage == UiLanguage.English ? "LEAVE" : "やめる");
         }
         else
         {
-            DrawText(g, "十字/LS: せんたく", new Rectangle(54, 50, 188, 24), smallFont);
-            DrawText(g, "A/Y/Z: けってい", new Rectangle(54, 78, 188, 24), smallFont);
-            DrawText(g, "B/X/ESC: もどる", new Rectangle(54, 106, 188, 24), smallFont);
+            DrawText(g, selectedLanguage == UiLanguage.English ? "D-PAD/LS: CHOOSE" : "十字/LS: せんたく", new Rectangle(54, 50, 188, 24), smallFont);
+            DrawText(g, selectedLanguage == UiLanguage.English ? "A/Y/Z: OK" : "A/Y/Z: けってい", new Rectangle(54, 78, 188, 24), smallFont);
+            DrawText(g, selectedLanguage == UiLanguage.English ? "B/X/ESC: BACK" : "B/X/ESC: もどる", new Rectangle(54, 106, 188, 24), smallFont);
         }
 
         DrawWindow(g, listRect);
         DrawText(g, bankPhase switch
         {
-            BankPhase.DepositList => "あずける",
-            BankPhase.WithdrawList => "ひきだす",
-            BankPhase.BorrowList => "かりる",
-            _ => "ぎんこう"
+            BankPhase.DepositList => selectedLanguage == UiLanguage.English ? "DEPOSIT" : "あずける",
+            BankPhase.WithdrawList => selectedLanguage == UiLanguage.English ? "WITHDRAW" : "ひきだす",
+            BankPhase.BorrowList => selectedLanguage == UiLanguage.English ? "BORROW" : "かりる",
+            _ => selectedLanguage == UiLanguage.English ? "BANK" : "ぎんこう"
         }, new Rectangle(listRect.X + 20, 34, 140, 24), smallFont);
 
         var options = bankPhase == BankPhase.Welcome
@@ -61,10 +61,10 @@ public partial class DragonGlareAlpha
         }
 
         DrawWindow(g, infoRect);
-        DrawText(g, $"てもち: {player.Gold}G", new Rectangle(infoRect.X + 20, infoRect.Y + 14, 196, 20), smallFont);
-        DrawText(g, $"よきん: {player.BankGold}G", new Rectangle(infoRect.X + 20, infoRect.Y + 38, 196, 20), smallFont);
-        DrawText(g, $"しゃっきん: {player.LoanBalance}G", new Rectangle(infoRect.X + 20, infoRect.Y + 62, 196, 20), smallFont);
-        DrawText(g, $"しんよう: {bankService.GetAvailableCredit(player)}G", new Rectangle(infoRect.X + 20, infoRect.Y + 86, 196, 20), smallFont);
+        DrawText(g, selectedLanguage == UiLanguage.English ? $"CASH: {player.Gold}G" : $"てもち: {player.Gold}G", new Rectangle(infoRect.X + 20, infoRect.Y + 14, 196, 20), smallFont);
+        DrawText(g, selectedLanguage == UiLanguage.English ? $"BANK: {player.BankGold}G" : $"よきん: {player.BankGold}G", new Rectangle(infoRect.X + 20, infoRect.Y + 38, 196, 20), smallFont);
+        DrawText(g, selectedLanguage == UiLanguage.English ? $"LOAN: {player.LoanBalance}G" : $"しゃっきん: {player.LoanBalance}G", new Rectangle(infoRect.X + 20, infoRect.Y + 62, 196, 20), smallFont);
+        DrawText(g, selectedLanguage == UiLanguage.English ? $"CREDIT: {bankService.GetAvailableCredit(player)}G" : $"しんよう: {bankService.GetAvailableCredit(player)}G", new Rectangle(infoRect.X + 20, infoRect.Y + 86, 196, 20), smallFont);
 
         DrawWindow(g, messageRect);
         DrawText(g, bankMessage, Rectangle.Inflate(messageRect, -24, -24), smallFont, wrap: true);

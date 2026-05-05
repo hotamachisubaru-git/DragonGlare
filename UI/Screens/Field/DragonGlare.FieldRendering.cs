@@ -28,12 +28,12 @@ public partial class DragonGlareAlpha
             DrawWindow(g, equipmentRect);
             DrawText(g, $"ATK {GetTotalAttack()}  DEF {GetTotalDefense()}", new Rectangle(458, 146, 160, 24), smallFont);
             DrawText(g, $"EXP {GetExperienceSummary()}", new Rectangle(458, 168, 160, 24), smallFont);
-            DrawFieldEquipmentSlot(g, equipmentRect, "ぶき", EquipmentSlot.Weapon, 196);
-            DrawFieldEquipmentSlot(g, equipmentRect, "あたま", EquipmentSlot.Head, 212);
-            DrawFieldEquipmentSlot(g, equipmentRect, "むね", EquipmentSlot.Armor, 228);
-            DrawFieldEquipmentSlot(g, equipmentRect, "こて", EquipmentSlot.Arms, 244);
-            DrawFieldEquipmentSlot(g, equipmentRect, "レギンス", EquipmentSlot.Legs, 260);
-            DrawFieldEquipmentSlot(g, equipmentRect, "ブーツ", EquipmentSlot.Feet, 276);
+            DrawFieldEquipmentSlot(g, equipmentRect, GetEquipmentSlotLabel(EquipmentSlot.Weapon), EquipmentSlot.Weapon, 196);
+            DrawFieldEquipmentSlot(g, equipmentRect, GetEquipmentSlotLabel(EquipmentSlot.Head), EquipmentSlot.Head, 212);
+            DrawFieldEquipmentSlot(g, equipmentRect, GetEquipmentSlotLabel(EquipmentSlot.Armor), EquipmentSlot.Armor, 228);
+            DrawFieldEquipmentSlot(g, equipmentRect, GetEquipmentSlotLabel(EquipmentSlot.Arms), EquipmentSlot.Arms, 244);
+            DrawFieldEquipmentSlot(g, equipmentRect, GetEquipmentSlotLabel(EquipmentSlot.Legs), EquipmentSlot.Legs, 260);
+            DrawFieldEquipmentSlot(g, equipmentRect, GetEquipmentSlotLabel(EquipmentSlot.Feet), EquipmentSlot.Feet, 276);
         }
 
         if (isFieldDialogOpen)

@@ -78,7 +78,6 @@ public partial class DragonGlareAlpha
             }
         }
 
-        // While fading out, skip most per-state updates to avoid visual/logic jumps.
         return true;
     }
 
@@ -229,8 +228,6 @@ public partial class DragonGlareAlpha
         if (languageOpeningFinished || languageOpeningLineIndex >= LanguageOpeningScript.Length)
         {
             languageOpeningFinished = true;
-            // If we were started from the title's "Start New Game", skip the
-            // language-selection prompt and advance directly to name input.
             if (skipLanguageSelectionPrompt)
             {
                 skipLanguageSelectionPrompt = false;

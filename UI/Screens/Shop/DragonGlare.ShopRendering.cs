@@ -21,19 +21,19 @@ public partial class DragonGlareAlpha
         DrawWindow(g, shopHelpRect);
         if (shopPhase == ShopPhase.Welcome)
         {
-            DrawOption(g, shopPromptCursor == 0, 84, 44, "かう");
-            DrawOption(g, shopPromptCursor == 1, 84, 72, "うる");
-            DrawOption(g, shopPromptCursor == 2, 84, 100, "やめる");
+            DrawOption(g, shopPromptCursor == 0, 84, 44, selectedLanguage == UiLanguage.English ? "BUY" : "かう");
+            DrawOption(g, shopPromptCursor == 1, 84, 72, selectedLanguage == UiLanguage.English ? "SELL" : "うる");
+            DrawOption(g, shopPromptCursor == 2, 84, 100, selectedLanguage == UiLanguage.English ? "LEAVE" : "やめる");
         }
         else
         {
-            DrawText(g, "十字/LS: せんたく", new Rectangle(54, 50, 188, 24), smallFont);
-            DrawText(g, shopPhase == ShopPhase.BuyList ? "A/Y/Z: こうにゅう" : "A/Y/Z: ばいきゃく", new Rectangle(54, 78, 188, 24), smallFont);
-            DrawText(g, "B/X/ESC: もどる", new Rectangle(54, 106, 188, 24), smallFont);
+            DrawText(g, selectedLanguage == UiLanguage.English ? "D-PAD/LS: CHOOSE" : "十字/LS: せんたく", new Rectangle(54, 50, 188, 24), smallFont);
+            DrawText(g, selectedLanguage == UiLanguage.English ? (shopPhase == ShopPhase.BuyList ? "A/Y/Z: BUY" : "A/Y/Z: SELL") : (shopPhase == ShopPhase.BuyList ? "A/Y/Z: こうにゅう" : "A/Y/Z: ばいきゃく"), new Rectangle(54, 78, 188, 24), smallFont);
+            DrawText(g, selectedLanguage == UiLanguage.English ? "B/X/ESC: BACK" : "B/X/ESC: もどる", new Rectangle(54, 106, 188, 24), smallFont);
         }
 
         DrawWindow(g, shopListRect);
-        DrawText(g, shopPhase == ShopPhase.SellList ? "うるもの" : "いちらん", new Rectangle(shopListRect.X + 20, 34, 120, 24), smallFont);
+        DrawText(g, selectedLanguage == UiLanguage.English ? (shopPhase == ShopPhase.SellList ? "SELL" : "CATALOG") : (shopPhase == ShopPhase.SellList ? "うるもの" : "いちらん"), new Rectangle(shopListRect.X + 20, 34, 120, 24), smallFont);
         DrawText(g, "ATK", new Rectangle(shopListRect.X + 142, 34, 38, 24), smallFont, StringAlignment.Center);
         DrawText(g, "DEF", new Rectangle(shopListRect.X + 180, 34, 38, 24), smallFont, StringAlignment.Center);
         DrawText(g, "G", new Rectangle(shopListRect.X + 220, 34, 44, 24), smallFont, StringAlignment.Center);
@@ -83,7 +83,9 @@ public partial class DragonGlareAlpha
                 ? selectedEntry.Value.InventoryItem.Value.Detail
                 : selectedEntry.Value.Product?.IsEquipment == true && selectedEntry.Value.Product.Equipment is not null
                     ? $"{GetEquipmentSlotLabel(selectedEntry.Value.Product.Equipment.Slot)}: {GetCurrentEquipmentNameForSlot(selectedEntry.Value.Product.Equipment.Slot)}"
-                    : selectedEntry.Value.Product?.Consumable?.Description ?? $"LV {player.Level}";
+                    : selectedEntry.Value.Product?.Consumable is not null
+                        ? GameContent.GetConsumableDescription(selectedEntry.Value.Product.Consumable, selectedLanguage)
+                        : $"LV {player.Level}";
         var detailLine2 = $"EXP {GetExperienceSummary()}";
         if (selectedEntry is not null &&
             selectedEntry.Value.Type == ShopMenuEntryType.Product &&
@@ -92,8 +94,12 @@ public partial class DragonGlareAlpha
         {
             detailLine2 = selectedEntry.Value.Product.Equipment switch
             {
-                WeaponDefinition weapon => $"そうびで ATK {battleService.GetPlayerAttack(player, weapon)}",
-                ArmorDefinition armor => $"そうびで DEF {battleService.GetPlayerDefense(player, armor)}",
+                WeaponDefinition weapon => selectedLanguage == UiLanguage.English
+                    ? $"EQUIP ATK {battleService.GetPlayerAttack(player, weapon)}"
+                    : $"そうびで ATK {battleService.GetPlayerAttack(player, weapon)}",
+                ArmorDefinition armor => selectedLanguage == UiLanguage.English
+                    ? $"EQUIP DEF {battleService.GetPlayerDefense(player, armor)}"
+                    : $"そうびで DEF {battleService.GetPlayerDefense(player, armor)}",
                 _ => detailLine2
             };
         }

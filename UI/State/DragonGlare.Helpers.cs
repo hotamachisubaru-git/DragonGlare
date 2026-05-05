@@ -1,5 +1,6 @@
 using DragonGlareAlpha.Data;
 using DragonGlareAlpha.Domain;
+using DragonGlareAlpha.Domain.Battle;
 using DragonGlareAlpha.Domain.Field;
 using DragonGlareAlpha.Domain.Items;
 using DragonGlareAlpha.Domain.Player;
@@ -63,9 +64,6 @@ public partial class DragonGlareAlpha
             return;
         }
 
-        // Start a fade-out before actually switching state. This sets a pending
-        // state and sceneFadeOutFramesRemaining; the Update loop will complete
-        // the fade then perform the state change and trigger a fade-in.
         pendingGameState = nextState;
         sceneFadeOutFramesRemaining = SceneFadeOutDuration;
     }
@@ -370,17 +368,28 @@ public partial class DragonGlareAlpha
             return player.Name;
         }
 
-        return playerName.Length == 0 ? "のりたま" : playerName.ToString();
+        if (playerName.Length > 0)
+        {
+            return playerName.ToString();
+        }
+
+        return selectedLanguage == UiLanguage.English ? "Hero" : "のりたま";
     }
 
     private string GetEquippedWeaponName()
     {
-        return GetEquippedWeapon()?.Name ?? "なし";
+        var weapon = GetEquippedWeapon();
+        return weapon is null
+            ? GetNoneLabel()
+            : GameContent.GetWeaponName(weapon, selectedLanguage);
     }
 
     private string GetEquippedArmorName()
     {
-        return GetEquippedArmor()?.Name ?? "なし";
+        var armor = GetEquippedArmor();
+        return armor is null
+            ? GetNoneLabel()
+            : GameContent.GetArmorName(armor, selectedLanguage);
     }
 
     private string GetCurrentEquipmentNameForSlot(EquipmentSlot slot)
@@ -388,8 +397,15 @@ public partial class DragonGlareAlpha
         return slot switch
         {
             EquipmentSlot.Weapon => GetEquippedWeaponName(),
-            _ => GetEquippedArmor(slot)?.Name ?? "なし"
+            _ => GetEquippedArmor(slot) is { } armor
+                ? GameContent.GetArmorName(armor, selectedLanguage)
+                : GetNoneLabel()
         };
+    }
+
+    private string GetNoneLabel()
+    {
+        return selectedLanguage == UiLanguage.English ? "NONE" : "なし";
     }
 
     private string GetEquipmentSlotLabel(EquipmentSlot slot)
@@ -401,9 +417,9 @@ public partial class DragonGlareAlpha
                 EquipmentSlot.Weapon => "WEAPON",
                 EquipmentSlot.Armor => "CHEST",
                 EquipmentSlot.Head => "HEAD",
-                EquipmentSlot.Arms => "GAUNTLET",
-                EquipmentSlot.Legs => "LEGGINGS",
-                EquipmentSlot.Feet => "BOOTS",
+                EquipmentSlot.Arms => "ARMS",
+                EquipmentSlot.Legs => "LEGS",
+                EquipmentSlot.Feet => "FEET",
                 _ => "GEAR"
             };
         }
@@ -451,12 +467,12 @@ public partial class DragonGlareAlpha
         {
             return new ShopInventoryEntry(
                 itemId,
-                consumable.Name,
+                GameContent.GetConsumableName(consumable, selectedLanguage),
                 sellPrice,
                 0,
                 0,
                 count,
-                consumable.Description);
+                GameContent.GetConsumableDescription(consumable, selectedLanguage));
         }
 
         var weapon = GameContent.GetWeaponById(itemId);
@@ -464,7 +480,7 @@ public partial class DragonGlareAlpha
         {
             return new ShopInventoryEntry(
                 itemId,
-                weapon.Name,
+                GameContent.GetWeaponName(weapon, selectedLanguage),
                 sellPrice,
                 weapon.AttackBonus,
                 weapon.DefenseBonus,
@@ -477,7 +493,7 @@ public partial class DragonGlareAlpha
         {
             return new ShopInventoryEntry(
                 itemId,
-                armor.Name,
+                GameContent.GetArmorName(armor, selectedLanguage),
                 sellPrice,
                 armor.AttackBonus,
                 armor.DefenseBonus,
@@ -516,21 +532,21 @@ public partial class DragonGlareAlpha
             _ => GameContent.ShopCatalog
                 .Skip(pageStartIndex)
                 .Take(ShopItemsPerPage)
-                .Select(item => new ShopMenuEntry(ShopMenuEntryType.Product, item.Name, Product: item))
+                .Select(item => new ShopMenuEntry(ShopMenuEntryType.Product, GameContent.GetShopProductName(item, selectedLanguage), Product: item))
                 .ToList()
         };
 
         if (shopPageIndex > 0)
         {
-            entries.Add(new ShopMenuEntry(ShopMenuEntryType.PreviousPage, "まえへ"));
+            entries.Add(new ShopMenuEntry(ShopMenuEntryType.PreviousPage, selectedLanguage == UiLanguage.English ? "PREV" : "まえへ"));
         }
 
         if (shopPageIndex + 1 < GetShopPageCount())
         {
-            entries.Add(new ShopMenuEntry(ShopMenuEntryType.NextPage, "つぎへ"));
+            entries.Add(new ShopMenuEntry(ShopMenuEntryType.NextPage, selectedLanguage == UiLanguage.English ? "NEXT" : "つぎへ"));
         }
 
-        entries.Add(new ShopMenuEntry(ShopMenuEntryType.Quit, "やめる"));
+        entries.Add(new ShopMenuEntry(ShopMenuEntryType.Quit, selectedLanguage == UiLanguage.English ? "QUIT" : "やめる"));
         return entries;
     }
 
@@ -570,12 +586,12 @@ public partial class DragonGlareAlpha
 
         options.Add(bankPhase switch
         {
-            BankPhase.DepositList => new BankAmountOption("ぜんぶ", 0, UseMaximum: true),
-            BankPhase.WithdrawList => new BankAmountOption("できるだけ", 0, UseMaximum: true),
-            BankPhase.BorrowList => new BankAmountOption("かのうなだけ", 0, UseMaximum: true),
-            _ => new BankAmountOption("やめる", 0, Quit: true)
+            BankPhase.DepositList => new BankAmountOption(selectedLanguage == UiLanguage.English ? "ALL" : "ぜんぶ", 0, UseMaximum: true),
+            BankPhase.WithdrawList => new BankAmountOption(selectedLanguage == UiLanguage.English ? "MAX" : "できるだけ", 0, UseMaximum: true),
+            BankPhase.BorrowList => new BankAmountOption(selectedLanguage == UiLanguage.English ? "MAX" : "かのうなだけ", 0, UseMaximum: true),
+            _ => new BankAmountOption(selectedLanguage == UiLanguage.English ? "QUIT" : "やめる", 0, Quit: true)
         });
-        options.Add(new BankAmountOption("やめる", 0, Quit: true));
+        options.Add(new BankAmountOption(selectedLanguage == UiLanguage.English ? "QUIT" : "やめる", 0, Quit: true));
         return options;
     }
 
@@ -665,7 +681,14 @@ public partial class DragonGlareAlpha
     {
         return currentEncounter is null
             ? GetBattleCommandPromptMessage()
-            : $"{GetBattleEncounterMessage(currentEncounter.Enemy.Name)}\n{GetBattleCommandPromptMessage()}";
+            : $"{GetBattleEncounterMessage(GameContent.GetEnemyName(currentEncounter.Enemy, selectedLanguage))}\n{GetBattleCommandPromptMessage()}";
+    }
+
+    private string GetBattleSpellPromptMessage()
+    {
+        return selectedLanguage == UiLanguage.English
+            ? "Choose a spell."
+            : "どの じゅもん？";
     }
 
     private string GetBattleItemPromptMessage()
@@ -682,6 +705,24 @@ public partial class DragonGlareAlpha
             : "なにを そうびする？";
     }
 
+    private string GetBattleSelectionPromptMessage(BattleFlowState selectionState)
+    {
+        return selectionState switch
+        {
+            BattleFlowState.SpellSelection => GetBattleSpellPromptMessage(),
+            BattleFlowState.ItemSelection => GetBattleItemPromptMessage(),
+            BattleFlowState.EquipmentSelection => GetBattleEquipmentPromptMessage(),
+            _ => GetBattleCommandPromptMessage()
+        };
+    }
+
+    private string GetBattleNoSpellsMessage()
+    {
+        return selectedLanguage == UiLanguage.English
+            ? "You do not know any spells."
+            : "じゅもんを おぼえていない。";
+    }
+
     private string GetBattleNoItemsMessage()
     {
         return selectedLanguage == UiLanguage.English
@@ -694,6 +735,17 @@ public partial class DragonGlareAlpha
         return selectedLanguage == UiLanguage.English
             ? "No gear to switch."
             : "つけかえられる そうびがない。";
+    }
+
+    private string GetBattleEmptySelectionMessage(BattleFlowState selectionState)
+    {
+        return selectionState switch
+        {
+            BattleFlowState.SpellSelection => GetBattleNoSpellsMessage(),
+            BattleFlowState.ItemSelection => GetBattleNoItemsMessage(),
+            BattleFlowState.EquipmentSelection => GetBattleNoEquipmentMessage(),
+            _ => GetBattleCommandPromptMessage()
+        };
     }
 
     private string GetBattleCommandHelpMessage()
@@ -714,6 +766,7 @@ public partial class DragonGlareAlpha
     {
         return battleFlowState switch
         {
+            BattleFlowState.SpellSelection => selectedLanguage == UiLanguage.English ? "SPELL" : "じゅもん",
             BattleFlowState.ItemSelection => selectedLanguage == UiLanguage.English ? "ITEM" : "どうぐ",
             BattleFlowState.EquipmentSelection => selectedLanguage == UiLanguage.English ? "EQUIP" : "そうび",
             _ => selectedLanguage == UiLanguage.English ? "COMMAND" : "こうどう"
@@ -735,12 +788,23 @@ public partial class DragonGlareAlpha
         return GameContent.GetBattleCommandLabel(selectedLanguage, row, column);
     }
 
+    private IReadOnlyList<BattleSelectionEntry> GetBattleSpellEntries()
+    {
+        return battleService.GetKnownSpells(player)
+            .Select(spell => new BattleSelectionEntry(
+                GameContent.GetSpellName(spell, selectedLanguage),
+                GetBattleSpellDetail(spell),
+                $"MP {spell.MpCost}",
+                Spell: spell))
+            .ToArray();
+    }
+
     private IReadOnlyList<BattleSelectionEntry> GetBattleItemEntries()
     {
         return GameContent.ConsumableCatalog
             .Where(item => player.GetItemCount(item.Id) > 0)
             .Select(item => new BattleSelectionEntry(
-                item.Name,
+                GameContent.GetConsumableName(item, selectedLanguage),
                 GetBattleConsumableDetail(item),
                 GetBattleCountBadge(player.GetItemCount(item.Id)),
                 Consumable: item))
@@ -753,7 +817,7 @@ public partial class DragonGlareAlpha
             .Where(item => player.GetItemCount(item.Id) > 0 &&
                 !string.Equals(player.EquippedWeaponId, item.Id, StringComparison.Ordinal))
             .Select(item => new BattleSelectionEntry(
-                item.Name,
+                GameContent.GetWeaponName(item, selectedLanguage),
                 GetBattleEquipmentDetail(item),
                 GetBattleCountBadge(player.GetItemCount(item.Id)),
                 Equipment: item));
@@ -764,7 +828,7 @@ public partial class DragonGlareAlpha
             .OrderBy(item => item.Slot)
             .ThenBy(item => item.Price)
             .Select(item => new BattleSelectionEntry(
-                item.Name,
+                GameContent.GetArmorName(item, selectedLanguage),
                 GetBattleEquipmentDetail(item),
                 GetBattleCountBadge(player.GetItemCount(item.Id)),
                 Equipment: item));
@@ -776,6 +840,7 @@ public partial class DragonGlareAlpha
     {
         return battleFlowState switch
         {
+            BattleFlowState.SpellSelection => GetBattleSpellEntries(),
             BattleFlowState.ItemSelection => GetBattleItemEntries(),
             BattleFlowState.EquipmentSelection => GetBattleEquipmentEntries(),
             _ => []
@@ -793,6 +858,19 @@ public partial class DragonGlareAlpha
         return $"{battleListCursor + 1}/{entries.Count}";
     }
 
+    private string GetBattleSpellDetail(SpellDefinition spell)
+    {
+        return spell.EffectType switch
+        {
+            SpellEffectType.DamageEnemy => selectedLanguage == UiLanguage.English ? $"DMG {spell.Power}" : $"与D {spell.Power}",
+            SpellEffectType.HealPlayer => $"HP+{spell.Power}",
+            SpellEffectType.PoisonEnemy => selectedLanguage == UiLanguage.English ? "POISON" : "どく",
+            SpellEffectType.SleepEnemy => selectedLanguage == UiLanguage.English ? "SLEEP" : "ねむり",
+            SpellEffectType.CurePlayerStatus => selectedLanguage == UiLanguage.English ? "CURE" : "なおす",
+            _ => GameContent.GetSpellDescription(spell, selectedLanguage)
+        };
+    }
+
     private string GetBattleConsumableDetail(ConsumableDefinition item)
     {
         return item.EffectType switch
@@ -800,7 +878,7 @@ public partial class DragonGlareAlpha
             ConsumableEffectType.HealHp => $"HP+{item.Amount}",
             ConsumableEffectType.HealMp => $"MP+{item.Amount}",
             ConsumableEffectType.DamageEnemy => selectedLanguage == UiLanguage.English ? $"DMG {item.Amount}" : $"与D {item.Amount}",
-            _ => item.Description
+            _ => GameContent.GetConsumableDescription(item, selectedLanguage)
         };
     }
 

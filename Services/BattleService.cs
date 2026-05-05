@@ -8,7 +8,6 @@ namespace DragonGlareAlpha.Services;
 
 public sealed class BattleService
 {
-    private const int SpellCost = 2;
     private const int MinimumEncounterPoolSize = 2;
     private static readonly EquipmentSlot[] ArmorSlots =
     [
@@ -57,6 +56,15 @@ public sealed class BattleService
             .ToArray();
     }
 
+    public IReadOnlyList<SpellDefinition> GetKnownSpells(PlayerProgress player)
+    {
+        return GameContent.SpellCatalog
+            .Where(spell => player.Level >= spell.MinimumLevel)
+            .OrderBy(spell => spell.MinimumLevel)
+            .ThenBy(spell => spell.MpCost)
+            .ToArray();
+    }
+
     public BattleTurnResolution ResolveTurn(
         PlayerProgress player,
         BattleEncounter encounter,
@@ -65,15 +73,33 @@ public sealed class BattleService
         IEquipmentDefinition? selectedEquipment,
         Random random)
     {
+        return ResolveTurn(player, encounter, action, null, selectedConsumable, selectedEquipment, random);
+    }
+
+    public BattleTurnResolution ResolveTurn(
+        PlayerProgress player,
+        BattleEncounter encounter,
+        BattleActionType action,
+        SpellDefinition? selectedSpell,
+        ConsumableDefinition? selectedConsumable,
+        IEquipmentDefinition? selectedEquipment,
+        Random random)
+    {
+        if (encounter.PlayerStatusEffect == BattleStatusEffect.Sleep &&
+            encounter.PlayerStatusTurnsRemaining > 0)
+        {
+            return ResolvePlayerSleepTurn(player, encounter, random);
+        }
+
         return action switch
         {
             BattleActionType.Attack => ResolveAttack(player, encounter, random),
-            BattleActionType.Spell => ResolveSpell(player, encounter, random),
+            BattleActionType.Spell => ResolveSpell(player, encounter, selectedSpell, random),
             BattleActionType.Defend => ResolveDefend(player, encounter, random),
             BattleActionType.Item => ResolveItem(player, encounter, selectedConsumable, random),
             BattleActionType.Equip => ResolveEquip(player, encounter, selectedEquipment, random),
-            BattleActionType.Run => ResolveEscape(),
-            _ => Reject("こうどうできない。")
+            BattleActionType.Run => ResolveEscape(player),
+            _ => Reject(player.Language, "こうどうできない。", "You cannot act.")
         };
     }
 
@@ -98,11 +124,13 @@ public sealed class BattleService
         BattleEncounter encounter,
         Random random)
     {
+        var language = player.Language;
+        var enemyName = GetEnemyName(encounter, language);
         var steps = new List<BattleSequenceStep>
         {
             new()
             {
-                Message = $"{GetPlayerName(player)}の こうげき！"
+                Message = Text(language, $"{GetPlayerName(player)}の こうげき！", $"{GetPlayerName(player)} attacks!")
             }
         };
 
@@ -110,25 +138,20 @@ public sealed class BattleService
         encounter.CurrentHp = Math.Max(0, encounter.CurrentHp - damage);
         steps.Add(new BattleSequenceStep
         {
-            Message = $"{encounter.Enemy.Name}に {damage}ダメージ！",
+            Message = Text(language, $"{enemyName}に {damage}ダメージ！", $"{enemyName} takes {damage} damage!"),
             VisualCue = BattleVisualCue.EnemyHit,
             AnimationFrames = 10
         });
 
         if (encounter.CurrentHp == 0)
         {
-            steps.Add(new BattleSequenceStep
-            {
-                Message = $"{encounter.Enemy.Name}を たおした！",
-                VisualCue = BattleVisualCue.EnemyDefeat,
-                AnimationFrames = 16
-            });
+            AppendEnemyDefeatStep(encounter, steps, language, "を たおした！", " was defeated!");
+            return Victory(steps);
+        }
 
-            return new BattleTurnResolution
-            {
-                Outcome = BattleOutcome.Victory,
-                Steps = steps
-            };
+        if (TryAppendEnemyPoisonTick(encounter, steps, language))
+        {
+            return Victory(steps);
         }
 
         AppendEnemyCounter(player, encounter, steps, random);
@@ -138,47 +161,183 @@ public sealed class BattleService
     private BattleTurnResolution ResolveSpell(
         PlayerProgress player,
         BattleEncounter encounter,
+        SpellDefinition? selectedSpell,
         Random random)
     {
-        if (player.CurrentMp < SpellCost)
+        var language = player.Language;
+        var spell = selectedSpell ?? GetKnownSpells(player).FirstOrDefault();
+        if (spell is null)
         {
-            return Reject("MPが たりない！");
+            return Reject(language, "まだ じゅもんを おぼえていない。", "You do not know any spells yet.");
         }
 
-        player.CurrentMp -= SpellCost;
-        var damage = 10 + (player.Level * 2) + random.Next(3, 8);
+        if (player.Level < spell.MinimumLevel)
+        {
+            return Reject(language, "その じゅもんは まだ おぼえていない。", "You have not learned that spell yet.");
+        }
+
+        if (player.CurrentMp < spell.MpCost)
+        {
+            return Reject(language, "MPが たりない！", "Not enough MP!");
+        }
+
+        return spell.EffectType switch
+        {
+            SpellEffectType.DamageEnemy => ResolveDamageSpell(player, encounter, spell, random),
+            SpellEffectType.HealPlayer => ResolveHealSpell(player, encounter, spell, random),
+            SpellEffectType.PoisonEnemy => ResolveEnemyStatusSpell(player, encounter, spell, BattleStatusEffect.Poison, random),
+            SpellEffectType.SleepEnemy => ResolveEnemyStatusSpell(player, encounter, spell, BattleStatusEffect.Sleep, random),
+            SpellEffectType.CurePlayerStatus => ResolveCureSpell(player, encounter, spell, random),
+            _ => Reject(language, "その じゅもんは まだ つかえない。", "That spell cannot be used yet.")
+        };
+    }
+
+    private BattleTurnResolution ResolveDamageSpell(
+        PlayerProgress player,
+        BattleEncounter encounter,
+        SpellDefinition spell,
+        Random random)
+    {
+        var language = player.Language;
+        var enemyName = GetEnemyName(encounter, language);
+        player.CurrentMp -= spell.MpCost;
+        var damage = Math.Max(1, spell.Power + (player.Level * 2) + random.Next(3, 8) - Math.Max(0, encounter.Enemy.Defense / 2));
         encounter.CurrentHp = Math.Max(0, encounter.CurrentHp - damage);
 
-        var steps = new List<BattleSequenceStep>
+        var steps = CreateSpellCastSteps(player, spell);
+        steps.Add(new BattleSequenceStep
         {
-            new()
-            {
-                Message = $"{GetPlayerName(player)}は メラを となえた！",
-                VisualCue = BattleVisualCue.SpellCast,
-                AnimationFrames = 12
-            },
-            new()
-            {
-                Message = $"{encounter.Enemy.Name}に {damage}ダメージ！",
-                VisualCue = BattleVisualCue.EnemyHit,
-                AnimationFrames = 10
-            }
-        };
+            Message = Text(language, $"{enemyName}に {damage}ダメージ！", $"{enemyName} takes {damage} damage!"),
+            VisualCue = BattleVisualCue.EnemyHit,
+            AnimationFrames = 12
+        });
 
         if (encounter.CurrentHp == 0)
         {
+            AppendEnemyDefeatStep(encounter, steps, language, "を やきはらった！", " was burned away!");
+            return Victory(steps);
+        }
+
+        if (TryAppendEnemyPoisonTick(encounter, steps, language))
+        {
+            return Victory(steps);
+        }
+
+        AppendEnemyCounter(player, encounter, steps, random);
+        return BuildResolution(player, steps);
+    }
+
+    private BattleTurnResolution ResolveHealSpell(
+        PlayerProgress player,
+        BattleEncounter encounter,
+        SpellDefinition spell,
+        Random random)
+    {
+        var language = player.Language;
+        if (player.CurrentHp >= player.MaxHp)
+        {
+            return Reject(language, "HPは もう まんたんだ。", "HP is already full.");
+        }
+
+        player.CurrentMp -= spell.MpCost;
+        var healed = Math.Min(spell.Power + player.Level + random.Next(0, 5), player.MaxHp - player.CurrentHp);
+        player.CurrentHp += healed;
+
+        var steps = CreateSpellCastSteps(player, spell);
+        steps.Add(new BattleSequenceStep
+        {
+            Message = Text(language, $"HPが {healed}かいふくした！", $"Recovered {healed} HP!"),
+            VisualCue = BattleVisualCue.PlayerHeal,
+            AnimationFrames = 14
+        });
+
+        if (TryAppendEnemyPoisonTick(encounter, steps, language))
+        {
+            return Victory(steps);
+        }
+
+        AppendEnemyCounter(player, encounter, steps, random);
+        return BuildResolution(player, steps);
+    }
+
+    private BattleTurnResolution ResolveEnemyStatusSpell(
+        PlayerProgress player,
+        BattleEncounter encounter,
+        SpellDefinition spell,
+        BattleStatusEffect statusEffect,
+        Random random)
+    {
+        var language = player.Language;
+        var enemyName = GetEnemyName(encounter, language);
+        player.CurrentMp -= spell.MpCost;
+        var steps = CreateSpellCastSteps(player, spell);
+
+        var landed = random.Next(100) < spell.AccuracyPercent;
+        if (!landed)
+        {
             steps.Add(new BattleSequenceStep
             {
-                Message = $"{encounter.Enemy.Name}を やきはらった！",
-                VisualCue = BattleVisualCue.EnemyDefeat,
-                AnimationFrames = 16
+                Message = Text(language, "しかし きかなかった！", "But it had no effect!"),
+                VisualCue = BattleVisualCue.EnemyStatus,
+                AnimationFrames = 12
             });
-
-            return new BattleTurnResolution
+        }
+        else
+        {
+            encounter.EnemyStatusEffect = statusEffect;
+            encounter.EnemyStatusTurnsRemaining = Math.Max(1, spell.DurationTurns);
+            if (statusEffect == BattleStatusEffect.Poison)
             {
-                Outcome = BattleOutcome.Victory,
-                Steps = steps
-            };
+                encounter.EnemyPoisonPower = Math.Max(1, spell.Power + Math.Max(0, player.Level / 2));
+            }
+
+            steps.Add(new BattleSequenceStep
+            {
+                Message = statusEffect == BattleStatusEffect.Poison
+                    ? Text(language, $"{enemyName}は どくに おかされた！", $"{enemyName} was poisoned!")
+                    : Text(language, $"{enemyName}は ねむってしまった！", $"{enemyName} fell asleep!"),
+                VisualCue = BattleVisualCue.EnemyStatus,
+                AnimationFrames = 18
+            });
+        }
+
+        if (TryAppendEnemyPoisonTick(encounter, steps, language))
+        {
+            return Victory(steps);
+        }
+
+        AppendEnemyCounter(player, encounter, steps, random);
+        return BuildResolution(player, steps);
+    }
+
+    private BattleTurnResolution ResolveCureSpell(
+        PlayerProgress player,
+        BattleEncounter encounter,
+        SpellDefinition spell,
+        Random random)
+    {
+        var language = player.Language;
+        if (encounter.PlayerStatusEffect == BattleStatusEffect.None)
+        {
+            return Reject(language, "なおす 状態異常がない。", "There is no status effect to cure.");
+        }
+
+        player.CurrentMp -= spell.MpCost;
+        encounter.PlayerStatusEffect = BattleStatusEffect.None;
+        encounter.PlayerStatusTurnsRemaining = 0;
+        encounter.PlayerPoisonPower = 0;
+
+        var steps = CreateSpellCastSteps(player, spell);
+        steps.Add(new BattleSequenceStep
+        {
+            Message = Text(language, "からだが すっきりした！", "Your body feels clear!"),
+            VisualCue = BattleVisualCue.PlayerHeal,
+            AnimationFrames = 14
+        });
+
+        if (TryAppendEnemyPoisonTick(encounter, steps, language))
+        {
+            return Victory(steps);
         }
 
         AppendEnemyCounter(player, encounter, steps, random);
@@ -190,13 +349,19 @@ public sealed class BattleService
         BattleEncounter encounter,
         Random random)
     {
+        var language = player.Language;
         var steps = new List<BattleSequenceStep>
         {
             new()
             {
-                Message = $"{GetPlayerName(player)}は みをまもっている！"
+                Message = Text(language, $"{GetPlayerName(player)}は みをまもっている！", $"{GetPlayerName(player)} guards!")
             }
         };
+
+        if (TryAppendEnemyPoisonTick(encounter, steps, language))
+        {
+            return Victory(steps);
+        }
 
         AppendEnemyCounter(player, encounter, steps, random, isDefending: true);
         return BuildResolution(player, steps);
@@ -208,21 +373,23 @@ public sealed class BattleService
         ConsumableDefinition? selectedConsumable,
         Random random)
     {
+        var language = player.Language;
         if (selectedConsumable is null)
         {
-            return Reject("つかえる どうぐがない。");
+            return Reject(language, "つかえる どうぐがない。", "You have no usable items.");
         }
 
         if (player.GetItemCount(selectedConsumable.Id) <= 0)
         {
-            return Reject("その どうぐは もっていない。");
+            return Reject(language, "その どうぐは もっていない。", "You do not have that item.");
         }
 
+        var itemName = GameContent.GetConsumableName(selectedConsumable, language);
         var steps = new List<BattleSequenceStep>
         {
             new()
             {
-                Message = $"{GetPlayerName(player)}は {selectedConsumable.Name}を つかった！",
+                Message = Text(language, $"{GetPlayerName(player)}は {itemName}を つかった！", $"{GetPlayerName(player)} used {itemName}!"),
                 VisualCue = BattleVisualCue.ItemUse,
                 AnimationFrames = 8
             }
@@ -234,7 +401,7 @@ public sealed class BattleService
             {
                 if (player.CurrentHp >= player.MaxHp)
                 {
-                    return Reject("HPは もう まんたんだ。");
+                    return Reject(language, "HPは もう まんたんだ。", "HP is already full.");
                 }
 
                 player.RemoveItem(selectedConsumable.Id);
@@ -242,10 +409,16 @@ public sealed class BattleService
                 player.CurrentHp += healed;
                 steps.Add(new BattleSequenceStep
                 {
-                    Message = $"HPが {healed}かいふくした！",
+                    Message = Text(language, $"HPが {healed}かいふくした！", $"Recovered {healed} HP!"),
                     VisualCue = BattleVisualCue.PlayerHeal,
                     AnimationFrames = 12
                 });
+
+                if (TryAppendEnemyPoisonTick(encounter, steps, language))
+                {
+                    return Victory(steps);
+                }
+
                 AppendEnemyCounter(player, encounter, steps, random);
                 return BuildResolution(player, steps);
             }
@@ -253,7 +426,7 @@ public sealed class BattleService
             {
                 if (player.CurrentMp >= player.MaxMp)
                 {
-                    return Reject("MPは もう まんたんだ。");
+                    return Reject(language, "MPは もう まんたんだ。", "MP is already full.");
                 }
 
                 player.RemoveItem(selectedConsumable.Id);
@@ -261,46 +434,48 @@ public sealed class BattleService
                 player.CurrentMp += restored;
                 steps.Add(new BattleSequenceStep
                 {
-                    Message = $"MPが {restored}かいふくした！",
+                    Message = Text(language, $"MPが {restored}かいふくした！", $"Recovered {restored} MP!"),
                     VisualCue = BattleVisualCue.MpRecover,
                     AnimationFrames = 12
                 });
+
+                if (TryAppendEnemyPoisonTick(encounter, steps, language))
+                {
+                    return Victory(steps);
+                }
+
                 AppendEnemyCounter(player, encounter, steps, random);
                 return BuildResolution(player, steps);
             }
             case ConsumableEffectType.DamageEnemy:
             {
                 player.RemoveItem(selectedConsumable.Id);
+                var enemyName = GetEnemyName(encounter, language);
                 var damage = Math.Max(1, selectedConsumable.Amount + random.Next(-2, 4) - encounter.Enemy.Defense);
                 encounter.CurrentHp = Math.Max(0, encounter.CurrentHp - damage);
                 steps.Add(new BattleSequenceStep
                 {
-                    Message = $"{encounter.Enemy.Name}に {damage}ダメージ！",
+                    Message = Text(language, $"{enemyName}に {damage}ダメージ！", $"{enemyName} takes {damage} damage!"),
                     VisualCue = BattleVisualCue.EnemyHit,
                     AnimationFrames = 12
                 });
 
                 if (encounter.CurrentHp == 0)
                 {
-                    steps.Add(new BattleSequenceStep
-                    {
-                        Message = $"{encounter.Enemy.Name}を ふきとばした！",
-                        VisualCue = BattleVisualCue.EnemyDefeat,
-                        AnimationFrames = 16
-                    });
+                    AppendEnemyDefeatStep(encounter, steps, language, "を ふきとばした！", " was blown away!");
+                    return Victory(steps);
+                }
 
-                    return new BattleTurnResolution
-                    {
-                        Outcome = BattleOutcome.Victory,
-                        Steps = steps
-                    };
+                if (TryAppendEnemyPoisonTick(encounter, steps, language))
+                {
+                    return Victory(steps);
                 }
 
                 AppendEnemyCounter(player, encounter, steps, random);
                 return BuildResolution(player, steps);
             }
             default:
-                return Reject("その どうぐは まだ つかえない。");
+                return Reject(language, "その どうぐは まだ つかえない。", "That item cannot be used yet.");
         }
     }
 
@@ -310,19 +485,21 @@ public sealed class BattleService
         IEquipmentDefinition? selectedEquipment,
         Random random)
     {
+        var language = player.Language;
         if (selectedEquipment is null)
         {
-            return Reject("そうびできる ものがない。");
+            return Reject(language, "そうびできる ものがない。", "There is no gear to equip.");
         }
 
         if (player.GetItemCount(selectedEquipment.Id) <= 0)
         {
-            return Reject("その そうびは もっていない。");
+            return Reject(language, "その そうびは もっていない。", "You do not have that gear.");
         }
 
+        var equipmentName = GameContent.GetEquipmentName(selectedEquipment, language);
         if (string.Equals(player.GetEquippedItemId(selectedEquipment.Slot), selectedEquipment.Id, StringComparison.Ordinal))
         {
-            return Reject($"{selectedEquipment.Name}は もう そうびしている。");
+            return Reject(language, $"{equipmentName}は もう そうびしている。", $"{equipmentName} is already equipped.");
         }
 
         player.SetEquippedItemId(selectedEquipment.Slot, selectedEquipment.Id);
@@ -331,16 +508,22 @@ public sealed class BattleService
         {
             new()
             {
-                Message = $"{GetPlayerName(player)}は {selectedEquipment.Name}を そうびした！"
+                Message = Text(language, $"{GetPlayerName(player)}は {equipmentName}を そうびした！", $"{GetPlayerName(player)} equipped {equipmentName}!")
             }
         };
+
+        if (TryAppendEnemyPoisonTick(encounter, steps, language))
+        {
+            return Victory(steps);
+        }
 
         AppendEnemyCounter(player, encounter, steps, random);
         return BuildResolution(player, steps);
     }
 
-    private static BattleTurnResolution ResolveEscape()
+    private BattleTurnResolution ResolveEscape(PlayerProgress player)
     {
+        var language = player.Language;
         return new BattleTurnResolution
         {
             Outcome = BattleOutcome.Escaped,
@@ -348,12 +531,47 @@ public sealed class BattleService
             [
                 new BattleSequenceStep
                 {
-                    Message = "うまく にげきった！",
+                    Message = Text(language, "うまく にげきった！", "You got away safely!"),
                     VisualCue = BattleVisualCue.ItemUse,
                     AnimationFrames = 8
                 }
             ]
         };
+    }
+
+    private BattleTurnResolution ResolvePlayerSleepTurn(
+        PlayerProgress player,
+        BattleEncounter encounter,
+        Random random)
+    {
+        var language = player.Language;
+        var steps = new List<BattleSequenceStep>
+        {
+            new()
+            {
+                Message = Text(language, $"{GetPlayerName(player)}は ねむっている。", $"{GetPlayerName(player)} is asleep."),
+                VisualCue = BattleVisualCue.PlayerStatus,
+                AnimationFrames = 12
+            }
+        };
+
+        encounter.PlayerStatusTurnsRemaining--;
+        if (encounter.PlayerStatusTurnsRemaining <= 0)
+        {
+            encounter.PlayerStatusEffect = BattleStatusEffect.None;
+            steps.Add(new BattleSequenceStep
+            {
+                Message = Text(language, $"{GetPlayerName(player)}は めをさました！", $"{GetPlayerName(player)} woke up!")
+            });
+        }
+
+        if (TryAppendEnemyPoisonTick(encounter, steps, language))
+        {
+            return Victory(steps);
+        }
+
+        AppendEnemyCounter(player, encounter, steps, random);
+        return BuildResolution(player, steps);
     }
 
     private void AppendEnemyCounter(
@@ -363,9 +581,17 @@ public sealed class BattleService
         Random random,
         bool isDefending = false)
     {
+        var language = player.Language;
+        var enemyName = GetEnemyName(encounter, language);
+        if (TryAppendEnemySleepSkip(encounter, steps, language))
+        {
+            TryAppendPlayerPoisonTick(player, encounter, steps, language);
+            return;
+        }
+
         steps.Add(new BattleSequenceStep
         {
-            Message = $"{encounter.Enemy.Name}の こうげき！"
+            Message = Text(language, $"{enemyName}の こうげき！", $"{enemyName} attacks!")
         });
 
         var enemyDamage = Math.Max(1, encounter.Enemy.Attack + random.Next(1, 5) - GetPlayerDefense(player));
@@ -378,8 +604,8 @@ public sealed class BattleService
         steps.Add(new BattleSequenceStep
         {
             Message = isDefending
-                ? $"{enemyDamage}ダメージに おさえた！"
-                : $"{enemyDamage}ダメージを うけた！",
+                ? Text(language, $"{enemyDamage}ダメージに おさえた！", $"Reduced damage to {enemyDamage}!")
+                : Text(language, $"{enemyDamage}ダメージを うけた！", $"Took {enemyDamage} damage!"),
             VisualCue = BattleVisualCue.PlayerHit,
             AnimationFrames = 10
         });
@@ -388,9 +614,203 @@ public sealed class BattleService
         {
             steps.Add(new BattleSequenceStep
             {
-                Message = "めのまえが まっくらになった…"
+                Message = Text(language, "めのまえが まっくらになった…", "Everything went dark...")
+            });
+            return;
+        }
+
+        TryInflictPlayerStatus(player, encounter, steps, random, language);
+        TryAppendPlayerPoisonTick(player, encounter, steps, language);
+    }
+
+    private static List<BattleSequenceStep> CreateSpellCastSteps(PlayerProgress player, SpellDefinition spell)
+    {
+        var language = player.Language;
+        var spellName = GameContent.GetSpellName(spell, language);
+        return
+        [
+            new BattleSequenceStep
+            {
+                Message = Text(language, $"{GetPlayerName(player)}は {spellName}を となえた！", $"{GetPlayerName(player)} casts {spellName}!"),
+                VisualCue = BattleVisualCue.SpellCast,
+                AnimationFrames = 16
+            }
+        ];
+    }
+
+    private bool TryAppendEnemyPoisonTick(
+        BattleEncounter encounter,
+        List<BattleSequenceStep> steps,
+        UiLanguage language)
+    {
+        if (encounter.EnemyStatusEffect != BattleStatusEffect.Poison ||
+            encounter.EnemyStatusTurnsRemaining <= 0)
+        {
+            return false;
+        }
+
+        var enemyName = GetEnemyName(encounter, language);
+        var damage = Math.Max(1, encounter.EnemyPoisonPower);
+        encounter.CurrentHp = Math.Max(0, encounter.CurrentHp - damage);
+        encounter.EnemyStatusTurnsRemaining--;
+        steps.Add(new BattleSequenceStep
+        {
+            Message = Text(language, $"どくが {enemyName}を むしばんだ！ {damage}ダメージ！", $"Poison eats at {enemyName}! {damage} damage!"),
+            VisualCue = BattleVisualCue.PoisonTick,
+            AnimationFrames = 14
+        });
+
+        if (encounter.CurrentHp == 0)
+        {
+            AppendEnemyDefeatStep(encounter, steps, language, "は どくで たおれた！", " collapsed from poison!");
+            return true;
+        }
+
+        if (encounter.EnemyStatusTurnsRemaining <= 0)
+        {
+            encounter.EnemyStatusEffect = BattleStatusEffect.None;
+            encounter.EnemyPoisonPower = 0;
+            steps.Add(new BattleSequenceStep
+            {
+                Message = Text(language, $"{enemyName}の どくが きえた。", $"{enemyName}'s poison faded.")
             });
         }
+
+        return false;
+    }
+
+    private static bool TryAppendEnemySleepSkip(
+        BattleEncounter encounter,
+        List<BattleSequenceStep> steps,
+        UiLanguage language)
+    {
+        if (encounter.EnemyStatusEffect != BattleStatusEffect.Sleep ||
+            encounter.EnemyStatusTurnsRemaining <= 0)
+        {
+            return false;
+        }
+
+        var enemyName = GetEnemyName(encounter, language);
+        steps.Add(new BattleSequenceStep
+        {
+            Message = Text(language, $"{enemyName}は ねむっている。", $"{enemyName} is asleep."),
+            VisualCue = BattleVisualCue.EnemyStatus,
+            AnimationFrames = 14
+        });
+
+        encounter.EnemyStatusTurnsRemaining--;
+        if (encounter.EnemyStatusTurnsRemaining <= 0)
+        {
+            encounter.EnemyStatusEffect = BattleStatusEffect.None;
+            steps.Add(new BattleSequenceStep
+            {
+                Message = Text(language, $"{enemyName}は めをさました！", $"{enemyName} woke up!")
+            });
+        }
+
+        return true;
+    }
+
+    private static void TryInflictPlayerStatus(
+        PlayerProgress player,
+        BattleEncounter encounter,
+        List<BattleSequenceStep> steps,
+        Random random,
+        UiLanguage language)
+    {
+        if (encounter.Enemy.AttackStatusEffect == BattleStatusEffect.None ||
+            encounter.Enemy.AttackStatusChancePercent <= 0 ||
+            encounter.PlayerStatusEffect != BattleStatusEffect.None ||
+            random.Next(100) >= encounter.Enemy.AttackStatusChancePercent)
+        {
+            return;
+        }
+
+        encounter.PlayerStatusEffect = encounter.Enemy.AttackStatusEffect;
+        encounter.PlayerStatusTurnsRemaining = Math.Max(1, encounter.Enemy.AttackStatusTurns);
+        if (encounter.PlayerStatusEffect == BattleStatusEffect.Poison)
+        {
+            encounter.PlayerPoisonPower = Math.Max(1, encounter.Enemy.Attack / 4);
+        }
+
+        steps.Add(new BattleSequenceStep
+        {
+            Message = encounter.PlayerStatusEffect == BattleStatusEffect.Poison
+                ? Text(language, $"{GetPlayerName(player)}は どくを うけた！", $"{GetPlayerName(player)} was poisoned!")
+                : Text(language, $"{GetPlayerName(player)}は ねむってしまった！", $"{GetPlayerName(player)} fell asleep!"),
+            VisualCue = BattleVisualCue.PlayerStatus,
+            AnimationFrames = 14
+        });
+    }
+
+    private static void TryAppendPlayerPoisonTick(
+        PlayerProgress player,
+        BattleEncounter encounter,
+        List<BattleSequenceStep> steps,
+        UiLanguage language)
+    {
+        if (encounter.PlayerStatusEffect != BattleStatusEffect.Poison ||
+            encounter.PlayerStatusTurnsRemaining <= 0 ||
+            player.CurrentHp <= 0)
+        {
+            return;
+        }
+
+        var damage = Math.Max(1, encounter.PlayerPoisonPower);
+        player.CurrentHp = Math.Max(0, player.CurrentHp - damage);
+        encounter.PlayerStatusTurnsRemaining--;
+        steps.Add(new BattleSequenceStep
+        {
+            Message = Text(language, $"どくで {damage}ダメージを うけた！", $"Poison deals {damage} damage!"),
+            VisualCue = BattleVisualCue.PoisonTick,
+            AnimationFrames = 12
+        });
+
+        if (player.CurrentHp == 0)
+        {
+            steps.Add(new BattleSequenceStep
+            {
+                Message = Text(language, "めのまえが まっくらになった…", "Everything went dark...")
+            });
+            return;
+        }
+
+        if (encounter.PlayerStatusTurnsRemaining <= 0)
+        {
+            encounter.PlayerStatusEffect = BattleStatusEffect.None;
+            encounter.PlayerPoisonPower = 0;
+            steps.Add(new BattleSequenceStep
+            {
+                Message = Text(language, "どくが きえた。", "The poison faded.")
+            });
+        }
+    }
+
+    private static void AppendEnemyDefeatStep(
+        BattleEncounter encounter,
+        List<BattleSequenceStep> steps,
+        UiLanguage language,
+        string japaneseSuffix,
+        string englishSuffix)
+    {
+        var enemyName = GetEnemyName(encounter, language);
+        steps.Add(new BattleSequenceStep
+        {
+            Message = language == UiLanguage.English
+                ? $"{enemyName}{englishSuffix}"
+                : $"{enemyName}{japaneseSuffix}",
+            VisualCue = BattleVisualCue.EnemyDefeat,
+            AnimationFrames = 16
+        });
+    }
+
+    private static BattleTurnResolution Victory(List<BattleSequenceStep> steps)
+    {
+        return new BattleTurnResolution
+        {
+            Outcome = BattleOutcome.Victory,
+            Steps = steps
+        };
     }
 
     private static BattleTurnResolution BuildResolution(PlayerProgress player, List<BattleSequenceStep> steps)
@@ -402,7 +822,7 @@ public sealed class BattleService
         };
     }
 
-    private static BattleTurnResolution Reject(string message)
+    private static BattleTurnResolution Reject(UiLanguage language, string japaneseMessage, string englishMessage)
     {
         return new BattleTurnResolution
         {
@@ -412,7 +832,7 @@ public sealed class BattleService
             [
                 new BattleSequenceStep
                 {
-                    Message = message
+                    Message = Text(language, japaneseMessage, englishMessage)
                 }
             ]
         };
@@ -420,7 +840,27 @@ public sealed class BattleService
 
     private static string GetPlayerName(PlayerProgress player)
     {
-        return string.IsNullOrWhiteSpace(player.Name) ? "ぼうけんしゃ" : player.Name;
+        if (!string.IsNullOrWhiteSpace(player.Name))
+        {
+            return player.Name;
+        }
+
+        return player.Language == UiLanguage.English ? "Adventurer" : "ぼうけんしゃ";
+    }
+
+    private static string GetEnemyName(BattleEncounter encounter, UiLanguage language)
+    {
+        return GetEnemyName(encounter.Enemy, language);
+    }
+
+    private static string GetEnemyName(EnemyDefinition enemy, UiLanguage language)
+    {
+        return GameContent.GetEnemyName(enemy, language);
+    }
+
+    private static string Text(UiLanguage language, string japanese, string english)
+    {
+        return language == UiLanguage.English ? english : japanese;
     }
 
     private static WeaponDefinition? GetEquippedWeapon(PlayerProgress player)

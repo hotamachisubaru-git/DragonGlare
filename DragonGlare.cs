@@ -106,6 +106,7 @@ public partial class DragonGlareAlpha : Game
     private UiLanguage selectedLanguage = UiLanguage.Japanese;
     private int modeCursor;
     private int languageCursor;
+    private int optionsCursor;
     private int nameCursorRow;
     private int nameCursorColumn;
     private int saveSlotCursor;
@@ -158,6 +159,10 @@ public partial class DragonGlareAlpha : Game
     private int encounterTransitionFrames;
     private int fieldEncounterStepsRemaining = 7;
     private int enemyHitFlashFramesRemaining;
+    private int battleSpellEffectFramesRemaining;
+    private int playerHitFlashFramesRemaining;
+    private int battlePlayerHealFramesRemaining;
+    private int battleStatusEffectFramesRemaining;
     private int battleIntroFramesRemaining;
     private BattleEncounter? pendingEncounter;
     private IReadOnlyList<string> activeFieldDialogPages = [];
@@ -339,7 +344,6 @@ public partial class DragonGlareAlpha : Game
         var kTranslateState = Keyboard.GetState();
         var nextHeld = new HashSet<XnaKeys>();
 
-        // キーボード入力の処理
         foreach (var xnaKey in kTranslateState.GetPressedKeys())
         {
             nextHeld.Add(xnaKey);
@@ -353,17 +357,14 @@ public partial class DragonGlareAlpha : Game
             }
         }
 
-        // ゲームパッド入力の処理
         var padState = GamePad.GetState(PlayerIndex.One, GamePadDeadZone.IndependentAxes);
         if (padState.IsConnected)
         {
-            // 十字キーまたは左スティックを方向キーにマップ
             MapGamepadToKey(padState.DPad.Up == XnaButtonState.Pressed || padState.ThumbSticks.Left.Y > GamepadThumbStickThreshold, XnaKeys.Up, nextHeld);
             MapGamepadToKey(padState.DPad.Down == XnaButtonState.Pressed || padState.ThumbSticks.Left.Y < -GamepadThumbStickThreshold, XnaKeys.Down, nextHeld);
             MapGamepadToKey(padState.DPad.Left == XnaButtonState.Pressed || padState.ThumbSticks.Left.X < -GamepadThumbStickThreshold, XnaKeys.Left, nextHeld);
             MapGamepadToKey(padState.DPad.Right == XnaButtonState.Pressed || padState.ThumbSticks.Left.X > GamepadThumbStickThreshold, XnaKeys.Right, nextHeld);
 
-            // ボタンを決定・キャンセルにマップ
             MapGamepadToKey(padState.Buttons.A == XnaButtonState.Pressed || padState.Buttons.Start == XnaButtonState.Pressed, XnaKeys.Enter, nextHeld);
             MapGamepadToKey(padState.Buttons.B == XnaButtonState.Pressed || padState.Buttons.Back == XnaButtonState.Pressed, XnaKeys.Escape, nextHeld);
             MapGamepadToKey(padState.Buttons.X == XnaButtonState.Pressed, XnaKeys.X, nextHeld);
@@ -380,9 +381,6 @@ public partial class DragonGlareAlpha : Game
         }
     }
 
-    /// <summary>
-    /// ゲームパッドの状態を仮想キーに変換し、入力バッファに追加します
-    /// </summary>
     private void MapGamepadToKey(bool isPressed, XnaKeys mappedKey, HashSet<XnaKeys> nextHeld)
     {
         if (isPressed)

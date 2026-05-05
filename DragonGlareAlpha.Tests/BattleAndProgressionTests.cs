@@ -97,6 +97,97 @@ public sealed class BattleAndProgressionTests
     }
 
     [Fact]
+    public void ResolveTurn_WhenCastingKnownDamageSpell_ConsumesMpAndDamagesEnemy()
+    {
+        var random = new FixedRandom(3, 1);
+        var service = new BattleService();
+        var player = PlayerProgress.CreateDefault(new Point(0, 0));
+        player.Level = 4;
+        player.CurrentMp = 8;
+        player.BaseDefense = 99;
+        var spell = GameContent.SpellCatalog.Single(spell => spell.Id == "spark");
+        var encounter = new BattleEncounter(new EnemyDefinition("test", "テストまもの", FieldMapId.Field, 1, 99, 1, 80, 1, 2, 2, 3));
+
+        var result = service.ResolveTurn(player, encounter, BattleActionType.Spell, spell, null, null, random);
+
+        Assert.Equal(BattleOutcome.Ongoing, result.Outcome);
+        Assert.Equal(3, player.CurrentMp);
+        Assert.True(encounter.CurrentHp < encounter.Enemy.MaxHp);
+        Assert.Contains("ライデン", result.Steps[0].Message);
+    }
+
+    [Fact]
+    public void ResolveTurn_WhenCastingPoisonSpell_AppliesEnemyStatusAndTicksDamage()
+    {
+        var random = new FixedRandom(0, 1);
+        var service = new BattleService();
+        var player = PlayerProgress.CreateDefault(new Point(0, 0));
+        player.Level = 3;
+        player.CurrentMp = 8;
+        player.BaseDefense = 99;
+        var spell = GameContent.SpellCatalog.Single(spell => spell.Id == "venom");
+        var encounter = new BattleEncounter(new EnemyDefinition("test", "テストまもの", FieldMapId.Field, 1, 99, 1, 80, 1, 1, 2, 3));
+
+        var result = service.ResolveTurn(player, encounter, BattleActionType.Spell, spell, null, null, random);
+
+        Assert.Equal(BattleOutcome.Ongoing, result.Outcome);
+        Assert.Equal(BattleStatusEffect.Poison, encounter.EnemyStatusEffect);
+        Assert.True(encounter.CurrentHp < encounter.Enemy.MaxHp);
+        Assert.Contains(result.Steps, step => step.Message.Contains("どく", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ResolveTurn_WhenEnemyInflictsSleep_PlayerLosesNextAction()
+    {
+        var random = new FixedRandom(1, 0, 1, 99);
+        var service = new BattleService();
+        var player = PlayerProgress.CreateDefault(new Point(0, 0));
+        player.CurrentHp = 20;
+        player.BaseDefense = 99;
+        var enemy = new EnemyDefinition(
+            "sleep_test",
+            "ねむりまもの",
+            FieldMapId.Field,
+            1,
+            99,
+            1,
+            40,
+            1,
+            1,
+            2,
+            3,
+            AttackStatusEffect: BattleStatusEffect.Sleep,
+            AttackStatusChancePercent: 50,
+            AttackStatusTurns: 1);
+        var encounter = new BattleEncounter(enemy);
+
+        var first = service.ResolveTurn(player, encounter, BattleActionType.Defend, null, null, random);
+        var second = service.ResolveTurn(player, encounter, BattleActionType.Attack, null, null, random);
+
+        Assert.Equal(BattleStatusEffect.Sleep, first.Steps.Any(step => step.Message.Contains("ねむってしまった", StringComparison.Ordinal))
+            ? BattleStatusEffect.Sleep
+            : BattleStatusEffect.None);
+        Assert.Contains("ねむっている", second.Steps[0].Message);
+        Assert.Equal(BattleStatusEffect.None, encounter.PlayerStatusEffect);
+    }
+
+    [Fact]
+    public void ResolveTurn_WhenLanguageIsEnglish_UsesEnglishBattleText()
+    {
+        var random = new FixedRandom(2, 1);
+        var service = new BattleService();
+        var player = PlayerProgress.CreateDefault(new Point(0, 0), UiLanguage.English);
+        player.BaseDefense = 99;
+        var enemy = new EnemyDefinition("test", "テストまもの", FieldMapId.Field, 1, 99, 1, 40, 1, 1, 2, 3, EnglishName: "Test Beast");
+        var encounter = new BattleEncounter(enemy);
+
+        var result = service.ResolveTurn(player, encounter, BattleActionType.Attack, null, null, random);
+
+        Assert.Contains("Adventurer attacks!", result.Steps[0].Message);
+        Assert.Contains("Test Beast takes", result.Steps[1].Message);
+    }
+
+    [Fact]
     public void ApplyBattleRewards_WhenThresholdPassed_LevelsUpAndRestoresResources()
     {
         var random = new Random(0);

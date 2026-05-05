@@ -19,6 +19,7 @@ public partial class DragonGlareAlpha
             DrawBattleEnemy(g, new Point(320, 266));
         }
 
+        DrawBattleVisualEffects(g);
         DrawBattleTopUi(g);
         DrawBattleMessageWindow(g);
     }
@@ -40,7 +41,7 @@ public partial class DragonGlareAlpha
         {
             DrawBattleCommandWindow(g, Rectangle.Inflate(commandWindowRect, -18, -16));
         }
-        else if (battleFlowState is BattleFlowState.ItemSelection or BattleFlowState.EquipmentSelection)
+        else if (battleFlowState is BattleFlowState.SpellSelection or BattleFlowState.ItemSelection or BattleFlowState.EquipmentSelection)
         {
             DrawBattleSelectionPane(g, Rectangle.Inflate(commandWindowRect, -16, -14));
         }
@@ -92,7 +93,9 @@ public partial class DragonGlareAlpha
             DrawWindow(g, messageRect);
             DrawText(
                 g,
-                $"{pendingEncounter.Enemy.Name}の けはいがする…",
+                selectedLanguage == UiLanguage.English
+                    ? $"{GameContent.GetEnemyName(pendingEncounter.Enemy, selectedLanguage)} is near..."
+                    : $"{GameContent.GetEnemyName(pendingEncounter.Enemy, selectedLanguage)}の けはいがする…",
                 Rectangle.Inflate(messageRect, -18, -10),
                 smallFont,
                 StringAlignment.Center,
@@ -142,6 +145,97 @@ public partial class DragonGlareAlpha
         return ((enemyHitFlashFramesRemaining - 1) / 2) % 2 == 0;
     }
 
+    private void DrawBattleVisualEffects(Graphics g)
+    {
+        if (battleSpellEffectFramesRemaining > 0)
+        {
+            DrawBattleSpellBurst(g, new Point(320, 242), battleSpellEffectFramesRemaining);
+        }
+
+        if (battleStatusEffectFramesRemaining > 0)
+        {
+            DrawBattleStatusCloud(g, new Point(320, 250), battleStatusEffectFramesRemaining);
+        }
+
+        if (battlePlayerHealFramesRemaining > 0)
+        {
+            DrawBattlePlayerHealEffect(g, battlePlayerHealFramesRemaining);
+        }
+
+        if (playerHitFlashFramesRemaining > 0)
+        {
+            var alpha = Math.Clamp(playerHitFlashFramesRemaining * 14, 20, 120);
+            using var flashBrush = new SolidBrush(Color.FromArgb(alpha, 180, 24, 38));
+            g.FillRectangle(flashBrush, 0, 0, UiCanvas.VirtualWidth, UiCanvas.VirtualHeight);
+        }
+    }
+
+    private void DrawBattleSpellBurst(Graphics g, Point center, int framesRemaining)
+    {
+        var pulse = 1f - Math.Clamp(framesRemaining / 16f, 0f, 1f);
+        var radius = 18 + (int)Math.Round(pulse * 58f);
+        using var ringPen = new Pen(Color.FromArgb(190, 255, 232, 102), 3);
+        using var sparkBrush = new SolidBrush(Color.FromArgb(220, 255, 246, 170));
+
+        g.DrawEllipse(ringPen, center.X - radius, center.Y - radius, radius * 2, radius * 2);
+        for (var index = 0; index < 10; index++)
+        {
+            var angle = ((frameCounter + (index * 36)) % 360) * Math.PI / 180d;
+            var x = center.X + (int)Math.Round(Math.Cos(angle) * radius);
+            var y = center.Y + (int)Math.Round(Math.Sin(angle) * Math.Max(12, radius / 2f));
+            g.FillRectangle(sparkBrush, x - 2, y - 2, 4, 4);
+        }
+    }
+
+    private void DrawBattleStatusCloud(Graphics g, Point center, int framesRemaining)
+    {
+        var status = currentEncounter?.EnemyStatusEffect ?? BattleStatusEffect.None;
+        var baseColor = status switch
+        {
+            BattleStatusEffect.Poison => Color.FromArgb(90, 120, 232, 96),
+            BattleStatusEffect.Sleep => Color.FromArgb(88, 116, 178, 255),
+            _ => Color.FromArgb(82, 200, 120, 255)
+        };
+
+        using var cloudBrush = new SolidBrush(baseColor);
+        for (var index = 0; index < 7; index++)
+        {
+            var wobble = Math.Sin((frameCounter + (index * 11)) / 5d);
+            var x = center.X - 58 + (index * 18);
+            var y = center.Y - 28 + (int)Math.Round(wobble * 8d) - ((16 - framesRemaining) / 2);
+            g.FillEllipse(cloudBrush, x, y, 26, 18);
+        }
+
+        if (status == BattleStatusEffect.Sleep)
+        {
+            DrawText(g, "Z", center.X + 52, center.Y - 66, smallFont);
+            DrawText(g, "Z", center.X + 72, center.Y - 88, smallFont);
+        }
+    }
+
+    private static void DrawBattlePlayerHealEffect(Graphics g, int framesRemaining)
+    {
+        var alpha = Math.Clamp(framesRemaining * 12, 28, 150);
+        using var healBrush = new SolidBrush(Color.FromArgb(alpha, 98, 244, 150));
+        for (var index = 0; index < 5; index++)
+        {
+            var x = 308 + (index * 44);
+            var y = 58 + ((index % 2) * 20);
+            g.FillRectangle(healBrush, x + 6, y, 6, 22);
+            g.FillRectangle(healBrush, x - 2, y + 8, 22, 6);
+        }
+    }
+
+    private string GetBattleStatusEffectLabel(BattleStatusEffect statusEffect)
+    {
+        return statusEffect switch
+        {
+            BattleStatusEffect.Poison => selectedLanguage == UiLanguage.English ? "POISON" : "どく",
+            BattleStatusEffect.Sleep => selectedLanguage == UiLanguage.English ? "SLEEP" : "ねむり",
+            _ => string.Empty
+        };
+    }
+
     private void DrawBattleStatusWindow(Graphics g, Rectangle rect)
     {
         var classLabel = selectedLanguage == UiLanguage.English ? "HERO" : "ゆうしゃ";
@@ -154,11 +248,18 @@ public partial class DragonGlareAlpha
         var exText = $"EX:{player.Experience}";
         var exX = statX + MeasureTextWidth(g, mpText, smallFont) + inlineStatGap;
         var exColumnWidth = rect.Right - exX;
+        var playerStatusLabel = currentEncounter is null
+            ? string.Empty
+            : GetBattleStatusEffectLabel(currentEncounter.PlayerStatusEffect);
 
         DrawText(g, $"{GetDisplayPlayerName()}  :  {classLabel}", new Rectangle(statX, rect.Y + 2, rect.Width - 16, 24), smallFont);
         DrawText(g, $"HP:{player.CurrentHp}", new Rectangle(statX, rect.Y + lineHeight + 6, leftColumnWidth, 24), smallFont);
         DrawText(g, mpText, new Rectangle(statX, mpY, leftColumnWidth, 24), smallFont);
         DrawText(g, exText, new Rectangle(exX, mpY, exColumnWidth, 24), smallFont);
+        if (!string.IsNullOrWhiteSpace(playerStatusLabel))
+        {
+            DrawText(g, playerStatusLabel, new Rectangle(rect.Right - 104, rect.Y + 2, 86, 24), smallFont, StringAlignment.Far);
+        }
     }
 
     private void DrawBattleLowerUi(Graphics g)
@@ -171,7 +272,7 @@ public partial class DragonGlareAlpha
         DrawBattleUnifiedHeader(g, headerRect);
         DrawBattleWindowSeparator(g, innerRect.X, innerRect.Y + 28, innerRect.Width);
 
-        if (battleFlowState is BattleFlowState.CommandSelection or BattleFlowState.ItemSelection or BattleFlowState.EquipmentSelection)
+        if (battleFlowState is BattleFlowState.CommandSelection or BattleFlowState.SpellSelection or BattleFlowState.ItemSelection or BattleFlowState.EquipmentSelection)
         {
             var selectionRect = new Rectangle(innerRect.X, innerRect.Y + 38, 210, innerRect.Height - 38);
             var separatorX = selectionRect.Right + 8;
@@ -194,7 +295,7 @@ public partial class DragonGlareAlpha
     private void DrawBattleSelectionPane(Graphics g, Rectangle rect)
     {
         DrawText(g, GetBattleSelectionTitle(), new Rectangle(rect.X, rect.Y, rect.Width, 20), smallFont);
-        if (battleFlowState is BattleFlowState.ItemSelection or BattleFlowState.EquipmentSelection)
+        if (battleFlowState is BattleFlowState.SpellSelection or BattleFlowState.ItemSelection or BattleFlowState.EquipmentSelection)
         {
             DrawText(g, GetBattleSelectionCounterText(), new Rectangle(rect.X, rect.Y, rect.Width, 20), smallFont, StringAlignment.Far);
         }
@@ -275,9 +376,15 @@ public partial class DragonGlareAlpha
 
     private void DrawBattleUnifiedHeader(Graphics g, Rectangle rect)
     {
-        var targetName = currentEncounter?.Enemy.Name ?? (selectedLanguage == UiLanguage.English ? "MONSTER" : "まもの");
+        var targetName = currentEncounter is null
+            ? selectedLanguage == UiLanguage.English ? "MONSTER" : "まもの"
+            : GameContent.GetEnemyName(currentEncounter.Enemy, selectedLanguage);
         var countLabel = selectedLanguage == UiLanguage.English ? "x1" : "1匹";
-        DrawText(g, targetName, new Rectangle(rect.X, rect.Y, rect.Width - 176, rect.Height), smallFont);
+        var statusLabel = currentEncounter is null
+            ? string.Empty
+            : GetBattleStatusEffectLabel(currentEncounter.EnemyStatusEffect);
+        var nameText = string.IsNullOrWhiteSpace(statusLabel) ? targetName : $"{targetName} [{statusLabel}]";
+        DrawText(g, nameText, new Rectangle(rect.X, rect.Y, rect.Width - 176, rect.Height), smallFont);
         DrawText(g, countLabel, new Rectangle(rect.Right - 204, rect.Y, 44, rect.Height), smallFont, StringAlignment.Far);
         if (currentEncounter is null)
         {
@@ -299,7 +406,6 @@ public partial class DragonGlareAlpha
             footerHeight == 0 ? rect.Height : Math.Max(20, rect.Height - (footerHeight + 8)));
         
         string displayMessage = battleMessage;
-        // バトルのリザルト等でアニメーション表示が有効な場合
         if (battleMessageLines.Length > 0 && (battleFlowState is BattleFlowState.Victory or BattleFlowState.Defeat or BattleFlowState.Escaped))
         {
             var visibleCount = Math.Min(battleMessageVisibleLines, battleMessageLines.Length);
@@ -312,7 +418,6 @@ public partial class DragonGlareAlpha
             return;
         }
 
-        // 次へ進むためのフッターメッセージ（決定キーでスキップできることも知らせる）
         DrawText(
             g,
             footer,
