@@ -1,3 +1,4 @@
+using System.IO;
 using DragonGlareAlpha.Domain;
 
 namespace DragonGlareAlpha.Services;
@@ -12,6 +13,47 @@ public static class MapFactory
     public const int CastleFloorTile = 5;
     public const int GrassTile = 6;
     public const int DecorationBlueTile = 7;
+    public const int CastleTextWallTile = '@';
+    public const int CastleTextCarpetTile = '4';
+    public const int CastleTextTopWallTile = '5';
+    public const int CastleTextColumnBaseTile = 'g';
+    public const int CastleTextPillarTile = 'l';
+    public const int CastleTextOrnamentTile = 'm';
+    public const int CastleTextRightWallTile = '#';
+    public const int CastleTextExitTile = 'r';
+
+    private const string CastleMapFileName = "map(mycas2).txt";
+    private const string EmbeddedCastleMap = """
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@55555555555555@@@@@@@@
+@@@@@@@@g44m444444m44g@@@@@@@@
+@@@@@@@@g4l4l4444l4l4g@@@@@@@@
+@@@@@@@@g444444444444g@@@@@@@@
+@@@@@@@@g444444444444g@@@@@@@@
+@@@@@@@@g444444444444g@@@@@@@@
+@@@@@@@@g444444444444g@@@@@@@@
+@@@@@@@@g444444444444g@@@@@@@@
+@@@@@@@@g444444444444g@@@@@@@@
+@@@@@@@@g444444444444g#@@@@@@@
+@@@@@@@@ggggg4444gggggg@@@@@@@
+@@@@@@@@ggggg4444ggggg@@@@@@@@
+@@@@@@@@ggggg4444ggggg@@@@@@@@
+@@@@@@@@ggggg4444ggggg@@@@@@@@
+@@@@@@@@@@@@@@r@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+""";
 
     public static int[,] CreateDefaultMap()
     {
@@ -50,14 +92,7 @@ public static class MapFactory
 
     private static int[,] CreateCastleMap()
     {
-        var map = CreateBoundedMap();
-
-        PaintArea(map, 1, 1, 18, 13, CastleFloorTile);
-        PaintArea(map, 7, 2, 12, 3, CastleBlockTile);
-        PaintArea(map, 4, 4, 5, 11, WallTile);
-        PaintArea(map, 14, 4, 15, 11, WallTile);
-        PaintArea(map, 9, 14, 10, 14, CastleGateTile);
-        return map;
+        return CreateTextMap(LoadCastleMapLines());
     }
 
     private static int[,] CreateFieldMap()
@@ -99,5 +134,97 @@ public static class MapFactory
                 map[y, x] = tile;
             }
         }
+    }
+
+    public static bool IsWalkableTileId(int tileId)
+    {
+        return tileId switch
+        {
+            WallTile
+                or CastleTextWallTile
+                or CastleTextTopWallTile
+                or CastleTextColumnBaseTile
+                or CastleTextPillarTile
+                or CastleTextOrnamentTile
+                or CastleTextRightWallTile => false,
+            _ => true
+        };
+    }
+
+    private static string[] LoadCastleMapLines()
+    {
+        if (TryReadCastleMapAsset() is { } assetText &&
+            TryNormalizeMapLines(assetText, out var assetLines))
+        {
+            return assetLines;
+        }
+
+        return TryNormalizeMapLines(EmbeddedCastleMap, out var embeddedLines)
+            ? embeddedLines
+            : ["@"];
+    }
+
+    private static string? TryReadCastleMapAsset()
+    {
+        foreach (var root in GetAssetLookupRoots())
+        {
+            foreach (var relativePath in new[]
+            {
+                Path.Combine("Assets", CastleMapFileName),
+                CastleMapFileName
+            })
+            {
+                var path = Path.GetFullPath(Path.Combine(root, relativePath));
+                if (!File.Exists(path))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    return File.ReadAllText(path);
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<string> GetAssetLookupRoots()
+    {
+        yield return AppContext.BaseDirectory;
+        yield return Path.Combine(AppContext.BaseDirectory, "..", "..", "..");
+        yield return Directory.GetCurrentDirectory();
+    }
+
+    private static bool TryNormalizeMapLines(string text, out string[] lines)
+    {
+        var normalizedLines = text
+            .Replace("\r", string.Empty, StringComparison.Ordinal)
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries);
+
+        lines = normalizedLines;
+        return normalizedLines.Length > 0 &&
+            normalizedLines[0].Length > 0 &&
+            normalizedLines.All(line => line.Length == normalizedLines[0].Length);
+    }
+
+    private static int[,] CreateTextMap(string[] lines)
+    {
+        var map = new int[lines.Length, lines[0].Length];
+
+        for (var y = 0; y < lines.Length; y++)
+        {
+            for (var x = 0; x < lines[y].Length; x++)
+            {
+                map[y, x] = lines[y][x];
+            }
+        }
+
+        return map;
     }
 }

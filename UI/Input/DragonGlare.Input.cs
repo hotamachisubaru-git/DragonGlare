@@ -66,7 +66,7 @@ public partial class DragonGlareAlpha
             return false;
         }
 
-        return fieldMap[tile.Y, tile.X] != MapFactory.WallTile;
+        return MapFactory.IsWalkableTileId(fieldMap[tile.Y, tile.X]);
     }
 
     private bool TryMovePlayer(Point movement)

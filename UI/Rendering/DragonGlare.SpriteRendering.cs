@@ -26,19 +26,42 @@ public partial class DragonGlareAlpha
         LoadHeroSpriteIfMissing(PlayerFacingDirection.Down, "hero_down.png", "hero_left.png", "hero.png");
     }
 
-    private Image? GetFieldTileSprite(int tileId)
+    private bool TryDrawFieldTileSprite(Graphics g, Point worldTile, Rectangle tileRect)
     {
-        if (!UsesCastleTileSprite(tileId))
+        if (currentFieldMap != FieldMapId.Castle)
         {
-            return null;
+            return false;
         }
 
-        if (castleTileSprite is not null)
+        var tileSheet = GetCastleTileSheet();
+        if (tileSheet is null)
         {
-            return castleTileSprite;
+            return false;
         }
 
-        var path = ResolveAssetPath("Tiles", "mapTile_Assets_SFCFrame1.png");
+        var sourceRect = GetCastleTileSourceRectangle(tileSheet, GetTileIdAtWorldPosition(worldTile), worldTile);
+        if (sourceRect.IsEmpty)
+        {
+            return false;
+        }
+
+        var state = g.Save();
+        g.InterpolationMode = InterpolationMode.NearestNeighbor;
+        g.PixelOffsetMode = PixelOffsetMode.Half;
+        g.SmoothingMode = SmoothingMode.None;
+        g.DrawImage(tileSheet, tileRect, sourceRect, GraphicsUnit.Pixel);
+        g.Restore(state);
+        return true;
+    }
+
+    private Image? GetCastleTileSheet()
+    {
+        if (castleTileSheet is not null)
+        {
+            return castleTileSheet;
+        }
+
+        var path = ResolveAssetPath(null, "mapTile_Assets_SFC.png", "mapTile_Assets_SFC_2.png", "mapTile_Assets_SFCFrame1.png");
         if (path is null)
         {
             return null;
@@ -46,15 +69,8 @@ public partial class DragonGlareAlpha
 
         try
         {
-            using var source = new Bitmap(path);
-            var sourceRect = new Rectangle(0, 64, 32, 32);
-            if (source.Width < sourceRect.Right || source.Height < sourceRect.Bottom)
-            {
-                return null;
-            }
-
-            castleTileSprite = source.Clone(sourceRect, source.PixelFormat);
-            return castleTileSprite;
+            castleTileSheet = Image.FromFile(path);
+            return castleTileSheet;
         }
         catch
         {
@@ -62,9 +78,80 @@ public partial class DragonGlareAlpha
         }
     }
 
-    private bool UsesCastleTileSprite(int tileId)
+    private Rectangle GetCastleTileSourceRectangle(Image tileSheet, int tileId, Point worldTile)
     {
-        return currentFieldMap == FieldMapId.Castle;
+        if (!TryGetCastleTileSheetCell(tileId, worldTile, out var cell))
+        {
+            return Rectangle.Empty;
+        }
+
+        const int tileSheetColumns = 8;
+        const int tileSheetRows = 8;
+        var sourceTileWidth = tileSheet.Width / tileSheetColumns;
+        var sourceTileHeight = tileSheet.Height / tileSheetRows;
+        if (sourceTileWidth <= 0 || sourceTileHeight <= 0)
+        {
+            return Rectangle.Empty;
+        }
+
+        return new Rectangle(
+            cell.X * sourceTileWidth,
+            cell.Y * sourceTileHeight,
+            sourceTileWidth,
+            sourceTileHeight);
+    }
+
+    private bool TryGetCastleTileSheetCell(int tileId, Point worldTile, out Point cell)
+    {
+        cell = tileId switch
+        {
+            MapFactory.CastleTextWallTile => new Point(2, 3),
+            MapFactory.CastleTextTopWallTile => new Point(3, 4),
+            MapFactory.CastleTextColumnBaseTile => new Point(5, 0),
+            MapFactory.CastleTextPillarTile => new Point(4, 6),
+            MapFactory.CastleTextOrnamentTile => new Point(3, 7),
+            MapFactory.CastleTextRightWallTile => new Point(3, 3),
+            MapFactory.CastleTextExitTile => new Point(1, 5),
+            MapFactory.CastleTextCarpetTile => GetCastleCarpetTileCell(worldTile),
+            _ => Point.Empty
+        };
+
+        return tileId is MapFactory.CastleTextWallTile
+            or MapFactory.CastleTextTopWallTile
+            or MapFactory.CastleTextColumnBaseTile
+            or MapFactory.CastleTextPillarTile
+            or MapFactory.CastleTextOrnamentTile
+            or MapFactory.CastleTextRightWallTile
+            or MapFactory.CastleTextExitTile
+            or MapFactory.CastleTextCarpetTile;
+    }
+
+    private Point GetCastleCarpetTileCell(Point worldTile)
+    {
+        var hasLeftEdge = IsCastleCarpetBoundary(worldTile, new Point(-1, 0));
+        var hasRightEdge = IsCastleCarpetBoundary(worldTile, new Point(1, 0));
+        var hasTopEdge = IsCastleCarpetBoundary(worldTile, new Point(0, -1));
+        var hasBottomEdge = IsCastleCarpetBoundary(worldTile, new Point(0, 1));
+
+        return (hasLeftEdge, hasRightEdge, hasTopEdge, hasBottomEdge) switch
+        {
+            (true, false, true, false) => new Point(0, 4),
+            (false, true, true, false) => new Point(2, 4),
+            (true, false, false, true) => new Point(0, 6),
+            (false, true, false, true) => new Point(2, 6),
+            (true, false, _, _) => new Point(0, 5),
+            (false, true, _, _) => new Point(2, 5),
+            (_, _, true, false) => new Point(1, 4),
+            (_, _, false, true) => new Point(1, 6),
+            _ => new Point(1, 5)
+        };
+    }
+
+    private bool IsCastleCarpetBoundary(Point worldTile, Point direction)
+    {
+        var neighborTileId = GetTileIdAtWorldPosition(new Point(worldTile.X + direction.X, worldTile.Y + direction.Y));
+        return neighborTileId != MapFactory.CastleTextCarpetTile &&
+            neighborTileId != MapFactory.CastleTextExitTile;
     }
 
     private Image? GetNpcSprite(string? spriteAssetName)
@@ -789,8 +876,8 @@ public partial class DragonGlareAlpha
 
     private void DisposeFieldSprites()
     {
-        castleTileSprite?.Dispose();
-        castleTileSprite = null;
+        castleTileSheet?.Dispose();
+        castleTileSheet = null;
 
         foreach (var sprite in heroSprites.Values)
         {

@@ -98,11 +98,9 @@ public partial class DragonGlareAlpha
                 var worldTile = new Point(cameraOrigin.X + x, cameraOrigin.Y + y);
                 var tileRect = GetFieldTileRectangle(viewport, cameraOrigin, worldTile, cameraAnimationOffset);
                 var tileId = GetTileIdAtWorldPosition(worldTile);
-                var tileSprite = GetFieldTileSprite(tileId);
 
-                if (tileSprite is not null)
+                if (TryDrawFieldTileSprite(g, worldTile, tileRect))
                 {
-                    g.DrawImage(tileSprite, tileRect);
                     continue;
                 }
 
@@ -136,6 +134,14 @@ public partial class DragonGlareAlpha
             MapFactory.GrassTile => Color.FromArgb(24, 74, 36),
             MapFactory.DecorationBlueTile when currentFieldMap == FieldMapId.Castle => Color.FromArgb(76, 20, 34),
             MapFactory.DecorationBlueTile => Color.FromArgb(8, 30, 90),
+            MapFactory.CastleTextWallTile => Color.FromArgb(28, 18, 18),
+            MapFactory.CastleTextCarpetTile => Color.FromArgb(184, 36, 28),
+            MapFactory.CastleTextTopWallTile => Color.FromArgb(34, 52, 112),
+            MapFactory.CastleTextColumnBaseTile => Color.FromArgb(78, 34, 92),
+            MapFactory.CastleTextPillarTile => Color.FromArgb(212, 174, 54),
+            MapFactory.CastleTextOrnamentTile => Color.FromArgb(238, 208, 88),
+            MapFactory.CastleTextRightWallTile => Color.FromArgb(42, 22, 54),
+            MapFactory.CastleTextExitTile => Color.FromArgb(64, 44, 32),
             _ => Color.FromArgb(5, 5, 5)
         };
     }

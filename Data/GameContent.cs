@@ -133,9 +133,9 @@ public static class GameContent
 
     public static readonly FieldTransitionDefinition[] FieldTransitions =
     [
-        new(FieldMapId.Hub, new Rectangle(9, 0, 2, 1), FieldMapId.Castle, new Point(9, 12)),
+        new(FieldMapId.Hub, new Rectangle(9, 0, 2, 1), FieldMapId.Castle, new Point(14, 20)),
         new(FieldMapId.Hub, new Rectangle(19, 7, 1, 2), FieldMapId.Field, new Point(2, 7)),
-        new(FieldMapId.Castle, new Rectangle(9, 14, 2, 1), FieldMapId.Hub, new Point(9, 2)),
+        new(FieldMapId.Castle, new Rectangle(14, 21, 1, 1), FieldMapId.Hub, new Point(9, 2)),
         new(FieldMapId.Field, new Rectangle(0, 7, 1, 2), FieldMapId.Hub, new Point(15, 7))
     ];
 

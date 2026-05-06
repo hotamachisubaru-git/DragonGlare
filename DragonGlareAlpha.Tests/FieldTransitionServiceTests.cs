@@ -8,9 +8,9 @@ public sealed class FieldTransitionServiceTests
     private readonly FieldTransitionService service = new();
 
     [Theory]
-    [InlineData(FieldMapId.Hub, 9, 0, FieldMapId.Castle, 9, 12)]
+    [InlineData(FieldMapId.Hub, 9, 0, FieldMapId.Castle, 14, 20)]
     [InlineData(FieldMapId.Hub, 19, 7, FieldMapId.Field, 2, 7)]
-    [InlineData(FieldMapId.Castle, 10, 14, FieldMapId.Hub, 9, 2)]
+    [InlineData(FieldMapId.Castle, 14, 21, FieldMapId.Hub, 9, 2)]
     [InlineData(FieldMapId.Field, 0, 8, FieldMapId.Hub, 15, 7)]
     public void TryGetTransition_WhenTileMatchesPortal_ReturnsConfiguredDestination(
         FieldMapId fromMap,
