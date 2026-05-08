@@ -25,6 +25,7 @@ TestResults/
 *.bak
 *.orig
 *.log
+/sources/
 .tmp_opening_frames*/
 omnisharp.json
 AGENTS.md

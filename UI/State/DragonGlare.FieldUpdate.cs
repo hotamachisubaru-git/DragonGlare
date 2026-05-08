@@ -103,12 +103,12 @@ public partial class DragonGlareAlpha
         }
 
         var tileId = map[player.TilePosition.Y, player.TilePosition.X];
-        if (tileId == MapFactory.FieldGateTile)
+        if (MapFactory.IsFieldGateTileId(tileId))
         {
             return false;
         }
 
-        fieldEncounterStepsRemaining -= tileId == MapFactory.GrassTile ? 2 : 1;
+        fieldEncounterStepsRemaining -= MapFactory.IsGrassTileId(tileId) ? 2 : 1;
         if (fieldEncounterStepsRemaining > 0)
         {
             return false;

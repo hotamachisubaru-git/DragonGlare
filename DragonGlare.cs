@@ -83,7 +83,7 @@ public partial class DragonGlareAlpha : Game
     private readonly Dictionary<string, Image> npcPortraits = [];
     private readonly Dictionary<string, Image> uiImages = [];
     private readonly Dictionary<PlayerFacingDirection, Image> heroSprites = [];
-    private Image? castleTileSheet;
+    private Image? mapTileSheet;
     private readonly Random random = new();
     private readonly SaveService saveService = new();
     private readonly AntiCheatService antiCheatService = new();

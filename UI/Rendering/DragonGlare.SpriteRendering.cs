@@ -28,18 +28,24 @@ public partial class DragonGlareAlpha
 
     private bool TryDrawFieldTileSprite(Graphics g, Point worldTile, Rectangle tileRect)
     {
-        if (currentFieldMap != FieldMapId.Castle)
+        if (currentFieldMap is not (FieldMapId.Castle or FieldMapId.Field))
         {
             return false;
         }
 
-        var tileSheet = GetCastleTileSheet();
+        var tileSheet = GetMapTileSheet();
         if (tileSheet is null)
         {
             return false;
         }
 
-        var sourceRect = GetCastleTileSourceRectangle(tileSheet, GetTileIdAtWorldPosition(worldTile), worldTile);
+        var tileId = GetTileIdAtWorldPosition(worldTile);
+        if (currentFieldMap == FieldMapId.Field && tileId == MapFactory.GrassTile)
+        {
+            return TryDrawOutdoorTreeTile(g, tileSheet, worldTile, tileRect);
+        }
+
+        var sourceRect = GetMapTileSourceRectangle(tileSheet, tileId, worldTile);
         if (sourceRect.IsEmpty)
         {
             return false;
@@ -54,14 +60,14 @@ public partial class DragonGlareAlpha
         return true;
     }
 
-    private Image? GetCastleTileSheet()
+    private Image? GetMapTileSheet()
     {
-        if (castleTileSheet is not null)
+        if (mapTileSheet is not null)
         {
-            return castleTileSheet;
+            return mapTileSheet;
         }
 
-        var path = ResolveAssetPath(null, "mapTile_Assets_SFC.png", "mapTile_Assets_SFC_2.png", "mapTile_Assets_SFCFrame1.png");
+        var path = ResolveAssetPath(null, "mapTile_Assets_SFC.png", "mapTile_Assets_SFCFrame1.png");
         if (path is null)
         {
             return null;
@@ -69,8 +75,8 @@ public partial class DragonGlareAlpha
 
         try
         {
-            castleTileSheet = Image.FromFile(path);
-            return castleTileSheet;
+            mapTileSheet = Image.FromFile(path);
+            return mapTileSheet;
         }
         catch
         {
@@ -78,9 +84,9 @@ public partial class DragonGlareAlpha
         }
     }
 
-    private Rectangle GetCastleTileSourceRectangle(Image tileSheet, int tileId, Point worldTile)
+    private Rectangle GetMapTileSourceRectangle(Image tileSheet, int tileId, Point worldTile)
     {
-        if (!TryGetCastleTileSheetCell(tileId, worldTile, out var cell))
+        if (!TryGetMapTileSheetCell(tileId, worldTile, out var cell))
         {
             return Rectangle.Empty;
         }
@@ -99,6 +105,64 @@ public partial class DragonGlareAlpha
             cell.Y * sourceTileHeight,
             sourceTileWidth,
             sourceTileHeight);
+    }
+
+    private bool TryDrawOutdoorTreeTile(Graphics g, Image tileSheet, Point worldTile, Rectangle tileRect)
+    {
+        var isTreeBelow = IsOutdoorTreeTile(new Point(worldTile.X, worldTile.Y + 1));
+        var isTreeAbove = IsOutdoorTreeTile(new Point(worldTile.X, worldTile.Y - 1));
+        var sourceCell = (isTreeAbove, isTreeBelow) switch
+        {
+            (true, true) => new Point(1, 3),
+            (true, false) => new Point(6, 1),
+            _ => new Point(1, 3)
+        };
+        var sourceRect = GetTileSheetSourceRectangle(tileSheet, sourceCell);
+        if (sourceRect.IsEmpty)
+        {
+            return false;
+        }
+
+        var state = g.Save();
+        g.InterpolationMode = InterpolationMode.NearestNeighbor;
+        g.PixelOffsetMode = PixelOffsetMode.Half;
+        g.SmoothingMode = SmoothingMode.None;
+        g.DrawImage(tileSheet, tileRect, sourceRect, GraphicsUnit.Pixel);
+        g.Restore(state);
+        return true;
+    }
+
+    private static Rectangle GetTileSheetSourceRectangle(Image tileSheet, Point cell)
+    {
+        const int tileSheetColumns = 8;
+        const int tileSheetRows = 8;
+        var sourceTileWidth = tileSheet.Width / tileSheetColumns;
+        var sourceTileHeight = tileSheet.Height / tileSheetRows;
+        if (sourceTileWidth <= 0 || sourceTileHeight <= 0)
+        {
+            return Rectangle.Empty;
+        }
+
+        return new Rectangle(
+            cell.X * sourceTileWidth,
+            cell.Y * sourceTileHeight,
+            sourceTileWidth,
+            sourceTileHeight);
+    }
+
+    private bool IsOutdoorTreeTile(Point worldTile)
+    {
+        return GetTileIdAtWorldPosition(worldTile) == MapFactory.GrassTile;
+    }
+
+    private bool TryGetMapTileSheetCell(int tileId, Point worldTile, out Point cell)
+    {
+        return currentFieldMap switch
+        {
+            FieldMapId.Castle => TryGetCastleTileSheetCell(tileId, worldTile, out cell),
+            FieldMapId.Field => TryGetOutdoorTileSheetCell(tileId, out cell),
+            _ => TryGetHubTileSheetCell(tileId, out cell)
+        };
     }
 
     private bool TryGetCastleTileSheetCell(int tileId, Point worldTile, out Point cell)
@@ -152,6 +216,50 @@ public partial class DragonGlareAlpha
         var neighborTileId = GetTileIdAtWorldPosition(new Point(worldTile.X + direction.X, worldTile.Y + direction.Y));
         return neighborTileId != MapFactory.CastleTextCarpetTile &&
             neighborTileId != MapFactory.CastleTextExitTile;
+    }
+
+    private static bool TryGetOutdoorTileSheetCell(int tileId, out Point cell)
+    {
+        cell = tileId switch
+        {
+            MapFactory.WallTile => new Point(0, 3),
+            MapFactory.FloorTile => new Point(6, 2),
+            MapFactory.GrassTile => new Point(1, 3),
+            MapFactory.DecorationBlueTile => new Point(0, 3),
+            MapFactory.FieldGateTile => new Point(6, 2),
+            _ => Point.Empty
+        };
+
+        return tileId is MapFactory.WallTile
+            or MapFactory.FloorTile
+            or MapFactory.GrassTile
+            or MapFactory.DecorationBlueTile
+            or MapFactory.FieldGateTile;
+    }
+
+    private static bool TryGetHubTileSheetCell(int tileId, out Point cell)
+    {
+        cell = tileId switch
+        {
+            MapFactory.WallTile => new Point(7, 0),
+            MapFactory.FloorTile => new Point(6, 2),
+            MapFactory.GrassTile => new Point(1, 3),
+            MapFactory.DecorationBlueTile => new Point(0, 3),
+            MapFactory.FieldGateTile => new Point(6, 1),
+            MapFactory.CastleGateTile => new Point(3, 7),
+            MapFactory.CastleBlockTile => new Point(2, 3),
+            MapFactory.CastleFloorTile => new Point(1, 5),
+            _ => Point.Empty
+        };
+
+        return tileId is MapFactory.WallTile
+            or MapFactory.FloorTile
+            or MapFactory.GrassTile
+            or MapFactory.DecorationBlueTile
+            or MapFactory.FieldGateTile
+            or MapFactory.CastleGateTile
+            or MapFactory.CastleBlockTile
+            or MapFactory.CastleFloorTile;
     }
 
     private Image? GetNpcSprite(string? spriteAssetName)
@@ -876,8 +984,8 @@ public partial class DragonGlareAlpha
 
     private void DisposeFieldSprites()
     {
-        castleTileSheet?.Dispose();
-        castleTileSheet = null;
+        mapTileSheet?.Dispose();
+        mapTileSheet = null;
 
         foreach (var sprite in heroSprites.Values)
         {

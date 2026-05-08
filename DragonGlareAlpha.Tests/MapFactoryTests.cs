@@ -29,4 +29,20 @@ public sealed class MapFactoryTests
     {
         Assert.Equal(expected, MapFactory.IsWalkableTileId(tileId));
     }
+
+    [Theory]
+    [InlineData(MapFactory.FieldGateTile, true)]
+    [InlineData(MapFactory.FloorTile, false)]
+    public void IsFieldGateTileId_HandlesGeneratedAndTextTiles(int tileId, bool expected)
+    {
+        Assert.Equal(expected, MapFactory.IsFieldGateTileId(tileId));
+    }
+
+    [Theory]
+    [InlineData(MapFactory.GrassTile, true)]
+    [InlineData(MapFactory.FloorTile, false)]
+    public void IsGrassTileId_HandlesGeneratedAndTextTiles(int tileId, bool expected)
+    {
+        Assert.Equal(expected, MapFactory.IsGrassTileId(tileId));
+    }
 }

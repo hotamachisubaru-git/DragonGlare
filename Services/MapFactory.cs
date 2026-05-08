@@ -151,6 +151,16 @@ public static class MapFactory
         };
     }
 
+    public static bool IsFieldGateTileId(int tileId)
+    {
+        return tileId is FieldGateTile;
+    }
+
+    public static bool IsGrassTileId(int tileId)
+    {
+        return tileId is GrassTile;
+    }
+
     private static string[] LoadCastleMapLines()
     {
         if (TryReadCastleMapAsset() is { } assetText &&
