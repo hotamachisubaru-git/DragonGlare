@@ -91,6 +91,21 @@ public partial class DragonGlareAlpha
             g.FillRectangle(voidBrush, viewport);
         }
 
+        if (currentFieldMap == FieldMapId.Field && TryDrawFieldMapImage(g, viewport))
+        {
+            foreach (var fieldEvent in GetCurrentFieldEvents())
+            {
+                var sprite = GetNpcSprite(fieldEvent.SpriteAssetName);
+                DrawWorldTileEntity(g, fieldEvent.TilePosition, viewport, cameraOrigin, cameraAnimationOffset, fieldEvent.DisplayColor, sprite);
+            }
+
+            DrawPlayerTileEntity(g, viewport, cameraOrigin, playerAnimationOffset);
+
+            g.Restore(clipState);
+            DrawFieldViewportFrame(g, viewport);
+            return;
+        }
+
         for (var y = 0; y < visibleHeightTiles; y++)
         {
             for (var x = 0; x < visibleWidthTiles; x++)

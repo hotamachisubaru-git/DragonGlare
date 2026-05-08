@@ -84,6 +84,47 @@ public partial class DragonGlareAlpha
         }
     }
 
+    private bool TryDrawFieldMapImage(Graphics g, Rectangle viewport)
+    {
+        var fieldImage = GetFieldMapImage();
+        if (fieldImage is null)
+        {
+            return false;
+        }
+
+        var state = g.Save();
+        g.InterpolationMode = InterpolationMode.NearestNeighbor;
+        g.PixelOffsetMode = PixelOffsetMode.Half;
+        g.SmoothingMode = SmoothingMode.None;
+        g.DrawImage(fieldImage, viewport);
+        g.Restore(state);
+        return true;
+    }
+
+    private Image? GetFieldMapImage()
+    {
+        if (fieldMapImage is not null)
+        {
+            return fieldMapImage;
+        }
+
+        var path = ResolveAssetPath(null, "field_map.png", "field-map.png", "field.png");
+        if (path is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            fieldMapImage = Image.FromFile(path);
+            return fieldMapImage;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private Rectangle GetMapTileSourceRectangle(Image tileSheet, int tileId, Point worldTile)
     {
         if (!TryGetMapTileSheetCell(tileId, worldTile, out var cell))
@@ -109,14 +150,24 @@ public partial class DragonGlareAlpha
 
     private bool TryDrawOutdoorTreeTile(Graphics g, Image tileSheet, Point worldTile, Rectangle tileRect)
     {
+        if (GetOutdoorTreeLocalColumn(worldTile) == 2)
+        {
+            return DrawTileSheetCell(g, tileSheet, new Point(3, 6), tileRect);
+        }
+
         var isTreeBelow = IsOutdoorTreeTile(new Point(worldTile.X, worldTile.Y + 1));
         var isTreeAbove = IsOutdoorTreeTile(new Point(worldTile.X, worldTile.Y - 1));
         var sourceCell = (isTreeAbove, isTreeBelow) switch
         {
             (true, true) => new Point(1, 3),
-            (true, false) => new Point(6, 1),
+            (true, false) => new Point(3, 6),
             _ => new Point(1, 3)
         };
+        return DrawTileSheetCell(g, tileSheet, sourceCell, tileRect);
+    }
+
+    private bool DrawTileSheetCell(Graphics g, Image tileSheet, Point sourceCell, Rectangle tileRect)
+    {
         var sourceRect = GetTileSheetSourceRectangle(tileSheet, sourceCell);
         if (sourceRect.IsEmpty)
         {
@@ -130,6 +181,17 @@ public partial class DragonGlareAlpha
         g.DrawImage(tileSheet, tileRect, sourceRect, GraphicsUnit.Pixel);
         g.Restore(state);
         return true;
+    }
+
+    private int GetOutdoorTreeLocalColumn(Point worldTile)
+    {
+        var left = worldTile.X;
+        while (IsOutdoorTreeTile(new Point(left - 1, worldTile.Y)))
+        {
+            left--;
+        }
+
+        return worldTile.X - left;
     }
 
     private static Rectangle GetTileSheetSourceRectangle(Image tileSheet, Point cell)
@@ -986,6 +1048,8 @@ public partial class DragonGlareAlpha
     {
         mapTileSheet?.Dispose();
         mapTileSheet = null;
+        fieldMapImage?.Dispose();
+        fieldMapImage = null;
 
         foreach (var sprite in heroSprites.Values)
         {
