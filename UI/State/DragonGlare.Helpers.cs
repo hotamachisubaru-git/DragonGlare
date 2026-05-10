@@ -213,7 +213,7 @@ public partial class DragonGlareAlpha
         var width = widthTiles * TileSize;
         var height = heightTiles * TileSize;
         var x = isFieldStatusVisible ? 16 : ExpandedFieldViewportHorizontalMargin;
-        var y = isFieldStatusVisible ? 132 : 114;
+        var y = isFieldStatusVisible ? ExpandedFieldViewportVerticalTrim / 2 : 0;
 
         if (!isFieldStatusVisible)
         {
@@ -221,15 +221,12 @@ public partial class DragonGlareAlpha
             y += ExpandedFieldViewportVerticalTrim / 2;
             height -= ExpandedFieldViewportVerticalTrim;
         }
+        else
+        {
+            height = Math.Min(height, UiCanvas.VirtualHeight - y - (ExpandedFieldViewportVerticalTrim / 2));
+        }
 
         return new Rectangle(x, y, width, height);
-    }
-
-    private Rectangle GetFieldHelpWindow()
-    {
-        return isFieldStatusVisible
-            ? FieldLayout.StatusVisibleHelpWindow
-            : FieldLayout.ExpandedHelpWindow;
     }
 
     private Point GetFieldCameraOrigin()

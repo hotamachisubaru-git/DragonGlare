@@ -9,13 +9,6 @@ public partial class DragonGlareAlpha
     {
         DrawFieldScene(g);
 
-        var helpRect = GetFieldHelpWindow();
-        var helpInnerRect = Rectangle.Inflate(helpRect, -18, -14);
-        DrawWindow(g, helpRect);
-        DrawText(g, GetText("fieldHelpLine1"), new Rectangle(helpInnerRect.X, helpInnerRect.Y, helpInnerRect.Width, 18), smallFont);
-        DrawText(g, GetText("fieldHelpLine2"), new Rectangle(helpInnerRect.X, helpInnerRect.Y + 28, helpInnerRect.Width, 18), smallFont);
-        DrawText(g, GetText("fieldHelpLine3"), new Rectangle(helpInnerRect.X, helpInnerRect.Y + 56, helpInnerRect.Width, 18), smallFont);
-
         if (isFieldStatusVisible)
         {
             DrawWindow(g, new Rectangle(446, 8, 186, 116));
@@ -24,7 +17,7 @@ public partial class DragonGlareAlpha
             DrawText(g, $"MP {player.CurrentMp}/{player.MaxMp}", new Rectangle(458, 72, 160, 24), smallFont);
             DrawText(g, $"G {player.Gold}", new Rectangle(458, 96, 160, 24), smallFont);
 
-            var equipmentRect = new Rectangle(446, 132, 186, CompactFieldViewportHeightTiles * TileSize);
+            var equipmentRect = new Rectangle(446, 132, 186, FieldSidebarEquipmentHeightTiles * TileSize);
             DrawWindow(g, equipmentRect);
             DrawText(g, $"ATK {GetTotalAttack()}  DEF {GetTotalDefense()}", new Rectangle(458, 146, 160, 24), smallFont);
             DrawText(g, $"EXP {GetExperienceSummary()}", new Rectangle(458, 168, 160, 24), smallFont);

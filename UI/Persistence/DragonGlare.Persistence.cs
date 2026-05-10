@@ -7,24 +7,6 @@ namespace DragonGlareAlpha;
 
 public partial class DragonGlareAlpha
 {
-    private string GetText(string key)
-    {
-        return (selectedLanguage, key) switch
-        {
-            (UiLanguage.Japanese, "fieldHelpLine1") => "十字/LS/WASD: いどう",
-            (UiLanguage.English, "fieldHelpLine1") => "D-PAD/LS/WASD: MOVE",
-            (UiLanguage.Japanese, "fieldHelpLine2") => "A/Y/Z: はなす・しらべる   X: ステータス",
-            (UiLanguage.English, "fieldHelpLine2") => "A/Y/Z: TALK / CHECK   X: STATUS",
-            (UiLanguage.Japanese, "fieldHelpLine3") => "LB/Bキー: バトル   RB/Vキー: ショップ",
-            (UiLanguage.English, "fieldHelpLine3") => "LB/B KEY: BATTLE   RB/V KEY: SHOP",
-            (UiLanguage.Japanese, "areaField") => "フィールドBGM: SFC_field",
-            (UiLanguage.English, "areaField") => "FIELD BGM: SFC_field",
-            (UiLanguage.Japanese, "areaCastle") => "おしろBGM: SFC_castle",
-            (UiLanguage.English, "areaCastle") => "CASTLE BGM: SFC_castle",
-            _ => string.Empty
-        };
-    }
-
     private void StartNewGame()
     {
         selectedLanguage = UiLanguage.Japanese;

@@ -32,8 +32,9 @@ public partial class DragonGlareAlpha : Game
     private const int ShopItemsPerPage = 6;
     private const int CompactFieldViewportWidthTiles = 13;
     private const int ExpandedFieldViewportWidthTiles = 17;
-    private const int CompactFieldViewportHeightTiles = 6;
-    private const int ExpandedFieldViewportHeightTiles = 11;
+    private const int CompactFieldViewportHeightTiles = 15;
+    private const int ExpandedFieldViewportHeightTiles = 15;
+    private const int FieldSidebarEquipmentHeightTiles = 6;
     private const int ExpandedFieldViewportHorizontalMargin = 19;
     private const int ExpandedFieldViewportVerticalTrim = 16;
     private const int FieldMovementAnimationDuration = 12;
