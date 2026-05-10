@@ -1,8 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using SpriteFontPlus;
-using SpriteCharacterRange = SpriteFontPlus.CharacterRange;
 using XnaColor = Microsoft.Xna.Framework.Color;
 using XnaRectangle = Microsoft.Xna.Framework.Rectangle;
 
@@ -14,7 +12,7 @@ internal sealed class StartupErrorGame : Game
     private readonly string message;
     private SpriteBatch? spriteBatch;
     private Texture2D? pixel;
-    private SpriteFont? font;
+    private TtfSpriteTextRenderer? textRenderer;
 
     private StartupErrorGame(string message)
     {
@@ -42,7 +40,7 @@ internal sealed class StartupErrorGame : Game
         spriteBatch = new SpriteBatch(GraphicsDevice);
         pixel = new Texture2D(GraphicsDevice, 1, 1);
         pixel.SetData([XnaColor.White]);
-        font = LoadFont();
+        textRenderer = LoadTextRenderer();
     }
 
     protected override void Update(GameTime gameTime)
@@ -86,46 +84,29 @@ internal sealed class StartupErrorGame : Game
 
     protected override void UnloadContent()
     {
-        font = null;
+        textRenderer?.Dispose();
+        textRenderer = null;
         pixel?.Dispose();
         spriteBatch?.Dispose();
         base.UnloadContent();
     }
 
-    private SpriteFont? LoadFont()
+    private TtfSpriteTextRenderer? LoadTextRenderer()
     {
-        var path = ResolveFontPath();
+        var path = TtfSpriteTextRenderer.ResolveFontPath();
         if (path is null)
         {
             return null;
         }
 
-        var bakeResult = TtfFontBaker.Bake(
-            File.ReadAllBytes(path),
-            UiTypography.FontPixelSize,
-            1024,
-            1024,
-            [
-                new SpriteCharacterRange((char)0x0020, (char)0x007f),
-                new SpriteCharacterRange((char)0x3000, (char)0x30ff),
-                new SpriteCharacterRange((char)0x4e00, (char)0x9fff)
-            ]);
-
-        return bakeResult.CreateSpriteFont(GraphicsDevice);
-    }
-
-    private static string? ResolveFontPath()
-    {
-        var candidates = new[]
+        try
         {
-            Path.Combine(AppContext.BaseDirectory, "JF-Dot-ShinonomeMin14.ttf"),
-            Path.Combine(AppContext.BaseDirectory, "Content", "JF-Dot-ShinonomeMin14.ttf"),
-            Path.Combine(Directory.GetCurrentDirectory(), "JF-Dot-ShinonomeMin14.ttf"),
-            Path.Combine(Directory.GetCurrentDirectory(), "Assets", "JF-Dot-ShinonomeMin14.ttf"),
-            Path.Combine(Directory.GetCurrentDirectory(), "Content", "JF-Dot-ShinonomeMin14.ttf")
-        };
-
-        return candidates.Select(Path.GetFullPath).FirstOrDefault(File.Exists);
+            return new TtfSpriteTextRenderer(GraphicsDevice, path);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private void DrawBorder(XnaRectangle rect)
@@ -139,7 +120,7 @@ internal sealed class StartupErrorGame : Game
 
     private void DrawWrappedText(string text, XnaRectangle bounds)
     {
-        if (font is null)
+        if (textRenderer is null)
         {
             return;
         }
@@ -159,7 +140,7 @@ internal sealed class StartupErrorGame : Game
 
     private IReadOnlyList<string> WrapText(string text, int maxWidth)
     {
-        if (font is null)
+        if (textRenderer is null)
         {
             return [];
         }
@@ -171,7 +152,7 @@ internal sealed class StartupErrorGame : Game
             foreach (var character in rawLine)
             {
                 var candidate = current + character;
-                if (current.Length > 0 && font.MeasureString(candidate).X > maxWidth)
+                if (current.Length > 0 && textRenderer.MeasureWidth(candidate) > maxWidth)
                 {
                     lines.Add(current);
                     current = character.ToString();
@@ -190,11 +171,11 @@ internal sealed class StartupErrorGame : Game
 
     private void DrawText(string text, Vector2 position, XnaColor color)
     {
-        if (font is null || string.IsNullOrEmpty(text))
+        if (textRenderer is null || string.IsNullOrEmpty(text))
         {
             return;
         }
 
-        spriteBatch!.DrawString(font, text, position, color);
+        textRenderer.DrawLine(spriteBatch!, text, position, color);
     }
 }

@@ -245,7 +245,7 @@ public partial class DragonGlareAlpha
                     DrawText(g, $"{summary.Name}   LV {summary.Level}   G {summary.Gold}", slotRect.X + 38, slotRect.Y + 28, smallFont);
                     DrawText(
                         g,
-                        $"{GetMapDisplayName(summary.CurrentFieldMap)}  {summary.SavedAtLocal:yyyy/MM/dd HH:mm}",
+                        $"{GetMapDisplayName(summary.CurrentFieldMap, selectedLanguage)}  {summary.SavedAtLocal:yyyy/MM/dd HH:mm}",
                         new Rectangle(slotRect.X + 38, slotRect.Y + 48, 380, 16),
                         smallFont);
                     break;

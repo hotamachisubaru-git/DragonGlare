@@ -15,18 +15,8 @@ public partial class DragonGlareAlpha
             (UiLanguage.English, "fieldHelpLine1") => "D-PAD/LS/WASD: MOVE",
             (UiLanguage.Japanese, "fieldHelpLine2") => "A/Y/Z: はなす・しらべる   X: ステータス",
             (UiLanguage.English, "fieldHelpLine2") => "A/Y/Z: TALK / CHECK   X: STATUS",
-            (UiLanguage.Japanese, "fieldHelpLine3") => currentFieldMap switch
-            {
-                FieldMapId.Castle => "LB/Bキー: バトル   RB/Vキー: ショップ   いま: しろ",
-                FieldMapId.Field => "LB/Bキー: バトル   RB/Vキー: ショップ   いま: フィールド",
-                _ => "LB/Bキー: バトル   RB/Vキー: ショップ   いま: ハブ"
-            },
-            (UiLanguage.English, "fieldHelpLine3") => currentFieldMap switch
-            {
-                FieldMapId.Castle => "LB/B KEY: BATTLE   RB/V KEY: SHOP   AREA: CASTLE",
-                FieldMapId.Field => "LB/B KEY: BATTLE   RB/V KEY: SHOP   AREA: FIELD",
-                _ => "LB/B KEY: BATTLE   RB/V KEY: SHOP   AREA: HUB"
-            },
+            (UiLanguage.Japanese, "fieldHelpLine3") => "LB/Bキー: バトル   RB/Vキー: ショップ",
+            (UiLanguage.English, "fieldHelpLine3") => "LB/B KEY: BATTLE   RB/V KEY: SHOP",
             (UiLanguage.Japanese, "areaField") => "フィールドBGM: SFC_field",
             (UiLanguage.English, "areaField") => "FIELD BGM: SFC_field",
             (UiLanguage.Japanese, "areaCastle") => "おしろBGM: SFC_castle",

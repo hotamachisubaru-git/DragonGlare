@@ -36,7 +36,8 @@ public sealed class SaveDataMapperTests
             [
                 new InventoryEntry { ItemId = "bronze_sword", Quantity = 1 },
                 new InventoryEntry { ItemId = "healing_herb", Quantity = 2 }
-            ]
+            ],
+            CompletedFieldEventIds = ["field_treasure_chest"]
         };
 
         var restored = SaveDataMapper.Restore(saveData, new Point(3, 12));
@@ -54,6 +55,7 @@ public sealed class SaveDataMapperTests
         Assert.Equal(120, restored.Player.LoanBalance);
         Assert.Equal(5, restored.Player.LoanStepCounter);
         Assert.Equal(2, restored.Player.GetItemCount("healing_herb"));
+        Assert.True(restored.Player.HasCompletedFieldEvent("field_treasure_chest"));
     }
 
     [Fact]
@@ -82,6 +84,7 @@ public sealed class SaveDataMapperTests
             new InventoryEntry { ItemId = "leather_cap", Quantity = 1 },
             new InventoryEntry { ItemId = "travel_boots", Quantity = 1 }
         ];
+        player.CompleteFieldEvent("field_treasure_chest");
 
         var saveData = SaveDataMapper.Create(player, UiLanguage.Japanese, FieldMapId.Castle, 2);
 
@@ -98,5 +101,6 @@ public sealed class SaveDataMapperTests
         Assert.Equal(222, saveData.LoanBalance);
         Assert.Equal(9, saveData.LoanStepCounter);
         Assert.Equal(3, saveData.Inventory.Count);
+        Assert.Contains("field_treasure_chest", saveData.CompletedFieldEventIds);
     }
 }

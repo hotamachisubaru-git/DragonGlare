@@ -16,6 +16,7 @@ public sealed class SaveService
     private const int ArmorEquipmentVersion = 7;
     private const int BankSystemVersion = 8;
     private const int ArmorAccessoryVersion = 9;
+    private const int FieldEventStateVersion = 10;
     private const string SignatureSecret = "DragonGlareAlpha::SaveSeal::2026-04-09";
     private const string DpapiEntropySecret = "DragonGlareAlpha::Dpapi::2026-04-09";
 
@@ -368,6 +369,18 @@ public sealed class SaveService
         }
 
         writer.WriteEndArray();
+        if (effectiveVersion >= FieldEventStateVersion)
+        {
+            writer.WritePropertyName("CompletedFieldEventIds");
+            writer.WriteStartArray();
+            foreach (var eventId in saveData.CompletedFieldEventIds ?? [])
+            {
+                writer.WriteStringValue(eventId ?? string.Empty);
+            }
+
+            writer.WriteEndArray();
+        }
+
         writer.WriteEndObject();
         writer.Flush();
 

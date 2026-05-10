@@ -32,7 +32,7 @@ public partial class DragonGlareAlpha : Game
     private const int ShopItemsPerPage = 6;
     private const int CompactFieldViewportWidthTiles = 13;
     private const int ExpandedFieldViewportWidthTiles = 17;
-    private const int CompactFieldViewportHeightTiles = 9;
+    private const int CompactFieldViewportHeightTiles = 6;
     private const int ExpandedFieldViewportHeightTiles = 11;
     private const int ExpandedFieldViewportHorizontalMargin = 19;
     private const int ExpandedFieldViewportVerticalTrim = 16;
@@ -563,6 +563,7 @@ public partial class DragonGlareAlpha : Game
         smallFont.Dispose();
         privateFontCollection.Dispose();
         DisposeFieldSprites();
+        UnloadSpriteBatchUiContent();
         frameTexture?.Dispose();
         frameBitmap?.Dispose();
         spriteBatch?.Dispose();
@@ -581,6 +582,8 @@ public partial class DragonGlareAlpha : Game
     }
 
     partial void LoadSpriteBatchUiContent();
+
+    partial void UnloadSpriteBatchUiContent();
 
     partial void TryDrawSpriteBatchFrame(GameTime gameTime, ref bool handled);
 }

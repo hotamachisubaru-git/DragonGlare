@@ -131,130 +131,9 @@ public static class GameContent
         new("ancient_wyrm", "エンシェントワーム", FieldMapId.Field, 18, 99, 1, 112, 29, 15, 120, 180, new EnemyDropDefinition("mana_seed", 12), SpriteAssetName: "ancient_wyrm.png", EnglishName: "Ancient Wyrm", AttackStatusEffect: BattleStatusEffect.Poison, AttackStatusChancePercent: 30, AttackStatusTurns: 5)
     ];
 
-    public static readonly FieldTransitionDefinition[] FieldTransitions =
-    [
-        new(FieldMapId.Hub, new Rectangle(9, 0, 2, 1), FieldMapId.Castle, new Point(14, 20)),
-        new(FieldMapId.Hub, new Rectangle(19, 7, 1, 2), FieldMapId.Field, new Point(2, 7)),
-        new(FieldMapId.Castle, new Rectangle(14, 21, 1, 1), FieldMapId.Hub, new Point(9, 2)),
-        new(FieldMapId.Field, new Rectangle(0, 7, 1, 2), FieldMapId.Hub, new Point(15, 7))
-    ];
+    public static FieldTransitionDefinition[] FieldTransitions => FieldContent.FieldTransitions;
 
-    public static readonly FieldEventDefinition[] FieldEvents =
-    [
-        new(
-            "guide_npc",
-            FieldMapId.Hub,
-            new Point(12, 7),
-            Color.Cyan,
-            true,
-            FieldEventActionType.Dialogue,
-            [
-                "{player}、ようこそ。\nけんをみがき たびのしたくをしよう。".Replace("、", "、"),
-                "やくそうは HPを なおし、\nひのたまは どうぐで なげられるぞ。"
-            ],
-            [
-                "Welcome, {player}.\nSharpen your blade and prepare.",
-                "Herbs heal you.\nFire orbs can be thrown from ITEMS."
-            ],
-            SpriteAssetName: "guide_npc.png",
-            PortraitAssetName: "guide-4.png"),
-        new(
-            "town_child",
-            FieldMapId.Hub,
-            new Point(4, 4),
-            Color.FromArgb(120, 255, 180),
-            true,
-            FieldEventActionType.Dialogue,
-            [
-                "まちの こどもだ。\n「おしろの へいしって すごく まじめだよ！」",
-                "「フィールドの くさむらは\n　まものが でやすいから きをつけてね。」"
-            ],
-            [
-                "A village child grins.\n\"The castle guard is super serious!\"",
-                "\"Watch the tall grass out in the field.\nMonsters jump out fast there.\""
-            ],
-            SpriteAssetName: "town_child.png",
-            PortraitAssetName: "young-5.png"),
-        new(
-            "castle_guard",
-            FieldMapId.Castle,
-            new Point(12, 11),
-            Color.FromArgb(255, 180, 120),
-            true,
-            FieldEventActionType.Dialogue,
-            [
-                "おしろの へいしだ。\n「りゅうの ひかりを おうものよ、あわてるな。」",
-                "「レベルが あがったら そうびも みなおせ。\n　ちからだけでは かてぬぞ。」"
-            ],
-            [
-                "A castle guard stands firm.\n\"Hunter of dragonlight, do not rush.\"",
-                "\"When you grow stronger, review your gear.\nPower alone will not carry you.\""
-            ],
-            SpriteAssetName: "castle_guard.png",
-            PortraitAssetName: "castle-guard-4.png"),
-        new(
-            "field_scout",
-            FieldMapId.Field,
-            new Point(11, 11),
-            Color.FromArgb(255, 228, 120),
-            true,
-            FieldEventActionType.Dialogue,
-            [
-                "みはりの ぼうけんしゃだ。\n「このさきは ぬかるみが おおい。」",
-                "「HPが へったら いったん もどれ。\n　むりやり すすむと いたいめを みるぞ。」"
-            ],
-            [
-                "A field scout watches the road.\n\"The ground ahead gets rough.\"",
-                "\"If your HP drops, fall back first.\nPushing through carelessly will cost you.\""
-            ],
-            SpriteAssetName: "field_scout.png",
-            PortraitAssetName: "mihari-3.png"),
-        new(
-            "banker_npc",
-            FieldMapId.Hub,
-            new Point(7, 12),
-            Color.Gold,
-            true,
-            FieldEventActionType.Bank,
-            [
-                "ぎんこういんだ。\n「あずける・ひきだす・かりるを あつかうよ。」"
-            ],
-            [
-                "A banker nods.\n\"Deposit, withdraw, or borrow here.\""
-            ]),
-        new(
-            "field_sign",
-            FieldMapId.Hub,
-            new Point(2, 12),
-            Color.Gold,
-            true,
-            FieldEventActionType.Dialogue,
-            [
-                "たてふだだ。\nXで ステータスをひらける。",
-                "Bキー/LBで バトル、Vキー/RBで ショップ。\nZやAで イベントを よめる。"
-            ],
-            [
-                "A sign reads:\nPress X to open STATUS.",
-                "B key/LB starts battle, V key/RB opens shop.\nPress Z or A to inspect events."
-            ]),
-        new(
-            "healing_spring",
-            FieldMapId.Hub,
-            new Point(16, 12),
-            Color.MediumSpringGreen,
-            true,
-            FieldEventActionType.Recover,
-            [
-                "きらめく いずみだ。",
-                "みずの ちからが からだに しみこんだ。"
-            ],
-            [
-                "A shining spring bubbles here.",
-                "The water restores your strength."
-            ],
-            RecoverHp: 999,
-            RecoverMp: 999)
-    ];
+    public static FieldEventDefinition[] FieldEvents => FieldContent.FieldEvents;
 
     public static string[][] GetNameTable(UiLanguage language)
     {
@@ -371,7 +250,7 @@ public static class GameContent
             return null;
         }
 
-        return FieldEvents.FirstOrDefault(fieldEvent => string.Equals(fieldEvent.Id, eventId, StringComparison.Ordinal));
+        return FieldContent.GetFieldEventById(eventId);
     }
 
     public static ShopProductDefinition? GetShopProductById(string? itemId)

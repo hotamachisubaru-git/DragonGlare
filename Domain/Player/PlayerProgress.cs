@@ -122,6 +122,8 @@ public sealed class PlayerProgress
 
     public List<InventoryEntry> Inventory { get; set; } = [];
 
+    public List<string> CompletedFieldEventIds { get; set; } = [];
+
     public static PlayerProgress CreateDefault(Point startTile, UiLanguage language = UiLanguage.Japanese)
     {
         return new PlayerProgress
@@ -195,6 +197,26 @@ public sealed class PlayerProgress
         }
 
         return true;
+    }
+
+    public bool HasCompletedFieldEvent(string? eventId)
+    {
+        if (string.IsNullOrWhiteSpace(eventId))
+        {
+            return false;
+        }
+
+        return CompletedFieldEventIds.Any(completedEventId => string.Equals(completedEventId, eventId, StringComparison.Ordinal));
+    }
+
+    public void CompleteFieldEvent(string? eventId)
+    {
+        if (string.IsNullOrWhiteSpace(eventId) || HasCompletedFieldEvent(eventId))
+        {
+            return;
+        }
+
+        CompletedFieldEventIds.Add(eventId);
     }
 
     public string? GetEquippedItemId(EquipmentSlot slot)
@@ -283,6 +305,12 @@ public sealed class PlayerProgress
                 ItemId = group.Key,
                 Quantity = group.Sum(entry => entry.Quantity)
             })
+            .ToList();
+
+        CompletedFieldEventIds = CompletedFieldEventIds
+            .Where(eventId => !string.IsNullOrWhiteSpace(eventId))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(eventId => eventId, StringComparer.Ordinal)
             .ToList();
 
         foreach (var slot in EquippedSlots)

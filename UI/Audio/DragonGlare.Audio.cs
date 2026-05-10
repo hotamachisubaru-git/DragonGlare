@@ -412,6 +412,7 @@ public partial class DragonGlareAlpha
     {
         return mapId switch
         {
+            FieldMapId.Dungeon => BgmTrack.Castle,
             FieldMapId.Castle => BgmTrack.Castle,
             FieldMapId.Field => BgmTrack.Field,
             _ => BgmTrack.Field

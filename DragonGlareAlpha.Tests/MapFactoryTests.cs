@@ -16,9 +16,43 @@ public sealed class MapFactoryTests
         Assert.Equal(MapFactory.CastleTextExitTile, map[21, 14]);
     }
 
+    [Fact]
+    public void CreateMap_ForDungeon_UsesCastleTextMapLayout()
+    {
+        var map = MapFactory.CreateMap(FieldMapId.Dungeon);
+
+        Assert.Equal(29, map.GetLength(0));
+        Assert.Equal(30, map.GetLength(1));
+        Assert.Equal(MapFactory.CastleTextExitTile, map[21, 14]);
+    }
+
+    [Fact]
+    public void CreateMap_ForField_MarksDungeonEntranceAsGate()
+    {
+        var map = MapFactory.CreateMap(FieldMapId.Field);
+
+        Assert.Equal(MapFactory.FieldGateTile, map[1, 15]);
+    }
+
+    [Fact]
+    public void CreateMap_ForField_BlocksLeftSeaAndKeepsExitTilesWalkable()
+    {
+        var map = MapFactory.CreateMap(FieldMapId.Field);
+
+        Assert.Equal(MapFactory.DecorationBlueTile, map[6, 1]);
+        Assert.Equal(MapFactory.DecorationBlueTile, map[8, 1]);
+        Assert.Equal(MapFactory.FloorTile, map[6, 2]);
+        Assert.Equal(MapFactory.FloorTile, map[7, 2]);
+        Assert.False(MapFactory.IsWalkableTileId(map[6, 1]));
+        Assert.False(MapFactory.IsWalkableTileId(map[8, 1]));
+        Assert.True(MapFactory.IsWalkableTileId(map[6, 2]));
+        Assert.True(MapFactory.IsWalkableTileId(map[7, 2]));
+    }
+
     [Theory]
     [InlineData(MapFactory.CastleTextCarpetTile, true)]
     [InlineData(MapFactory.CastleTextExitTile, true)]
+    [InlineData(MapFactory.DecorationBlueTile, false)]
     [InlineData(MapFactory.CastleTextWallTile, false)]
     [InlineData(MapFactory.CastleTextTopWallTile, false)]
     [InlineData(MapFactory.CastleTextColumnBaseTile, false)]

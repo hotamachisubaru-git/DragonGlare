@@ -61,7 +61,8 @@ public sealed class SaveServiceTests
                         ItemId = "leather_leggings",
                         Quantity = 1
                     }
-                ]
+                ],
+                CompletedFieldEventIds = ["field_treasure_chest"]
             };
 
             service.SaveSlot(2, save);
@@ -82,6 +83,7 @@ public sealed class SaveServiceTests
             Assert.Equal(400, roundTripped.BankGold);
             Assert.Equal(90, roundTripped.LoanBalance);
             Assert.Equal(4, roundTripped.LoanStepCounter);
+            Assert.Contains("field_treasure_chest", roundTripped.CompletedFieldEventIds);
             Assert.False(string.IsNullOrWhiteSpace(roundTripped.Signature));
             Assert.DoesNotContain("テスター", rawText, StringComparison.Ordinal);
             Assert.DoesNotContain("\"Gold\"", rawText, StringComparison.Ordinal);

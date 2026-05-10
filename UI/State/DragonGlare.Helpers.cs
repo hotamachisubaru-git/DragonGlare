@@ -22,12 +22,17 @@ public partial class DragonGlareAlpha
 
     private IEnumerable<FieldEventDefinition> GetFieldEvents(FieldMapId mapId)
     {
-        return GameContent.FieldEvents.Where(fieldEvent => fieldEvent.MapId == mapId);
+        return FieldContent.FieldEvents.Where(fieldEvent => fieldEvent.MapId == mapId);
     }
 
     private IEnumerable<FieldEventDefinition> GetCurrentFieldEvents()
     {
         return GetFieldEvents(currentFieldMap);
+    }
+
+    private IEnumerable<FieldEventDefinition> GetRenderableCurrentFieldEvents()
+    {
+        return GetCurrentFieldEvents().Where(fieldEvent => fieldEvent.RenderOnMap);
     }
 
     private bool IsBlockedByFieldEvent(Point tile)
@@ -43,9 +48,7 @@ public partial class DragonGlareAlpha
     private FieldEventDefinition? GetInteractableFieldEvent()
     {
         return GetCurrentFieldEvents()
-            .FirstOrDefault(fieldEvent =>
-                fieldEvent.TilePosition == player.TilePosition ||
-                IsAdjacent(player.TilePosition, fieldEvent.TilePosition));
+            .FirstOrDefault(fieldEvent => fieldEvent.CanInteractFrom(player.TilePosition));
     }
 
     private void SetFieldMap(FieldMapId mapId)
@@ -210,7 +213,7 @@ public partial class DragonGlareAlpha
         var width = widthTiles * TileSize;
         var height = heightTiles * TileSize;
         var x = isFieldStatusVisible ? 16 : ExpandedFieldViewportHorizontalMargin;
-        var y = isFieldStatusVisible ? 112 : 114;
+        var y = isFieldStatusVisible ? 132 : 114;
 
         if (!isFieldStatusVisible)
         {
@@ -292,7 +295,7 @@ public partial class DragonGlareAlpha
         activeFieldDialogPortraitAssetName = fieldEvent.PortraitAssetName;
         isFieldDialogOpen = activeFieldDialogPages.Count > 0;
 
-        if (fieldEvent.ActionType == FieldEventActionType.Recover)
+        if (result.ShouldPersistProgress)
         {
             PersistProgress();
         }
@@ -653,11 +656,23 @@ public partial class DragonGlareAlpha
         return string.Join('\n', steps.Select(step => step.Message).Where(message => !string.IsNullOrWhiteSpace(message)));
     }
 
-    private static string GetMapDisplayName(FieldMapId mapId)
+    private static string GetMapDisplayName(FieldMapId mapId, UiLanguage language)
     {
+        if (language == UiLanguage.Japanese)
+        {
+            return mapId switch
+            {
+                FieldMapId.Castle => "しろ",
+                FieldMapId.Dungeon => "ダンジョン",
+                FieldMapId.Field => "フィールド",
+                _ => "ハブ"
+            };
+        }
+
         return mapId switch
         {
             FieldMapId.Castle => "CASTLE",
+            FieldMapId.Dungeon => "DUNGEON",
             FieldMapId.Field => "FIELD",
             _ => "HUB"
         };

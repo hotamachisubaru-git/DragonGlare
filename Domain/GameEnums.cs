@@ -59,7 +59,8 @@ public enum FieldMapId
 {
     Hub,
     Castle,
-    Field
+    Field,
+    Dungeon
 }
 
 public enum BgmTrack
@@ -152,5 +153,6 @@ public enum FieldEventActionType
 {
     Dialogue,
     Recover,
-    Bank
+    Bank,
+    Treasure
 }

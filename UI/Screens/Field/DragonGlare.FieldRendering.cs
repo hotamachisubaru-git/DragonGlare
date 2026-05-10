@@ -24,7 +24,7 @@ public partial class DragonGlareAlpha
             DrawText(g, $"MP {player.CurrentMp}/{player.MaxMp}", new Rectangle(458, 72, 160, 24), smallFont);
             DrawText(g, $"G {player.Gold}", new Rectangle(458, 96, 160, 24), smallFont);
 
-            var equipmentRect = new Rectangle(446, 132, 186, 180);
+            var equipmentRect = new Rectangle(446, 132, 186, CompactFieldViewportHeightTiles * TileSize);
             DrawWindow(g, equipmentRect);
             DrawText(g, $"ATK {GetTotalAttack()}  DEF {GetTotalDefense()}", new Rectangle(458, 146, 160, 24), smallFont);
             DrawText(g, $"EXP {GetExperienceSummary()}", new Rectangle(458, 168, 160, 24), smallFont);
@@ -91,9 +91,9 @@ public partial class DragonGlareAlpha
             g.FillRectangle(voidBrush, viewport);
         }
 
-        if (currentFieldMap == FieldMapId.Field && TryDrawFieldMapImage(g, viewport))
+        if (currentFieldMap == FieldMapId.Field && TryDrawFieldMapImage(g, viewport, cameraOrigin))
         {
-            foreach (var fieldEvent in GetCurrentFieldEvents())
+            foreach (var fieldEvent in GetRenderableCurrentFieldEvents())
             {
                 var sprite = GetNpcSprite(fieldEvent.SpriteAssetName);
                 DrawWorldTileEntity(g, fieldEvent.TilePosition, viewport, cameraOrigin, cameraAnimationOffset, fieldEvent.DisplayColor, sprite);
@@ -124,7 +124,7 @@ public partial class DragonGlareAlpha
             }
         }
 
-        foreach (var fieldEvent in GetCurrentFieldEvents())
+        foreach (var fieldEvent in GetRenderableCurrentFieldEvents())
         {
             var sprite = GetNpcSprite(fieldEvent.SpriteAssetName);
             DrawWorldTileEntity(g, fieldEvent.TilePosition, viewport, cameraOrigin, cameraAnimationOffset, fieldEvent.DisplayColor, sprite);
@@ -140,14 +140,14 @@ public partial class DragonGlareAlpha
     {
         return tileId switch
         {
-            MapFactory.WallTile when currentFieldMap == FieldMapId.Castle => Color.FromArgb(58, 14, 24),
+            MapFactory.WallTile when currentFieldMap is FieldMapId.Castle or FieldMapId.Dungeon => Color.FromArgb(58, 14, 24),
             MapFactory.WallTile => Color.FromArgb(8, 30, 90),
             MapFactory.CastleBlockTile => Color.FromArgb(120, 28, 38),
             MapFactory.CastleGateTile => Color.FromArgb(116, 58, 30),
             MapFactory.FieldGateTile => Color.FromArgb(24, 56, 40),
             MapFactory.CastleFloorTile => Color.FromArgb(108, 42, 52),
             MapFactory.GrassTile => Color.FromArgb(24, 74, 36),
-            MapFactory.DecorationBlueTile when currentFieldMap == FieldMapId.Castle => Color.FromArgb(76, 20, 34),
+            MapFactory.DecorationBlueTile when currentFieldMap is FieldMapId.Castle or FieldMapId.Dungeon => Color.FromArgb(76, 20, 34),
             MapFactory.DecorationBlueTile => Color.FromArgb(8, 30, 90),
             MapFactory.CastleTextWallTile => Color.FromArgb(28, 18, 18),
             MapFactory.CastleTextCarpetTile => Color.FromArgb(184, 36, 28),

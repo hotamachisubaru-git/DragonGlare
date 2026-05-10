@@ -27,8 +27,9 @@ public sealed class BattleService
 
     public IReadOnlyList<EnemyDefinition> GetEncounterPool(FieldMapId encounterMap, int playerLevel)
     {
+        var enemyMap = encounterMap == FieldMapId.Dungeon ? FieldMapId.Castle : encounterMap;
         var mapPool = GameContent.EnemyCatalog
-            .Where(enemy => enemy.EncounterMap == encounterMap)
+            .Where(enemy => enemy.EncounterMap == enemyMap)
             .ToArray();
 
         if (mapPool.Length == 0)

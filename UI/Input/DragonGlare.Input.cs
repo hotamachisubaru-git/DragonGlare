@@ -72,6 +72,12 @@ public partial class DragonGlareAlpha
     private bool TryMovePlayer(Point movement)
     {
         var target = new Point(player.TilePosition.X + movement.X, player.TilePosition.Y + movement.Y);
+        if (TryTransitionFromTile(target))
+        {
+            bankService.AccrueStepInterest(player);
+            return true;
+        }
+
         if (!IsWalkableTile(target) || IsBlockedByFieldEvent(target))
         {
             return false;
@@ -80,10 +86,6 @@ public partial class DragonGlareAlpha
         player.TilePosition = target;
         bankService.AccrueStepInterest(player);
         StartFieldMovementAnimation(movement);
-        if (TryTransitionFromTile(target))
-        {
-            return true;
-        }
 
         if (TryTriggerRandomEncounter())
         {
@@ -119,11 +121,6 @@ public partial class DragonGlareAlpha
         {
             playerFacingDirection = PlayerFacingDirection.Down;
         }
-    }
-
-    private static bool IsAdjacent(Point a, Point b)
-    {
-        return Math.Abs(a.X - b.X) + Math.Abs(a.Y - b.Y) == 1;
     }
 
     private bool WasPressed(Keys key) => pressedKeys.Contains(key);

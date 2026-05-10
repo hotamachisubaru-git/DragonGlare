@@ -28,7 +28,7 @@ public partial class DragonGlareAlpha
 
     private bool TryDrawFieldTileSprite(Graphics g, Point worldTile, Rectangle tileRect)
     {
-        if (currentFieldMap is not (FieldMapId.Castle or FieldMapId.Field))
+        if (currentFieldMap is not (FieldMapId.Castle or FieldMapId.Dungeon or FieldMapId.Field))
         {
             return false;
         }
@@ -84,7 +84,7 @@ public partial class DragonGlareAlpha
         }
     }
 
-    private bool TryDrawFieldMapImage(Graphics g, Rectangle viewport)
+    private bool TryDrawFieldMapImage(Graphics g, Rectangle viewport, Point cameraOrigin)
     {
         var fieldImage = GetFieldMapImage();
         if (fieldImage is null)
@@ -92,11 +92,35 @@ public partial class DragonGlareAlpha
             return false;
         }
 
+        var mapWidthTiles = map.GetLength(1);
+        var mapHeightTiles = map.GetLength(0);
+        if (mapWidthTiles <= 0 || mapHeightTiles <= 0)
+        {
+            return false;
+        }
+
+        var sourceTileWidth = fieldImage.Width / (float)mapWidthTiles;
+        var sourceTileHeight = fieldImage.Height / (float)mapHeightTiles;
+        var visibleWidthTiles = GetFieldViewportWidthTiles();
+        var visibleHeightTiles = GetFieldViewportHeightTiles();
+        var destinationRect = new Rectangle(
+            viewport.X + (isFieldStatusVisible ? 0 : GetExpandedFieldViewportHorizontalPadding()),
+            viewport.Y,
+            visibleWidthTiles * TileSize,
+            visibleHeightTiles * TileSize);
+
         var state = g.Save();
         g.InterpolationMode = InterpolationMode.NearestNeighbor;
         g.PixelOffsetMode = PixelOffsetMode.Half;
         g.SmoothingMode = SmoothingMode.None;
-        g.DrawImage(fieldImage, viewport);
+        g.DrawImage(
+            fieldImage,
+            destinationRect,
+            cameraOrigin.X * sourceTileWidth,
+            cameraOrigin.Y * sourceTileHeight,
+            visibleWidthTiles * sourceTileWidth,
+            visibleHeightTiles * sourceTileHeight,
+            GraphicsUnit.Pixel);
         g.Restore(state);
         return true;
     }
@@ -221,6 +245,7 @@ public partial class DragonGlareAlpha
     {
         return currentFieldMap switch
         {
+            FieldMapId.Dungeon => TryGetCastleTileSheetCell(tileId, worldTile, out cell),
             FieldMapId.Castle => TryGetCastleTileSheetCell(tileId, worldTile, out cell),
             FieldMapId.Field => TryGetOutdoorTileSheetCell(tileId, out cell),
             _ => TryGetHubTileSheetCell(tileId, out cell)

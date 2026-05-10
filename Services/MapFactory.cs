@@ -64,6 +64,7 @@ public static class MapFactory
     {
         return mapId switch
         {
+            FieldMapId.Dungeon => CreateCastleMap(),
             FieldMapId.Castle => CreateCastleMap(),
             FieldMapId.Field => CreateFieldMap(),
             _ => CreateHubMap()
@@ -99,7 +100,8 @@ public static class MapFactory
     {
         var map = CreateBoundedMap();
 
-        PaintArea(map, 0, 7, 0, 8, FieldGateTile);
+        PaintArea(map, 1, 1, 1, 13, DecorationBlueTile);
+        PaintArea(map, 15, 1, 15, 1, FieldGateTile);
         PaintArea(map, 2, 2, 6, 5, GrassTile);
         PaintArea(map, 10, 3, 16, 6, GrassTile);
         PaintArea(map, 5, 9, 12, 12, GrassTile);
@@ -141,6 +143,7 @@ public static class MapFactory
         return tileId switch
         {
             WallTile
+                or DecorationBlueTile
                 or CastleTextWallTile
                 or CastleTextTopWallTile
                 or CastleTextColumnBaseTile

@@ -36,6 +36,7 @@ public static class SaveDataMapper
         player.EquippedLegsId = saveData.EquippedLegsId;
         player.EquippedFeetId = saveData.EquippedFeetId;
         player.Inventory = saveData.Inventory?.Select(entry => entry.Clone()).ToList() ?? [];
+        player.CompletedFieldEventIds = saveData.CompletedFieldEventIds?.ToList() ?? [];
         player.Normalize();
 
         return new RestoredSaveState(language, mapId, player);
@@ -70,7 +71,8 @@ public static class SaveDataMapper
             EquippedArmsId = player.EquippedArmsId,
             EquippedLegsId = player.EquippedLegsId,
             EquippedFeetId = player.EquippedFeetId,
-            Inventory = player.Inventory.Select(entry => entry.Clone()).ToList()
+            Inventory = player.Inventory.Select(entry => entry.Clone()).ToList(),
+            CompletedFieldEventIds = player.CompletedFieldEventIds.ToList()
         };
     }
 }

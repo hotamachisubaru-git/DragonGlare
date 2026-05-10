@@ -1,7 +1,6 @@
 using DragonGlareAlpha.Domain;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using SpriteFontPlus;
 using XnaColor = Microsoft.Xna.Framework.Color;
 using XnaRectangle = Microsoft.Xna.Framework.Rectangle;
 
@@ -11,8 +10,7 @@ public partial class DragonGlareAlpha
 {
     private Texture2D? spriteBatchPixel;
     private Texture2D? spriteBatchModeSelectLayout;
-    private SpriteFont? spriteBatchUiFont;
-    private const string SpriteBatchModeSelectKanji = "選最初前回別枠未実装";
+    private TtfSpriteTextRenderer? spriteBatchTextRenderer;
 
     partial void LoadSpriteBatchUiContent()
     {
@@ -20,7 +18,17 @@ public partial class DragonGlareAlpha
         spriteBatchPixel.SetData([XnaColor.White]);
 
         spriteBatchModeSelectLayout = LoadSpriteBatchTexture("UI", "window21.png");
-        spriteBatchUiFont = LoadSpriteBatchFont();
+        spriteBatchTextRenderer = LoadSpriteBatchTextRenderer();
+    }
+
+    partial void UnloadSpriteBatchUiContent()
+    {
+        spriteBatchTextRenderer?.Dispose();
+        spriteBatchModeSelectLayout?.Dispose();
+        spriteBatchPixel?.Dispose();
+        spriteBatchTextRenderer = null;
+        spriteBatchModeSelectLayout = null;
+        spriteBatchPixel = null;
     }
 
     partial void TryDrawSpriteBatchFrame(GameTime gameTime, ref bool handled)
@@ -28,7 +36,7 @@ public partial class DragonGlareAlpha
         if (gameState != GameState.ModeSelect ||
             spriteBatch is null ||
             spriteBatchPixel is null ||
-            spriteBatchUiFont is null)
+            spriteBatchTextRenderer is null)
         {
             return;
         }
@@ -144,7 +152,7 @@ public partial class DragonGlareAlpha
 
     private void DrawSpriteBatchText(string text, Vector2 position, XnaColor? color = null)
     {
-        if (string.IsNullOrEmpty(text) || spriteBatchUiFont is null)
+        if (string.IsNullOrEmpty(text) || spriteBatchTextRenderer is null)
         {
             return;
         }
@@ -152,8 +160,8 @@ public partial class DragonGlareAlpha
         var lines = text.Replace("\r\n", "\n").Split('\n');
         for (var index = 0; index < lines.Length; index++)
         {
-            spriteBatch!.DrawString(
-                spriteBatchUiFont,
+            spriteBatchTextRenderer.DrawLine(
+                spriteBatch!,
                 lines[index],
                 new Vector2(position.X, position.Y + (index * UiTypography.LineHeight)),
                 color ?? XnaColor.White);
@@ -162,7 +170,7 @@ public partial class DragonGlareAlpha
 
     private void DrawSpriteBatchText(string text, XnaRectangle bounds, bool wrap)
     {
-        if (string.IsNullOrEmpty(text) || spriteBatchUiFont is null)
+        if (string.IsNullOrEmpty(text) || spriteBatchTextRenderer is null)
         {
             return;
         }
@@ -170,8 +178,8 @@ public partial class DragonGlareAlpha
         var lines = LayoutSpriteBatchTextLines(text, bounds.Width, Math.Max(1, bounds.Height / UiTypography.LineHeight), wrap);
         for (var index = 0; index < lines.Count; index++)
         {
-            spriteBatch!.DrawString(
-                spriteBatchUiFont,
+            spriteBatchTextRenderer.DrawLine(
+                spriteBatch!,
                 lines[index],
                 new Vector2(bounds.X, bounds.Y + (index * UiTypography.LineHeight)),
                 XnaColor.White);
@@ -246,9 +254,9 @@ public partial class DragonGlareAlpha
 
     private int MeasureSpriteBatchTextWidth(string text)
     {
-        return spriteBatchUiFont is null || string.IsNullOrEmpty(text)
+        return spriteBatchTextRenderer is null || string.IsNullOrEmpty(text)
             ? 0
-            : (int)Math.Ceiling(spriteBatchUiFont.MeasureString(text).X);
+            : spriteBatchTextRenderer.MeasureWidth(text);
     }
 
     private void DrawSpriteBatchSceneFade()
@@ -287,28 +295,22 @@ public partial class DragonGlareAlpha
         return Texture2D.FromStream(GraphicsDevice, stream);
     }
 
-    private SpriteFont? LoadSpriteBatchFont()
+    private TtfSpriteTextRenderer? LoadSpriteBatchTextRenderer()
     {
-        var path = ResolveAssetPath(null, "JF-Dot-ShinonomeMin14.ttf");
+        var path = ResolveAssetPath(null, "JF-Dot-ShinonomeMin14.ttf") ?? TtfSpriteTextRenderer.ResolveFontPath();
         if (path is null)
         {
             return null;
         }
 
-        var bakeResult = TtfFontBaker.Bake(
-            File.ReadAllBytes(path),
-            UiTypography.FontPixelSize,
-            1024,
-            1024,
-            [
-                new SpriteFontPlus.CharacterRange((char)0x0020, (char)0x007f),
-                new SpriteFontPlus.CharacterRange((char)0x3000, (char)0x30ff),
-                .. SpriteBatchModeSelectKanji
-                    .Distinct()
-                    .Select(character => new SpriteFontPlus.CharacterRange(character, character))
-            ]);
-
-        return bakeResult.CreateSpriteFont(GraphicsDevice);
+        try
+        {
+            return new TtfSpriteTextRenderer(GraphicsDevice, path);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static int ScaleModeSelectX(XnaRectangle layoutRect, int sourceX)

@@ -307,6 +307,17 @@ public sealed class BattleAndProgressionTests
     }
 
     [Fact]
+    public void GetEncounterPool_ForDungeon_UsesCastleEnemies()
+    {
+        var service = new BattleService();
+
+        var pool = service.GetEncounterPool(FieldMapId.Dungeon, 1);
+
+        Assert.Contains(pool, enemy => enemy.EncounterMap == FieldMapId.Castle);
+        Assert.DoesNotContain(pool, enemy => enemy.EncounterMap == FieldMapId.Field);
+    }
+
+    [Fact]
     public void GetEncounterPool_WhenOnlyOneEnemyMatchesLevel_IncludesNearbyEnemy()
     {
         var service = new BattleService();
