@@ -167,10 +167,12 @@ public partial class DragonGlareAlpha
         g.Clear(Color.Black);
 
         var table = GameContent.GetNameTable(selectedLanguage);
-        const int originX = 44;
-        const int originY = 52;
-        const int cellWidth = 56;
-        const int cellHeight = 44;
+        const int originX = 34;
+        const int originY = 40;
+        const int tableBottomY = 248;
+        var maxColumns = Math.Max(1, table.Max(row => row.Length));
+        var cellWidth = Math.Min(56, (UiCanvas.VirtualWidth - (originX * 2)) / maxColumns);
+        var cellHeight = Math.Min(44, (tableBottomY - originY) / Math.Max(1, table.Length));
 
         for (var row = 0; row < table.Length; row++)
         {
