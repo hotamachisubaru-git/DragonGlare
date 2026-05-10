@@ -95,6 +95,7 @@ public partial class DragonGlareAlpha
         }
 
         UpdateBgm();
+        UpdateQueuedProgressSave();
     }
 
     private void UpdateStartupFade()

@@ -57,10 +57,64 @@ public partial class DragonGlareAlpha
 
     private void PersistProgress()
     {
-        SaveGame();
+        if (activeSaveSlot is < 1 or > SaveService.SlotCount)
+        {
+            return;
+        }
+
+        progressSavePending = true;
+        progressSaveDelayFrames = ProgressSaveDelayFrames;
+        if (progressSaveMaxDelayFrames <= 0)
+        {
+            progressSaveMaxDelayFrames = ProgressSaveMaxDelayFrames;
+        }
     }
 
-    private void SaveGame()
+    private void UpdateQueuedProgressSave()
+    {
+        if (!progressSavePending)
+        {
+            return;
+        }
+
+        if (pendingGameState is not null || sceneFadeOutFramesRemaining > 0)
+        {
+            return;
+        }
+
+        progressSaveDelayFrames = Math.Max(0, progressSaveDelayFrames - 1);
+        progressSaveMaxDelayFrames = Math.Max(0, progressSaveMaxDelayFrames - 1);
+
+        var canWaitForInputToSettle = progressSaveMaxDelayFrames > 0;
+        if (canWaitForInputToSettle &&
+            gameState == GameState.Field &&
+            (movementCooldown > 0 || fieldMovementAnimationFramesRemaining > 0))
+        {
+            return;
+        }
+
+        if (progressSaveDelayFrames > 0 && progressSaveMaxDelayFrames > 0)
+        {
+            return;
+        }
+
+        FlushQueuedProgressSave(refreshSlotSummaries: false);
+    }
+
+    private void FlushQueuedProgressSave(bool refreshSlotSummaries)
+    {
+        if (!progressSavePending)
+        {
+            return;
+        }
+
+        progressSavePending = false;
+        progressSaveDelayFrames = 0;
+        progressSaveMaxDelayFrames = 0;
+        SaveGame(refreshSlotSummaries);
+    }
+
+    private void SaveGame(bool refreshSlotSummaries = true)
     {
         if (gameState == GameState.ModeSelect || gameState == GameState.LanguageSelection)
         {
@@ -94,7 +148,10 @@ public partial class DragonGlareAlpha
         try
         {
             saveService.SaveSlot(activeSaveSlot, save);
-            RefreshSaveSlotSummaries();
+            if (refreshSlotSummaries)
+            {
+                RefreshSaveSlotSummaries();
+            }
         }
         catch
         {

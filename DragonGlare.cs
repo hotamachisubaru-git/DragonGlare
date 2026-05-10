@@ -37,7 +37,7 @@ public partial class DragonGlareAlpha : Game
     private const int FieldSidebarEquipmentHeightTiles = 6;
     private const int ExpandedFieldViewportHorizontalMargin = 19;
     private const int ExpandedFieldViewportVerticalTrim = 16;
-    private const int FieldMovementAnimationDuration = 12;
+    private const int FieldMovementAnimationDuration = 6;
     private const int EncounterTransitionDuration = 26;
     private const int BattleSelectionVisibleRows = 4;
     private const int MaxPlayerNameLength = 6;
@@ -45,6 +45,8 @@ public partial class DragonGlareAlpha : Game
     private const int OpeningSourceViewportHeight = 240;
     private const int LanguageOpeningAudioFrames = 2978;
     private const int SceneFadeOutDuration = 40;
+    private const int ProgressSaveDelayFrames = 45;
+    private const int ProgressSaveMaxDelayFrames = 180;
     private const float GamepadThumbStickThreshold = 0.5f;
     private static readonly System.Drawing.Point PlayerStartTile = new(3, 12);
     private static readonly OpeningNarrationLine[] LanguageOpeningScript =
@@ -120,7 +122,10 @@ public partial class DragonGlareAlpha : Game
     private int frameCounter;
     private int startupFadeFrames = 20;
     private int sceneFadeOutFramesRemaining;
+    private int progressSaveDelayFrames;
+    private int progressSaveMaxDelayFrames;
     private GameState? pendingGameState;
+    private bool progressSavePending;
     private PlayerFacingDirection playerFacingDirection = PlayerFacingDirection.Down;
     private System.Drawing.Point fieldMovementAnimationDirection = System.Drawing.Point.Empty;
     private int fieldMovementAnimationFramesRemaining;
@@ -547,7 +552,14 @@ public partial class DragonGlareAlpha : Game
         {
             try
             {
-                SaveGame();
+                if (progressSavePending)
+                {
+                    FlushQueuedProgressSave(refreshSlotSummaries: false);
+                }
+                else
+                {
+                    SaveGame(refreshSlotSummaries: false);
+                }
             }
             catch (TamperDetectedException)
             {
