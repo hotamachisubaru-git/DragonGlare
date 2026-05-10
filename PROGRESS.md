@@ -35,7 +35,7 @@
 
 ### バージョン管理
 
-- ゲームパッド対応に合わせて `AppVersion` を `1.1.0` に更新。
+- ゲームパッド対応に合わせて `AppVersion` を `1.4.0` に更新。
 - メインプロジェクトを `DragonGlareAlpha.csproj` に統一し、未参照の旧プロジェクト定義を削除。
 - アプリ起動時に MuiCache の `ApplicationCompany` と `FriendlyAppName` を現在のバージョン表示へ同期するよう変更。
 - 今後、変更内容に応じて `.csproj` のバージョンを更新します。
