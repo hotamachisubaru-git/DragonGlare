@@ -45,3 +45,66 @@ GEMINI.md
 !/Assets/Portraits/NPC/**
 /アセット/
 /JF-Dot-ShinonomeMin14.ttf
+
+# Unity generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Pp]roject[Ss]ettings/
+
+# Unity generated files
+ExportedObj/
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+sysinfo.txt
+
+# Unity crash and profiling output
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# Unity Asset Store tools
+[Aa]ssets/AssetStoreTools*
+
+# Keep meta files for tracked assets.
+!/[Aa]ssets/**/*.meta
+
+# IDE generated files
+.vscode/
+.idea/
+*.csproj
+*.sln
+*.userprefs
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Build artifacts
+*.apk
+*.aab
+*.ipa
+*.app
+*.exe
+*.dmg
+
+# Logs and local environment
+.env
+.env.*
