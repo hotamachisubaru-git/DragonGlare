@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Threading;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
@@ -6,6 +7,8 @@ namespace DragonGlareAlpha.Security;
 
 public sealed partial class AntiCheatService
 {
+    private const int ProcessScanCooldownMilliseconds = 5000;
+
     private static readonly string[] SuspiciousProcessKeywords =
     [
         "cheatengine",
@@ -32,24 +35,40 @@ public sealed partial class AntiCheatService
 
     public static bool TryDetectStartupViolation(out string message)
     {
-        return new AntiCheatService().TryDetectViolation(out message);
+        var service = new AntiCheatService();
+        if (service.TryDetectDebugger(out message))
+        {
+            ReportViolation(message);
+            return true;
+        }
+
+        if (TryFindSuspiciousProcess(out var processLabel))
+        {
+            message = FormatSuspiciousProcessMessage(processLabel);
+            ReportViolation(message);
+            return true;
+        }
+
+        message = string.Empty;
+        return false;
     }
 
     private static bool _isViolationDetected;
     private static string _detectedMessage = string.Empty;
-    private static bool _isScanning;
+    private static int _isScanning;
+    private static long _lastProcessScanTimestamp;
 
     public bool TryDetectViolation(out string message)
     {
-        if (_isViolationDetected)
+        if (Volatile.Read(ref _isViolationDetected))
         {
             message = _detectedMessage;
             return true;
         }
 
-        if (Debugger.IsAttached || IsDebuggerPresent() || IsRemoteDebuggerAttached())
+        if (TryDetectDebugger(out message))
         {
-            message = "デバッガを検知したため起動を停止しました。";
+            ReportViolation(message);
             return true;
         }
 
@@ -61,68 +80,107 @@ public sealed partial class AntiCheatService
 
     private void TriggerAsyncProcessScan()
     {
-        if (_isScanning) return;
+        if (!ShouldStartProcessScan() ||
+            Interlocked.CompareExchange(ref _isScanning, 1, 0) != 0)
+        {
+            return;
+        }
 
         Task.Run(() =>
         {
-            _isScanning = true;
             try
             {
                 if (TryFindSuspiciousProcess(out var processLabel))
                 {
-                    _detectedMessage = $"不正ツールを検知したため終了します。\n検知対象: {processLabel}";
-                    _isViolationDetected = true;
+                    ReportViolation(FormatSuspiciousProcessMessage(processLabel));
                 }
             }
             finally
             {
-                _isScanning = false;
+                Volatile.Write(ref _isScanning, 0);
             }
         });
+    }
+
+    private static bool ShouldStartProcessScan()
+    {
+        var now = Stopwatch.GetTimestamp();
+        var lastScan = Volatile.Read(ref _lastProcessScanTimestamp);
+        if (lastScan != 0)
+        {
+            var elapsedMilliseconds = (now - lastScan) * 1000d / Stopwatch.Frequency;
+            if (elapsedMilliseconds < ProcessScanCooldownMilliseconds)
+            {
+                return false;
+            }
+        }
+
+        Volatile.Write(ref _lastProcessScanTimestamp, now);
+        return true;
     }
 
     private static bool TryFindSuspiciousProcess(out string processLabel)
     {
         processLabel = string.Empty;
 
+        Process[] processes;
         try
         {
-            using var currentProcess = Process.GetCurrentProcess();
-            foreach (var process in Process.GetProcesses())
+            processes = Process.GetProcesses();
+        }
+        catch
+        {
+            return false;
+        }
+
+        var currentProcessId = Environment.ProcessId;
+        foreach (var process in processes)
+        {
+            using (process)
             {
-                using (process)
+                try
                 {
-                    if (process.Id == currentProcess.Id)
+                    if (process.Id == currentProcessId)
                     {
                         continue;
                     }
 
                     var processName = process.ProcessName ?? string.Empty;
-                    var windowTitle = string.Empty;
-                    try
+                    if (ContainsSuspiciousKeyword(processName, SuspiciousProcessKeywords))
                     {
-                        windowTitle = process.MainWindowTitle ?? string.Empty;
-                    }
-                    catch
-                    {
+                        processLabel = processName;
+                        return true;
                     }
 
-                    if (ContainsSuspiciousKeyword(processName, SuspiciousProcessKeywords) ||
-                        ContainsSuspiciousKeyword(windowTitle, SuspiciousWindowKeywords))
+                    var windowTitle = TryReadMainWindowTitle(process);
+                    if (ContainsSuspiciousKeyword(windowTitle, SuspiciousWindowKeywords))
                     {
-                        processLabel = string.IsNullOrWhiteSpace(windowTitle)
-                            ? processName
+                        processLabel = string.IsNullOrWhiteSpace(processName)
+                            ? windowTitle
                             : $"{processName} ({windowTitle})";
                         return true;
                     }
                 }
+                catch
+                {
+                    continue;
+                }
             }
-        }
-        catch
-        {
         }
 
         return false;
+    }
+
+    private static string TryReadMainWindowTitle(Process process)
+    {
+        try
+        {
+            return process.MainWindowTitle ?? string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
     }
 
     private static bool ContainsSuspiciousKeyword(string value, IEnumerable<string> keywords)
@@ -133,6 +191,41 @@ public sealed partial class AntiCheatService
         }
 
         return keywords.Any(keyword => value.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private bool TryDetectDebugger(out string message)
+    {
+        try
+        {
+            if (Debugger.IsAttached)
+            {
+                message = "デバッガを検知したため起動を停止しました。";
+                return true;
+            }
+
+            if (OperatingSystem.IsWindows() && (IsDebuggerPresent() || IsRemoteDebuggerAttached()))
+            {
+                message = "デバッガを検知したため起動を停止しました。";
+                return true;
+            }
+        }
+        catch
+        {
+        }
+
+        message = string.Empty;
+        return false;
+    }
+
+    private static string FormatSuspiciousProcessMessage(string processLabel)
+    {
+        return $"不正ツールを検知したため終了します。\n検知対象: {processLabel}";
+    }
+
+    private static void ReportViolation(string message)
+    {
+        _detectedMessage = message;
+        Volatile.Write(ref _isViolationDetected, true);
     }
 
     private static bool IsRemoteDebuggerAttached()

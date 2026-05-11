@@ -144,11 +144,15 @@ public partial class DragonGlareAlpha : Game
     private SaveSlotSelectionMode saveSlotSelectionMode = SaveSlotSelectionMode.Save;
     private int dataOperationSourceSlot;
     private string battleMessage = DefaultBattleMessage;
-    private string[] battleMessageLines = [];
-    private int battleMessageVisibleLines;
-    private int battleMessageLineTimer;
-    private const int BattleMessageLineDelayFrames = 30;
+    private IReadOnlyList<BattleSequenceStep> battleResolutionSteps = [];
+    private BattleTurnResolution? activeBattleResolution;
+    private BattleFlowState battleReturnFlowState = BattleFlowState.CommandSelection;
+    private int battleResolutionStepIndex = -1;
+    private int battleResolutionStepFramesRemaining;
     private const int BattleIntroDurationFrames = 90;
+    private const int BattleStepMinimumFrames = 8;
+    private const int BattleStepMessageHoldFrames = 34;
+    private const int BattleResolutionVisibleLines = 7;
     private string shopMessage = ShopWelcomeMessage;
     private string bankMessage = BankWelcomeMessage;
     private BgmTrack? currentBgmTrack;
@@ -165,6 +169,11 @@ public partial class DragonGlareAlpha : Game
     private bool skipSaveOnClose;
     private int encounterTransitionFrames;
     private int fieldEncounterStepsRemaining = 7;
+    private int battlePlayerActionFramesRemaining;
+    private int battlePlayerGuardFramesRemaining;
+    private int battleEnemyActionFramesRemaining;
+    private int battleItemUseFramesRemaining;
+    private int battleEnemyDefeatFramesRemaining;
     private int enemyHitFlashFramesRemaining;
     private int battleSpellEffectFramesRemaining;
     private int playerHitFlashFramesRemaining;
@@ -465,6 +474,7 @@ public partial class DragonGlareAlpha : Game
 
     private void UpdateStartupOptions()
     {
+        var previousCursor = optionsCursor;
         if (WasPressed(XnaKeys.Up) || WasPressed(XnaKeys.W))
         {
             optionsCursor = Math.Max(0, optionsCursor - 1);
@@ -473,6 +483,7 @@ public partial class DragonGlareAlpha : Game
         {
             optionsCursor = Math.Min(5, optionsCursor + 1);
         }
+        PlayCursorSeIfChanged(previousCursor, optionsCursor);
 
         if (!WasPrimaryConfirmPressed())
         {
@@ -572,6 +583,7 @@ public partial class DragonGlareAlpha : Game
     protected override void UnloadContent()
     {
         StopBgm();
+        StopAllSoundEffects();
         uiFont.Dispose();
         smallFont.Dispose();
         privateFontCollection.Dispose();

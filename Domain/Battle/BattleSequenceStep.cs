@@ -9,4 +9,6 @@ public sealed class BattleSequenceStep
     public BattleVisualCue VisualCue { get; init; }
 
     public int AnimationFrames { get; init; } = 12;
+
+    public SoundEffect? SoundEffect { get; init; }
 }

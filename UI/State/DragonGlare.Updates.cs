@@ -19,6 +19,7 @@ public partial class DragonGlareAlpha
 
         if (AdvancePendingStateChange())
         {
+            UpdateBgm();
             return;
         }
 
@@ -146,6 +147,7 @@ public partial class DragonGlareAlpha
 
     private void UpdateModeSelect()
     {
+        var previousCursor = modeCursor;
         if (WasPressed(Keys.Up) || WasPressed(Keys.W))
         {
             modeCursor = Math.Max(0, modeCursor - 1);
@@ -154,6 +156,7 @@ public partial class DragonGlareAlpha
         {
             modeCursor = Math.Min(3, modeCursor + 1);
         }
+        PlayCursorSeIfChanged(previousCursor, modeCursor);
 
         if (!WasPrimaryConfirmPressed())
         {
@@ -185,6 +188,7 @@ public partial class DragonGlareAlpha
             return;
         }
 
+        var previousCursor = languageCursor;
         if (WasPressed(Keys.Up) || WasPressed(Keys.W))
         {
             languageCursor = 0;
@@ -193,6 +197,7 @@ public partial class DragonGlareAlpha
         {
             languageCursor = 1;
         }
+        PlayCursorSeIfChanged(previousCursor, languageCursor);
 
         if (WasPrimaryConfirmPressed())
         {
@@ -206,6 +211,7 @@ public partial class DragonGlareAlpha
 
         if (WasPressed(Keys.Escape))
         {
+            PlayCancelSe();
             ChangeGameState(GameState.ModeSelect);
         }
     }
@@ -214,6 +220,7 @@ public partial class DragonGlareAlpha
     {
         if (WasPressed(Keys.Escape))
         {
+            PlayCancelSe();
             ChangeGameState(GameState.ModeSelect);
             return;
         }
@@ -283,6 +290,7 @@ public partial class DragonGlareAlpha
 
         if (WasPressed(Keys.Escape))
         {
+            PlayCancelSe();
             ChangeGameState(GameState.LanguageSelection);
             return;
         }

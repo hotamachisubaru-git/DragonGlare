@@ -10,6 +10,7 @@ public partial class DragonGlareAlpha
     {
         if (saveSlotSelectionMode != SaveSlotSelectionMode.DeleteConfirm)
         {
+            var previousCursor = saveSlotCursor;
             if (WasPressed(Keys.Up) || WasPressed(Keys.W))
             {
                 saveSlotCursor = Math.Max(0, saveSlotCursor - 1);
@@ -18,10 +19,12 @@ public partial class DragonGlareAlpha
             {
                 saveSlotCursor = Math.Min(SaveService.SlotCount - 1, saveSlotCursor + 1);
             }
+            PlayCursorSeIfChanged(previousCursor, saveSlotCursor);
         }
 
         if (WasPressed(Keys.Escape))
         {
+            PlayCancelSe();
             CancelSaveSlotSelection();
             return;
         }

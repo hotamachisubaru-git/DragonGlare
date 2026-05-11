@@ -18,60 +18,41 @@ public sealed class ProgressionService
 
     public string ApplyBattleRewards(PlayerProgress player, EnemyDefinition enemy, Random random)
     {
-        var language = player.Language;
-        var previousExperience = player.Experience;
-        var previousGold = player.Gold;
-        player.Experience = Math.Min(MaxLevelExperience, player.Experience + enemy.ExperienceReward);
-        player.Gold = Math.Min(PlayerProgress.MaxGoldValue, player.Gold + enemy.GoldReward);
-        var gainedExperience = player.Experience - previousExperience;
-        var gainedGold = player.Gold - previousGold;
+        return ApplyBattleRewardsDetailed(player, enemy, random).ToMessageText();
+    }
 
-        var messages = new List<string>
-        {
-            Text(language,
-                $"{gainedExperience}けいけんち と {gainedGold}Gを えた！",
-                $"Gained {gainedExperience} EXP and {gainedGold}G!")
-        };
+    public BattleRewardResult ApplyBattleRewardsDetailed(PlayerProgress player, EnemyDefinition enemy, Random random)
+    {
+        return ApplyPartyBattleRewardsDetailed(player, [player], enemy, random);
+    }
 
-        if (TryAwardBattleDrop(player, enemy, random, out var dropMessage))
-        {
-            messages.Add(dropMessage);
-        }
+    public BattleRewardResult ApplyPartyBattleRewardsDetailed(
+        PlayerProgress partyInventoryOwner,
+        IEnumerable<PlayerProgress> partyMembers,
+        EnemyDefinition enemy,
+        Random random)
+    {
+        var language = partyInventoryOwner.Language;
+        var members = NormalizeRewardPartyMembers(partyInventoryOwner, partyMembers);
+        var previousGold = partyInventoryOwner.Gold;
+        partyInventoryOwner.Gold = Math.Min(PlayerProgress.MaxGoldValue, partyInventoryOwner.Gold + enemy.GoldReward);
+        var gainedGold = partyInventoryOwner.Gold - previousGold;
+        var memberRewardResults = members
+            .Select(member => ApplyExperienceReward(member, enemy.ExperienceReward, random))
+            .ToArray();
+        var gainedExperience = memberRewardResults.Length == 0
+            ? 0
+            : memberRewardResults.Max(result => result.GainedExperience);
 
-        while (player.Level < PlayerProgress.MaxLevelValue && player.Experience >= GetExperienceThreshold(player.Level + 1))
-        {
-            player.Level++;
+        var rewardMessage = Text(language,
+            $"{gainedExperience}けいけんちと{gainedGold}Gをえた！",
+            $"Gained {gainedExperience} EXP and {gainedGold}G!");
 
-            var previousMaxHp = player.MaxHp;
-            var previousMaxMp = player.MaxMp;
-            var hpGain = 4 + random.Next(0, 3);
-            var mpGain = 1 + random.Next(0, 2);
-            var attackGain = 1 + random.Next(0, 2);
-            var defenseGain = 1 + random.Next(0, 2);
-
-            player.MaxHp = Math.Min(PlayerProgress.MaxVitalValue, player.MaxHp + hpGain);
-            player.MaxMp = Math.Min(PlayerProgress.MaxVitalValue, player.MaxMp + mpGain);
-            if (player.Level == PlayerProgress.MaxLevelValue)
-            {
-                player.MaxHp = PlayerProgress.MaxVitalValue;
-                player.MaxMp = PlayerProgress.MaxVitalValue;
-            }
-
-            hpGain = player.MaxHp - previousMaxHp;
-            mpGain = player.MaxMp - previousMaxMp;
-            player.BaseAttack += attackGain;
-            player.BaseDefense += defenseGain;
-            player.CurrentHp = player.MaxHp;
-            player.CurrentMp = player.MaxMp;
-
-            messages.Add(Text(language,
-                $"{GetName(player)}は レベル{player.Level}に あがった！",
-                $"{GetName(player)} reached level {player.Level}!"));
-            messages.Add($"HP+{hpGain} MP+{mpGain} ATK+{attackGain} DEF+{defenseGain}");
-        }
-
-        player.Normalize();
-        return string.Join("\n", messages);
+        TryAwardBattleDrop(partyInventoryOwner, enemy, random, out var dropMessage);
+        return new BattleRewardResult(
+            rewardMessage,
+            memberRewardResults.SelectMany(result => result.LevelUps).ToArray(),
+            dropMessage);
     }
 
     public string ApplyDefeatPenalty(PlayerProgress player, Point respawnTile)
@@ -129,6 +110,89 @@ public sealed class ProgressionService
         return completedLevels * (24 + ((completedLevels - 1) * 10)) / 2;
     }
 
+    private static BattleMemberRewardResult ApplyExperienceReward(PlayerProgress member, int experienceReward, Random random)
+    {
+        var previousExperience = member.Experience;
+        member.Experience = Math.Min(MaxLevelExperience, member.Experience + experienceReward);
+        var gainedExperience = member.Experience - previousExperience;
+        var levelUps = new List<BattleLevelUpResult>();
+
+        while (member.Level < PlayerProgress.MaxLevelValue && member.Experience >= GetExperienceThreshold(member.Level + 1))
+        {
+            member.Level++;
+
+            var previousMaxHp = member.MaxHp;
+            var previousMaxMp = member.MaxMp;
+            var hpGain = 4 + random.Next(0, 3);
+            var mpGain = 1 + random.Next(0, 2);
+            var attackGain = 1 + random.Next(0, 2);
+            var defenseGain = 1 + random.Next(0, 2);
+
+            member.MaxHp = Math.Min(PlayerProgress.MaxVitalValue, member.MaxHp + hpGain);
+            member.MaxMp = Math.Min(PlayerProgress.MaxVitalValue, member.MaxMp + mpGain);
+            if (member.Level == PlayerProgress.MaxLevelValue)
+            {
+                member.MaxHp = PlayerProgress.MaxVitalValue;
+                member.MaxMp = PlayerProgress.MaxVitalValue;
+            }
+
+            hpGain = member.MaxHp - previousMaxHp;
+            mpGain = member.MaxMp - previousMaxMp;
+            member.BaseAttack += attackGain;
+            member.BaseDefense += defenseGain;
+            member.CurrentHp = member.MaxHp;
+            member.CurrentMp = member.MaxMp;
+
+            levelUps.Add(new BattleLevelUpResult(
+                GetName(member),
+                member.Language,
+                member.Level,
+                hpGain,
+                mpGain,
+                attackGain,
+                defenseGain));
+        }
+
+        member.Normalize();
+        return new BattleMemberRewardResult(gainedExperience, levelUps);
+    }
+
+    private static IReadOnlyList<PlayerProgress> NormalizeRewardPartyMembers(
+        PlayerProgress fallbackMember,
+        IEnumerable<PlayerProgress> partyMembers)
+    {
+        var members = new List<PlayerProgress>();
+        foreach (var member in partyMembers)
+        {
+            if (member is null || ContainsReference(members, member))
+            {
+                continue;
+            }
+
+            members.Add(member);
+        }
+
+        if (members.Count == 0)
+        {
+            members.Add(fallbackMember);
+        }
+
+        return members;
+    }
+
+    private static bool ContainsReference(IEnumerable<PlayerProgress> members, PlayerProgress candidate)
+    {
+        foreach (var member in members)
+        {
+            if (ReferenceEquals(member, candidate))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static string GetName(PlayerProgress player)
     {
         if (!string.IsNullOrWhiteSpace(player.Name))
@@ -182,10 +246,10 @@ public sealed class ProgressionService
 
         dropMessage = enemy.Drop.Quantity > 1
             ? Text(player.Language,
-                $"{GameContent.GetEnemyName(enemy, player.Language)}は {itemName} x{enemy.Drop.Quantity}を おとした！",
+                $"{GameContent.GetEnemyName(enemy, player.Language)}は {itemName} x{enemy.Drop.Quantity}をおとした！",
                 $"{GameContent.GetEnemyName(enemy, player.Language)} dropped {itemName} x{enemy.Drop.Quantity}!")
             : Text(player.Language,
-                $"{GameContent.GetEnemyName(enemy, player.Language)}は {itemName}を おとした！",
+                $"{GameContent.GetEnemyName(enemy, player.Language)}は {itemName}をおとした！",
                 $"{GameContent.GetEnemyName(enemy, player.Language)} dropped {itemName}!");
         return true;
     }
@@ -247,3 +311,62 @@ public sealed class ProgressionService
         return language == UiLanguage.English ? english : japanese;
     }
 }
+
+public sealed record BattleRewardResult(
+    string RewardMessage,
+    IReadOnlyList<BattleLevelUpResult> LevelUps,
+    string DropMessage)
+{
+    public IReadOnlyList<string> LevelUpMessages => LevelUps
+        .Select(levelUp => levelUp.ToMessageText())
+        .ToArray();
+
+    public IEnumerable<string> Messages
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(RewardMessage))
+            {
+                yield return RewardMessage;
+            }
+
+            foreach (var message in LevelUps
+                .Select(levelUp => levelUp.ToMessageText())
+                .Where(message => !string.IsNullOrWhiteSpace(message)))
+            {
+                yield return message;
+            }
+
+            if (!string.IsNullOrWhiteSpace(DropMessage))
+            {
+                yield return DropMessage;
+            }
+        }
+    }
+
+    public string ToMessageText()
+    {
+        return string.Join('\n', Messages);
+    }
+}
+
+public sealed record BattleLevelUpResult(
+    string MemberName,
+    UiLanguage Language,
+    int NewLevel,
+    int HpGain,
+    int MpGain,
+    int AttackGain,
+    int DefenseGain)
+{
+    public string ToMessageText()
+    {
+        return Language == UiLanguage.English
+            ? $"{MemberName} reached Lv {NewLevel}!\nHP+{HpGain} MP+{MpGain} ATK+{AttackGain} DEF+{DefenseGain}"
+            : $"{MemberName}は Lv {NewLevel} にあがった！\nHPが{HpGain} MPが{MpGain} ATKが{AttackGain} DEFが{DefenseGain} あがった！";
+    }
+}
+
+internal sealed record BattleMemberRewardResult(
+    int GainedExperience,
+    IReadOnlyList<BattleLevelUpResult> LevelUps);

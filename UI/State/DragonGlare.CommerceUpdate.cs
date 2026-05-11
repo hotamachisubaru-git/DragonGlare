@@ -10,6 +10,7 @@ public partial class DragonGlareAlpha
     {
         if (shopPhase == ShopPhase.Welcome)
         {
+            var previousCursor = shopPromptCursor;
             if (WasPressed(Keys.Up) || WasPressed(Keys.W))
             {
                 shopPromptCursor = Math.Max(0, shopPromptCursor - 1);
@@ -18,9 +19,11 @@ public partial class DragonGlareAlpha
             {
                 shopPromptCursor = Math.Min(2, shopPromptCursor + 1);
             }
+            PlayCursorSeIfChanged(previousCursor, shopPromptCursor);
 
             if (WasShopBackPressed())
             {
+                PlayCancelSe();
                 ChangeGameState(GameState.Field);
                 return;
             }
@@ -43,11 +46,13 @@ public partial class DragonGlareAlpha
             }
 
             ChangeGameState(GameState.Field);
+            PlayCancelSe();
             return;
         }
 
         var visibleEntries = GetShopVisibleEntries();
         var maxIndex = visibleEntries.Count - 1;
+        var previousItemCursor = shopItemCursor;
         if (WasPressed(Keys.Up) || WasPressed(Keys.W))
         {
             shopItemCursor = Math.Max(0, shopItemCursor - 1);
@@ -56,9 +61,11 @@ public partial class DragonGlareAlpha
         {
             shopItemCursor = Math.Min(maxIndex, shopItemCursor + 1);
         }
+        PlayCursorSeIfChanged(previousItemCursor, shopItemCursor);
 
         if (WasShopBackPressed())
         {
+            PlayCancelSe();
             ReturnToShopPrompt(GetShopReturnMessage());
             return;
         }
@@ -83,6 +90,7 @@ public partial class DragonGlareAlpha
 
         if (selectedEntry.Type == ShopMenuEntryType.Quit)
         {
+            PlayCancelSe();
             ReturnToShopPrompt(GetShopFarewellMessage());
             return;
         }
@@ -114,6 +122,11 @@ public partial class DragonGlareAlpha
         shopMessage = purchaseResult.Message;
         if (purchaseResult.Success)
         {
+            if (purchaseResult.Equipped)
+            {
+                PlaySe(SoundEffect.Equip);
+            }
+
             PersistProgress();
         }
     }
@@ -136,6 +149,7 @@ public partial class DragonGlareAlpha
     {
         if (bankPhase == BankPhase.Welcome)
         {
+            var previousCursor = bankPromptCursor;
             if (WasPressed(Keys.Up) || WasPressed(Keys.W))
             {
                 bankPromptCursor = Math.Max(0, bankPromptCursor - 1);
@@ -144,9 +158,11 @@ public partial class DragonGlareAlpha
             {
                 bankPromptCursor = Math.Min(3, bankPromptCursor + 1);
             }
+            PlayCursorSeIfChanged(previousCursor, bankPromptCursor);
 
             if (WasShopBackPressed())
             {
+                PlayCancelSe();
                 ChangeGameState(GameState.Field);
                 return;
             }
@@ -168,12 +184,14 @@ public partial class DragonGlareAlpha
                     OpenBankList(BankPhase.BorrowList);
                     return;
                 default:
+                    PlayCancelSe();
                     ChangeGameState(GameState.Field);
                     return;
             }
         }
 
         var options = GetBankAmountOptions();
+        var previousItemCursor = bankItemCursor;
         if (WasPressed(Keys.Up) || WasPressed(Keys.W))
         {
             bankItemCursor = Math.Max(0, bankItemCursor - 1);
@@ -182,9 +200,11 @@ public partial class DragonGlareAlpha
         {
             bankItemCursor = Math.Min(options.Count - 1, bankItemCursor + 1);
         }
+        PlayCursorSeIfChanged(previousItemCursor, bankItemCursor);
 
         if (WasShopBackPressed())
         {
+            PlayCancelSe();
             ReturnToBankPrompt(GetBankReturnMessage());
             return;
         }
@@ -197,6 +217,7 @@ public partial class DragonGlareAlpha
         var selectedOption = options[bankItemCursor];
         if (selectedOption.Quit)
         {
+            PlayCancelSe();
             ReturnToBankPrompt(GetBankReturnMessage());
             return;
         }

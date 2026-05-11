@@ -76,7 +76,18 @@ public enum BgmTrack
 public enum SoundEffect
 {
     Dialog,
-    Collision
+    Collision,
+    Attack,
+    Defend,
+    Magic,
+    Cure,
+    Poison,
+    Raiden,
+    Fire,
+    Equip,
+    Cursor,
+    Cancel,
+    Escape
 }
 
 public enum BattleFlowState
@@ -114,6 +125,9 @@ public enum BattleOutcome
 public enum BattleVisualCue
 {
     None,
+    PlayerAction,
+    PlayerGuard,
+    EnemyAction,
     EnemyHit,
     PlayerHit,
     SpellCast,

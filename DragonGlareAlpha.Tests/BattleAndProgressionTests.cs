@@ -11,7 +11,7 @@ public sealed class BattleAndProgressionTests
     [Fact]
     public void ResolveTurn_WhenAttackFinishesEnemy_ReturnsVictory()
     {
-        var random = new Random(0);
+        var random = new FixedRandom(4);
         var service = new BattleService();
         var player = PlayerProgress.CreateDefault(new Point(0, 0));
         player.Level = 4;
@@ -23,6 +23,9 @@ public sealed class BattleAndProgressionTests
 
         Assert.Equal(BattleOutcome.Victory, result.Outcome);
         Assert.Equal(0, encounter.CurrentHp);
+        Assert.Contains("こうげき", result.Steps[0].Message);
+        Assert.Equal("26ダメージ！", result.Steps[1].Message);
+        Assert.Equal("テストまものをたおした！", result.Steps[2].Message);
     }
 
     [Fact]
@@ -55,7 +58,10 @@ public sealed class BattleAndProgressionTests
         Assert.Equal(BattleOutcome.Ongoing, result.Outcome);
         Assert.Equal(15, player.CurrentHp);
         Assert.Contains("みをまもっている", result.Steps[0].Message);
+        Assert.Equal(BattleVisualCue.PlayerGuard, result.Steps[0].VisualCue);
         Assert.Contains("ダメージに おさえた", result.Steps[2].Message);
+        Assert.Equal(BattleVisualCue.EnemyAction, result.Steps[1].VisualCue);
+        Assert.Equal(BattleVisualCue.PlayerHit, result.Steps[2].VisualCue);
     }
 
     [Fact]
@@ -184,7 +190,9 @@ public sealed class BattleAndProgressionTests
         var result = service.ResolveTurn(player, encounter, BattleActionType.Attack, null, null, random);
 
         Assert.Contains("Adventurer attacks!", result.Steps[0].Message);
+        Assert.Equal(BattleVisualCue.PlayerAction, result.Steps[0].VisualCue);
         Assert.Contains("Test Beast takes", result.Steps[1].Message);
+        Assert.Equal(BattleVisualCue.EnemyHit, result.Steps[1].VisualCue);
     }
 
     [Fact]
@@ -204,7 +212,8 @@ public sealed class BattleAndProgressionTests
         Assert.Equal(2, player.Level);
         Assert.Equal(player.MaxHp, player.CurrentHp);
         Assert.Equal(player.MaxMp, player.CurrentMp);
-        Assert.Contains("レベル2", message);
+        Assert.Contains("Lv 2", message);
+        Assert.Contains("HPが", message);
     }
 
     [Fact]
@@ -364,6 +373,87 @@ public sealed class BattleAndProgressionTests
 
         Assert.Equal(1, player.GetItemCount("fire_orb"));
         Assert.Contains("ひのたま", message);
+    }
+
+    [Fact]
+    public void ApplyBattleRewardsDetailed_ReturnsRewardLevelUpAndDropInDisplayOrder()
+    {
+        var progression = new ProgressionService();
+        var player = PlayerProgress.CreateDefault(new Point(0, 0));
+        player.Name = "ゆうしゃ";
+        player.Experience = 20;
+        var enemy = new EnemyDefinition(
+            "reward_order",
+            "ごほうびまもの",
+            FieldMapId.Field,
+            1,
+            99,
+            1,
+            10,
+            1,
+            0,
+            10,
+            6,
+            new EnemyDropDefinition("healing_herb", 100));
+
+        var reward = progression.ApplyBattleRewardsDetailed(player, enemy, new FixedRandom(0, 1, 0, 1, 0));
+        var messages = reward.Messages.ToArray();
+
+        Assert.Equal(3, messages.Length);
+        Assert.Contains("10けいけんち", messages[0]);
+        Assert.Contains("Lv 2", messages[1]);
+        Assert.Contains("HPが", messages[1]);
+        Assert.Contains('\n', messages[1]);
+        Assert.Contains("ごほうびまものは", messages[2]);
+        Assert.Contains("やくそう", messages[2]);
+    }
+
+    [Fact]
+    public void ApplyPartyBattleRewardsDetailed_AwardsExperienceToEachMemberAndSharedRewardsOnce()
+    {
+        var progression = new ProgressionService();
+        var leader = PlayerProgress.CreateDefault(new Point(0, 0));
+        leader.Name = "ゆうしゃ";
+        leader.Experience = 20;
+        leader.Gold = 5;
+        var ally = PlayerProgress.CreateDefault(new Point(0, 0));
+        ally.Name = "まほうつかい";
+        ally.Experience = 20;
+        var enemy = new EnemyDefinition(
+            "party_reward",
+            "パーティまもの",
+            FieldMapId.Field,
+            1,
+            99,
+            1,
+            10,
+            1,
+            0,
+            10,
+            6,
+            new EnemyDropDefinition("healing_herb", 100));
+
+        var reward = progression.ApplyPartyBattleRewardsDetailed(
+            leader,
+            [leader, ally, leader],
+            enemy,
+            new FixedRandom(0, 1, 0, 1, 1, 0, 1, 0, 0));
+        var messages = reward.Messages.ToArray();
+
+        Assert.Equal(2, leader.Level);
+        Assert.Equal(2, ally.Level);
+        Assert.Equal(30, leader.Experience);
+        Assert.Equal(30, ally.Experience);
+        Assert.Equal(11, leader.Gold);
+        Assert.Equal(220, ally.Gold);
+        Assert.Equal(1, leader.GetItemCount("healing_herb"));
+        Assert.Equal(0, ally.GetItemCount("healing_herb"));
+        Assert.Equal(2, reward.LevelUps.Count);
+        Assert.Equal(4, messages.Length);
+        Assert.Contains("10けいけんち", messages[0]);
+        Assert.Contains("ゆうしゃは Lv 2", messages[1]);
+        Assert.Contains("まほうつかいは Lv 2", messages[2]);
+        Assert.Contains("パーティまものは", messages[3]);
     }
 
     private sealed class FixedRandom(params int[] values) : Random

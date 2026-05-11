@@ -2,17 +2,26 @@ using System.IO;
 using DragonGlareAlpha.Domain;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
-using XnaSoundEffect = Microsoft.Xna.Framework.Audio.SoundEffect;
 
 namespace DragonGlareAlpha;
 
 public partial class DragonGlareAlpha
 {
+    private const float BgmPlaybackVolume = 0.85f;
+    private const float SePlaybackVolume = 0.9f;
+    private const int BgmFadeInDurationFrames = 28;
+    private const int BgmFadeOutDurationFrames = 18;
+
     private readonly object audioSyncRoot = new();
+    private readonly List<ActiveSoundEffectPlayback> activeSePlaybacks = [];
     private AudioFileReader? bgmReader;
     private IWavePlayer? bgmOutput;
     private Uri? currentBgmUri;
+    private BgmTrack? pendingBgmTrack;
+    private Uri? pendingBgmUri;
     private BgmTrack? failedBgmTrack;
+    private int bgmFadeInFramesRemaining;
+    private int bgmFadeOutFramesRemaining;
     private bool isStoppingBgm;
 
     private void LoadCustomFont()
@@ -64,6 +73,17 @@ public partial class DragonGlareAlpha
 
         RegisterSe(SoundEffect.Dialog, "Serif_SE.mp3");
         RegisterSe(SoundEffect.Collision, "当たり判定SFC.mp3", "当たり判定SFC.wav");
+        RegisterSe(SoundEffect.Attack, "SFC_atk1.mp3");
+        RegisterSe(SoundEffect.Defend, "SFC_def.mp3");
+        RegisterSe(SoundEffect.Magic, "SFC_magic.mp3");
+        RegisterSe(SoundEffect.Cure, "SFC_cure.mp3");
+        RegisterSe(SoundEffect.Poison, "SFC_poison.mp3");
+        RegisterSe(SoundEffect.Raiden, "SFC_raiden.mp3");
+        RegisterSe(SoundEffect.Fire, "SFC_fire.mp3");
+        RegisterSe(SoundEffect.Equip, "SFC_equip.mp3");
+        RegisterSe(SoundEffect.Cursor, "SFC_cursor.mp3");
+        RegisterSe(SoundEffect.Cancel, "SFC_cancel.mp3");
+        RegisterSe(SoundEffect.Escape, "SFC_escape.mp3");
 
         UpdateBgm();
     }
@@ -263,21 +283,6 @@ public partial class DragonGlareAlpha
             return;
         }
 
-        if (currentBgmTrack == desiredTrack && bgmOutput is not null)
-        {
-            if (bgmOutput.PlaybackState != PlaybackState.Playing)
-            {
-                bgmOutput.Play();
-            }
-
-            return;
-        }
-
-        if (failedBgmTrack == desiredTrack)
-        {
-            return;
-        }
-
         if (!bgmUris.TryGetValue(desiredTrack, out var bgmUri))
         {
             StopBgm();
@@ -286,7 +291,45 @@ public partial class DragonGlareAlpha
             return;
         }
 
-        PlayBgm(desiredTrack, bgmUri);
+        lock (audioSyncRoot)
+        {
+            if (currentBgmTrack == desiredTrack && bgmOutput is not null)
+            {
+                pendingBgmTrack = null;
+                pendingBgmUri = null;
+                bgmFadeOutFramesRemaining = 0;
+
+                if (bgmOutput.PlaybackState != PlaybackState.Playing)
+                {
+                    bgmOutput.Play();
+                }
+
+                UpdateBgmFadeLocked();
+                return;
+            }
+
+            if (failedBgmTrack == desiredTrack)
+            {
+                StopBgmLocked();
+                return;
+            }
+
+            pendingBgmTrack = desiredTrack;
+            pendingBgmUri = bgmUri;
+
+            if (bgmOutput is null)
+            {
+                PlayBgm(desiredTrack, bgmUri);
+                return;
+            }
+
+            if (bgmFadeOutFramesRemaining <= 0)
+            {
+                bgmFadeOutFramesRemaining = BgmFadeOutDurationFrames;
+            }
+
+            UpdateBgmFadeLocked();
+        }
     }
 
     private void PlayBgm(BgmTrack track, Uri bgmUri)
@@ -299,7 +342,7 @@ public partial class DragonGlareAlpha
             {
                 bgmReader = new AudioFileReader(bgmUri.LocalPath)
                 {
-                    Volume = 0.85f
+                    Volume = 0f
                 };
                 bgmOutput = CreateBgmOutputDevice();
                 bgmOutput.Init(bgmReader);
@@ -308,7 +351,11 @@ public partial class DragonGlareAlpha
 
                 currentBgmTrack = track;
                 currentBgmUri = bgmUri;
+                pendingBgmTrack = null;
+                pendingBgmUri = null;
                 failedBgmTrack = null;
+                bgmFadeInFramesRemaining = BgmFadeInDurationFrames;
+                bgmFadeOutFramesRemaining = 0;
             }
             catch
             {
@@ -318,6 +365,46 @@ public partial class DragonGlareAlpha
                 failedBgmTrack = track;
             }
         }
+    }
+
+    private void UpdateBgmFadeLocked()
+    {
+        if (bgmReader is null)
+        {
+            return;
+        }
+
+        if (bgmFadeOutFramesRemaining > 0)
+        {
+            var volume = BgmPlaybackVolume * bgmFadeOutFramesRemaining / BgmFadeOutDurationFrames;
+            bgmReader.Volume = Math.Clamp(volume, 0f, BgmPlaybackVolume);
+            bgmFadeOutFramesRemaining--;
+
+            if (bgmFadeOutFramesRemaining == 0)
+            {
+                var nextTrack = pendingBgmTrack;
+                var nextUri = pendingBgmUri;
+                StopBgmLocked();
+
+                if (nextTrack is not null && nextUri is not null)
+                {
+                    PlayBgm(nextTrack.Value, nextUri);
+                }
+            }
+
+            return;
+        }
+
+        if (bgmFadeInFramesRemaining > 0)
+        {
+            var elapsedFrames = BgmFadeInDurationFrames - bgmFadeInFramesRemaining + 1;
+            var volume = BgmPlaybackVolume * elapsedFrames / BgmFadeInDurationFrames;
+            bgmReader.Volume = Math.Clamp(volume, 0f, BgmPlaybackVolume);
+            bgmFadeInFramesRemaining--;
+            return;
+        }
+
+        bgmReader.Volume = BgmPlaybackVolume;
     }
 
     private IWavePlayer CreateBgmOutputDevice()
@@ -391,12 +478,17 @@ public partial class DragonGlareAlpha
         bgmReader = null;
         currentBgmTrack = null;
         currentBgmUri = null;
+        pendingBgmTrack = null;
+        pendingBgmUri = null;
+        bgmFadeInFramesRemaining = 0;
+        bgmFadeOutFramesRemaining = 0;
         isStoppingBgm = false;
     }
 
     private BgmTrack GetDesiredBgmTrack()
     {
-        return gameState switch
+        var targetState = pendingGameState ?? gameState;
+        return targetState switch
         {
             GameState.LanguageSelection when !languageOpeningFinished => BgmTrack.Prologue,
             GameState.Battle => BgmTrack.Battle,
@@ -421,14 +513,95 @@ public partial class DragonGlareAlpha
 
     private void PlaySe(SoundEffect effect)
     {
-        if (!seUris.TryGetValue(effect, out var seUri) ||
-            !seUri.LocalPath.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+        if (!seUris.TryGetValue(effect, out var seUri))
         {
             return;
         }
 
-        using var stream = File.OpenRead(seUri.LocalPath);
-        using var soundEffect = XnaSoundEffect.FromStream(stream);
-        soundEffect.Play(0.9f, 0f, 0f);
+        AudioFileReader? reader = null;
+        IWavePlayer? output = null;
+        ActiveSoundEffectPlayback? playback = null;
+
+        try
+        {
+            reader = new AudioFileReader(seUri.LocalPath)
+            {
+                Volume = SePlaybackVolume
+            };
+            output = CreateSeOutputDevice();
+            var activePlayback = new ActiveSoundEffectPlayback(reader, output);
+            playback = activePlayback;
+            output.Init(reader);
+            output.PlaybackStopped += (_, _) => DisposeSePlayback(activePlayback);
+
+            lock (audioSyncRoot)
+            {
+                activeSePlaybacks.Add(activePlayback);
+            }
+
+            output.Play();
+        }
+        catch
+        {
+            if (playback is not null)
+            {
+                DisposeSePlayback(playback);
+            }
+            else
+            {
+                output?.Dispose();
+                reader?.Dispose();
+            }
+        }
+    }
+
+    private static IWavePlayer CreateSeOutputDevice()
+    {
+        return new WaveOutEvent
+        {
+            DesiredLatency = 70
+        };
+    }
+
+    private void DisposeSePlayback(ActiveSoundEffectPlayback playback)
+    {
+        lock (audioSyncRoot)
+        {
+            activeSePlaybacks.Remove(playback);
+        }
+
+        playback.Dispose();
+    }
+
+    private void StopAllSoundEffects()
+    {
+        ActiveSoundEffectPlayback[] playbacks;
+        lock (audioSyncRoot)
+        {
+            playbacks = activeSePlaybacks.ToArray();
+            activeSePlaybacks.Clear();
+        }
+
+        foreach (var playback in playbacks)
+        {
+            playback.Dispose();
+        }
+    }
+
+    private sealed class ActiveSoundEffectPlayback(AudioFileReader reader, IWavePlayer output) : IDisposable
+    {
+        private bool disposed;
+
+        public void Dispose()
+        {
+            if (disposed)
+            {
+                return;
+            }
+
+            disposed = true;
+            output.Dispose();
+            reader.Dispose();
+        }
     }
 }

@@ -14,12 +14,13 @@ public partial class DragonGlareAlpha
     {
         DrawBattleBackdrop(g);
 
+        var enemyCenter = GetBattleEnemyCenter();
         if (ShouldDrawBattleEnemySprite())
         {
-            DrawBattleEnemy(g, new Point(320, 266));
+            DrawBattleEnemy(g, enemyCenter);
         }
 
-        DrawBattleVisualEffects(g);
+        DrawBattleVisualEffects(g, enemyCenter);
         DrawBattleTopUi(g);
         DrawBattleMessageWindow(g);
     }
@@ -51,7 +52,7 @@ public partial class DragonGlareAlpha
 
     private void DrawBattleMessageWindow(Graphics g)
     {
-        var messageWindowRect = new Rectangle(2, 326, 636, 130);
+        var messageWindowRect = new Rectangle(2, 326, 636, 146);
         DrawBattleMessageWindowBackground(g, messageWindowRect);
         DrawBattleWindowBorder(g, messageWindowRect);
         DrawBattleMessagePane(g, Rectangle.Inflate(messageWindowRect, -20, -16), string.Empty);
@@ -109,6 +110,30 @@ public partial class DragonGlareAlpha
         }
     }
 
+    private Point GetBattleEnemyCenter()
+    {
+        var center = new Point(320, 266);
+        if (battleEnemyActionFramesRemaining > 0)
+        {
+            var pulse = Math.Sin((battleEnemyActionFramesRemaining / 10f) * Math.PI);
+            center = new Point(center.X, center.Y + (int)Math.Round(pulse * 18d));
+        }
+
+        if (enemyHitFlashFramesRemaining > 0)
+        {
+            var shake = enemyHitFlashFramesRemaining % 4 < 2 ? -5 : 5;
+            center = new Point(center.X + shake, center.Y);
+        }
+
+        if (battleEnemyDefeatFramesRemaining > 0)
+        {
+            var sink = Math.Max(0, 16 - battleEnemyDefeatFramesRemaining);
+            center = new Point(center.X, center.Y + sink);
+        }
+
+        return center;
+    }
+
     private void DrawBattleEnemy(Graphics g, Point center)
     {
         var bobOffset = (int)Math.Round(Math.Sin(frameCounter / 7d) * 3);
@@ -132,7 +157,12 @@ public partial class DragonGlareAlpha
 
     private bool ShouldDrawBattleEnemySprite()
     {
-        if (currentEncounter is null || currentEncounter.CurrentHp <= 0)
+        if (currentEncounter is null)
+        {
+            return false;
+        }
+
+        if (currentEncounter.CurrentHp <= 0 && !ShouldKeepDefeatedEnemyVisible())
         {
             return false;
         }
@@ -145,21 +175,59 @@ public partial class DragonGlareAlpha
         return ((enemyHitFlashFramesRemaining - 1) / 2) % 2 == 0;
     }
 
-    private void DrawBattleVisualEffects(Graphics g)
+    private bool ShouldKeepDefeatedEnemyVisible()
     {
+        if (battleEnemyDefeatFramesRemaining > 0)
+        {
+            return true;
+        }
+
+        if (battleFlowState != BattleFlowState.Resolving || battleResolutionSteps.Count == 0)
+        {
+            return false;
+        }
+
+        var startIndex = Math.Clamp(battleResolutionStepIndex, 0, battleResolutionSteps.Count - 1);
+        return battleResolutionSteps
+            .Skip(startIndex)
+            .Any(step => step.VisualCue == BattleVisualCue.EnemyDefeat);
+    }
+
+    private void DrawBattleVisualEffects(Graphics g, Point enemyCenter)
+    {
+        if (battlePlayerActionFramesRemaining > 0)
+        {
+            DrawBattlePlayerActionEffect(g, enemyCenter, battlePlayerActionFramesRemaining);
+        }
+
         if (battleSpellEffectFramesRemaining > 0)
         {
-            DrawBattleSpellBurst(g, new Point(320, 242), battleSpellEffectFramesRemaining);
+            DrawBattleSpellBurst(g, new Point(enemyCenter.X, enemyCenter.Y - 24), battleSpellEffectFramesRemaining);
         }
 
         if (battleStatusEffectFramesRemaining > 0)
         {
-            DrawBattleStatusCloud(g, new Point(320, 250), battleStatusEffectFramesRemaining);
+            DrawBattleStatusCloud(g, new Point(enemyCenter.X, enemyCenter.Y - 16), battleStatusEffectFramesRemaining);
         }
 
         if (battlePlayerHealFramesRemaining > 0)
         {
             DrawBattlePlayerHealEffect(g, battlePlayerHealFramesRemaining);
+        }
+
+        if (battlePlayerGuardFramesRemaining > 0)
+        {
+            DrawBattlePlayerGuardEffect(g, battlePlayerGuardFramesRemaining);
+        }
+
+        if (battleItemUseFramesRemaining > 0)
+        {
+            DrawBattleItemUseEffect(g, battleItemUseFramesRemaining);
+        }
+
+        if (battleEnemyDefeatFramesRemaining > 0)
+        {
+            DrawBattleEnemyDefeatEffect(g, enemyCenter, battleEnemyDefeatFramesRemaining);
         }
 
         if (playerHitFlashFramesRemaining > 0)
@@ -168,6 +236,18 @@ public partial class DragonGlareAlpha
             using var flashBrush = new SolidBrush(Color.FromArgb(alpha, 180, 24, 38));
             g.FillRectangle(flashBrush, 0, 0, UiCanvas.VirtualWidth, UiCanvas.VirtualHeight);
         }
+    }
+
+    private void DrawBattlePlayerActionEffect(Graphics g, Point enemyCenter, int framesRemaining)
+    {
+        var progress = 1f - Math.Clamp(framesRemaining / 8f, 0f, 1f);
+        var alpha = Math.Clamp(220 - (int)Math.Round(progress * 140f), 70, 220);
+        using var slashPen = new Pen(Color.FromArgb(alpha, 246, 244, 228), 4);
+        using var accentPen = new Pen(Color.FromArgb(Math.Max(40, alpha - 80), 86, 180, 255), 2);
+
+        var offset = (int)Math.Round(progress * 34f);
+        g.DrawLine(slashPen, enemyCenter.X - 74 + offset, enemyCenter.Y - 78, enemyCenter.X + 18 + offset, enemyCenter.Y + 28);
+        g.DrawLine(accentPen, enemyCenter.X - 54 + offset, enemyCenter.Y - 70, enemyCenter.X + 38 + offset, enemyCenter.Y + 18);
     }
 
     private void DrawBattleSpellBurst(Graphics g, Point center, int framesRemaining)
@@ -226,6 +306,47 @@ public partial class DragonGlareAlpha
         }
     }
 
+    private static void DrawBattlePlayerGuardEffect(Graphics g, int framesRemaining)
+    {
+        var alpha = Math.Clamp(framesRemaining * 16, 50, 170);
+        using var guardPen = new Pen(Color.FromArgb(alpha, 154, 226, 255), 3);
+        using var guardBrush = new SolidBrush(Color.FromArgb(alpha / 4, 154, 226, 255));
+        var shieldRect = new Rectangle(286, 54, 72, 94);
+        g.FillPie(guardBrush, shieldRect, 20, 140);
+        g.DrawArc(guardPen, shieldRect, 20, 140);
+        g.DrawLine(guardPen, shieldRect.X + 36, shieldRect.Y + 8, shieldRect.X + 36, shieldRect.Bottom - 10);
+    }
+
+    private void DrawBattleItemUseEffect(Graphics g, int framesRemaining)
+    {
+        var alpha = Math.Clamp(framesRemaining * 18, 40, 190);
+        using var sparkleBrush = new SolidBrush(Color.FromArgb(alpha, 255, 238, 144));
+        for (var index = 0; index < 6; index++)
+        {
+            var angle = ((frameCounter * 8) + (index * 60)) * Math.PI / 180d;
+            var radius = 20 + ((14 - framesRemaining) * 2);
+            var x = 318 + (int)Math.Round(Math.Cos(angle) * radius);
+            var y = 92 + (int)Math.Round(Math.Sin(angle) * 12d);
+            g.FillRectangle(sparkleBrush, x - 2, y - 2, 4, 4);
+            g.FillRectangle(sparkleBrush, x - 5, y, 10, 1);
+            g.FillRectangle(sparkleBrush, x, y - 5, 1, 10);
+        }
+    }
+
+    private void DrawBattleEnemyDefeatEffect(Graphics g, Point center, int framesRemaining)
+    {
+        var alpha = Math.Clamp(framesRemaining * 14, 36, 180);
+        using var dustBrush = new SolidBrush(Color.FromArgb(alpha, 210, 214, 228));
+        for (var index = 0; index < 10; index++)
+        {
+            var angle = ((frameCounter * 5) + (index * 36)) * Math.PI / 180d;
+            var radius = 24 + ((16 - framesRemaining) * 4) + (index % 3 * 6);
+            var x = center.X + (int)Math.Round(Math.Cos(angle) * radius);
+            var y = center.Y + 22 + (int)Math.Round(Math.Sin(angle) * Math.Max(10, radius / 3f));
+            g.FillEllipse(dustBrush, x - 3, y - 3, 6, 6);
+        }
+    }
+
     private string GetBattleStatusEffectLabel(BattleStatusEffect statusEffect)
     {
         return statusEffect switch
@@ -258,7 +379,7 @@ public partial class DragonGlareAlpha
         DrawText(g, exText, new Rectangle(exX, mpY, exColumnWidth, 24), smallFont);
         if (!string.IsNullOrWhiteSpace(playerStatusLabel))
         {
-            DrawText(g, playerStatusLabel, new Rectangle(rect.Right - 104, rect.Y + 2, 86, 24), smallFont, StringAlignment.Far);
+            DrawText(g, playerStatusLabel, new Rectangle(exX, rect.Y + lineHeight + 6, exColumnWidth, 24), smallFont);
         }
     }
 
@@ -289,7 +410,7 @@ public partial class DragonGlareAlpha
         DrawBattleMessagePane(
             g,
             resultRect,
-            selectedLanguage == UiLanguage.English ? "A / Y / X / ENTER / Z: NEXT" : "A / Y / X / ENTER / Z: つぎへ");
+            string.Empty);
     }
 
     private void DrawBattleSelectionPane(Graphics g, Rectangle rect)
@@ -405,14 +526,7 @@ public partial class DragonGlareAlpha
             rect.Width,
             footerHeight == 0 ? rect.Height : Math.Max(20, rect.Height - (footerHeight + 8)));
         
-        string displayMessage = battleMessage;
-        if (battleMessageLines.Length > 0 && (battleFlowState is BattleFlowState.Victory or BattleFlowState.Defeat or BattleFlowState.Escaped))
-        {
-            var visibleCount = Math.Min(battleMessageVisibleLines, battleMessageLines.Length);
-            displayMessage = string.Join("\n", battleMessageLines.Take(visibleCount));
-        }
-
-        DrawText(g, displayMessage, textRect, smallFont, wrap: true);
+        DrawText(g, battleMessage, textRect, smallFont, wrap: true);
         if (string.IsNullOrWhiteSpace(footer))
         {
             return;

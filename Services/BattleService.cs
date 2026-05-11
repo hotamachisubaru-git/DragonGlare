@@ -131,22 +131,26 @@ public sealed class BattleService
         {
             new()
             {
-                Message = Text(language, $"{GetPlayerName(player)}の こうげき！", $"{GetPlayerName(player)} attacks!")
+                Message = Text(language, $"{GetPlayerName(player)}の こうげき！", $"{GetPlayerName(player)} attacks!"),
+                VisualCue = BattleVisualCue.PlayerAction,
+                AnimationFrames = 8,
+                SoundEffect = SoundEffect.Attack
             }
         };
 
         var damage = Math.Max(1, GetPlayerAttack(player) + random.Next(2, 6) - encounter.Enemy.Defense);
         encounter.CurrentHp = Math.Max(0, encounter.CurrentHp - damage);
+        var enemyDefeated = encounter.CurrentHp == 0;
         steps.Add(new BattleSequenceStep
         {
-            Message = Text(language, $"{enemyName}に {damage}ダメージ！", $"{enemyName} takes {damage} damage!"),
+            Message = FormatEnemyDamageMessage(language, enemyName, damage, enemyDefeated),
             VisualCue = BattleVisualCue.EnemyHit,
             AnimationFrames = 10
         });
 
-        if (encounter.CurrentHp == 0)
+        if (enemyDefeated)
         {
-            AppendEnemyDefeatStep(encounter, steps, language, "を たおした！", " was defeated!");
+            AppendEnemyDefeatStep(encounter, steps, language, "をたおした！", " was defeated!");
             return Victory(steps);
         }
 
@@ -206,14 +210,15 @@ public sealed class BattleService
         encounter.CurrentHp = Math.Max(0, encounter.CurrentHp - damage);
 
         var steps = CreateSpellCastSteps(player, spell);
+        var enemyDefeated = encounter.CurrentHp == 0;
         steps.Add(new BattleSequenceStep
         {
-            Message = Text(language, $"{enemyName}に {damage}ダメージ！", $"{enemyName} takes {damage} damage!"),
+            Message = FormatEnemyDamageMessage(language, enemyName, damage, enemyDefeated),
             VisualCue = BattleVisualCue.EnemyHit,
             AnimationFrames = 12
         });
 
-        if (encounter.CurrentHp == 0)
+        if (enemyDefeated)
         {
             AppendEnemyDefeatStep(encounter, steps, language, "を やきはらった！", " was burned away!");
             return Victory(steps);
@@ -355,7 +360,10 @@ public sealed class BattleService
         {
             new()
             {
-                Message = Text(language, $"{GetPlayerName(player)}は みをまもっている！", $"{GetPlayerName(player)} guards!")
+                Message = Text(language, $"{GetPlayerName(player)}は みをまもっている！", $"{GetPlayerName(player)} guards!"),
+                VisualCue = BattleVisualCue.PlayerGuard,
+                AnimationFrames = 12,
+                SoundEffect = SoundEffect.Defend
             }
         };
 
@@ -392,7 +400,8 @@ public sealed class BattleService
             {
                 Message = Text(language, $"{GetPlayerName(player)}は {itemName}を つかった！", $"{GetPlayerName(player)} used {itemName}!"),
                 VisualCue = BattleVisualCue.ItemUse,
-                AnimationFrames = 8
+                AnimationFrames = 8,
+                SoundEffect = GetConsumableSoundEffect(selectedConsumable)
             }
         };
 
@@ -454,14 +463,15 @@ public sealed class BattleService
                 var enemyName = GetEnemyName(encounter, language);
                 var damage = Math.Max(1, selectedConsumable.Amount + random.Next(-2, 4) - encounter.Enemy.Defense);
                 encounter.CurrentHp = Math.Max(0, encounter.CurrentHp - damage);
+                var enemyDefeated = encounter.CurrentHp == 0;
                 steps.Add(new BattleSequenceStep
                 {
-                    Message = Text(language, $"{enemyName}に {damage}ダメージ！", $"{enemyName} takes {damage} damage!"),
+                    Message = FormatEnemyDamageMessage(language, enemyName, damage, enemyDefeated),
                     VisualCue = BattleVisualCue.EnemyHit,
                     AnimationFrames = 12
                 });
 
-                if (encounter.CurrentHp == 0)
+                if (enemyDefeated)
                 {
                     AppendEnemyDefeatStep(encounter, steps, language, "を ふきとばした！", " was blown away!");
                     return Victory(steps);
@@ -509,7 +519,10 @@ public sealed class BattleService
         {
             new()
             {
-                Message = Text(language, $"{GetPlayerName(player)}は {equipmentName}を そうびした！", $"{GetPlayerName(player)} equipped {equipmentName}!")
+                Message = Text(language, $"{GetPlayerName(player)}は {equipmentName}を そうびした！", $"{GetPlayerName(player)} equipped {equipmentName}!"),
+                VisualCue = BattleVisualCue.PlayerGuard,
+                AnimationFrames = 10,
+                SoundEffect = SoundEffect.Equip
             }
         };
 
@@ -534,7 +547,8 @@ public sealed class BattleService
                 {
                     Message = Text(language, "うまく にげきった！", "You got away safely!"),
                     VisualCue = BattleVisualCue.ItemUse,
-                    AnimationFrames = 8
+                    AnimationFrames = 8,
+                    SoundEffect = SoundEffect.Escape
                 }
             ]
         };
@@ -592,7 +606,10 @@ public sealed class BattleService
 
         steps.Add(new BattleSequenceStep
         {
-            Message = Text(language, $"{enemyName}の こうげき！", $"{enemyName} attacks!")
+            Message = Text(language, $"{enemyName}の こうげき！", $"{enemyName} attacks!"),
+            VisualCue = BattleVisualCue.EnemyAction,
+            AnimationFrames = 10,
+            SoundEffect = SoundEffect.Attack
         });
 
         var enemyDamage = Math.Max(1, encounter.Enemy.Attack + random.Next(1, 5) - GetPlayerDefense(player));
@@ -634,9 +651,43 @@ public sealed class BattleService
             {
                 Message = Text(language, $"{GetPlayerName(player)}は {spellName}を となえた！", $"{GetPlayerName(player)} casts {spellName}!"),
                 VisualCue = BattleVisualCue.SpellCast,
-                AnimationFrames = 16
+                AnimationFrames = 16,
+                SoundEffect = GetSpellSoundEffect(spell)
             }
         ];
+    }
+
+    private static SoundEffect GetSpellSoundEffect(SpellDefinition spell)
+    {
+        return spell.Id switch
+        {
+            "flare" => SoundEffect.Fire,
+            "spark" => SoundEffect.Raiden,
+            "heal" or "cleanse" => SoundEffect.Cure,
+            "venom" => SoundEffect.Poison,
+            "sleep" => SoundEffect.Magic,
+            _ => spell.EffectType switch
+            {
+                SpellEffectType.HealPlayer or SpellEffectType.CurePlayerStatus => SoundEffect.Cure,
+                SpellEffectType.PoisonEnemy => SoundEffect.Poison,
+                _ => SoundEffect.Magic
+            }
+        };
+    }
+
+    private static SoundEffect GetConsumableSoundEffect(ConsumableDefinition item)
+    {
+        return item.Id switch
+        {
+            "fire_orb" => SoundEffect.Fire,
+            "thunder_orb" => SoundEffect.Raiden,
+            _ => item.EffectType switch
+            {
+                ConsumableEffectType.HealHp or ConsumableEffectType.HealMp => SoundEffect.Cure,
+                ConsumableEffectType.DamageEnemy => SoundEffect.Fire,
+                _ => SoundEffect.Magic
+            }
+        };
     }
 
     private bool TryAppendEnemyPoisonTick(
@@ -658,7 +709,8 @@ public sealed class BattleService
         {
             Message = Text(language, $"どくが {enemyName}を むしばんだ！ {damage}ダメージ！", $"Poison eats at {enemyName}! {damage} damage!"),
             VisualCue = BattleVisualCue.PoisonTick,
-            AnimationFrames = 14
+            AnimationFrames = 14,
+            SoundEffect = SoundEffect.Poison
         });
 
         if (encounter.CurrentHp == 0)
@@ -696,7 +748,8 @@ public sealed class BattleService
         {
             Message = Text(language, $"{enemyName}は ねむっている。", $"{enemyName} is asleep."),
             VisualCue = BattleVisualCue.EnemyStatus,
-            AnimationFrames = 14
+            AnimationFrames = 14,
+            SoundEffect = SoundEffect.Magic
         });
 
         encounter.EnemyStatusTurnsRemaining--;
@@ -740,7 +793,10 @@ public sealed class BattleService
                 ? Text(language, $"{GetPlayerName(player)}は どくを うけた！", $"{GetPlayerName(player)} was poisoned!")
                 : Text(language, $"{GetPlayerName(player)}は ねむってしまった！", $"{GetPlayerName(player)} fell asleep!"),
             VisualCue = BattleVisualCue.PlayerStatus,
-            AnimationFrames = 14
+            AnimationFrames = 14,
+            SoundEffect = encounter.PlayerStatusEffect == BattleStatusEffect.Poison
+                ? SoundEffect.Poison
+                : SoundEffect.Magic
         });
     }
 
@@ -764,7 +820,8 @@ public sealed class BattleService
         {
             Message = Text(language, $"どくで {damage}ダメージを うけた！", $"Poison deals {damage} damage!"),
             VisualCue = BattleVisualCue.PoisonTick,
-            AnimationFrames = 12
+            AnimationFrames = 12,
+            SoundEffect = SoundEffect.Poison
         });
 
         if (player.CurrentHp == 0)
@@ -803,6 +860,16 @@ public sealed class BattleService
             VisualCue = BattleVisualCue.EnemyDefeat,
             AnimationFrames = 16
         });
+    }
+
+    private static string FormatEnemyDamageMessage(UiLanguage language, string enemyName, int damage, bool enemyDefeated)
+    {
+        if (enemyDefeated)
+        {
+            return Text(language, $"{damage}ダメージ！", $"{damage} damage!");
+        }
+
+        return Text(language, $"{enemyName}に{damage}ダメージ！", $"{enemyName} takes {damage} damage!");
     }
 
     private static BattleTurnResolution Victory(List<BattleSequenceStep> steps)

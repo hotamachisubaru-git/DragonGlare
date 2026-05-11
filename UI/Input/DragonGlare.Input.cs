@@ -9,10 +9,16 @@ public partial class DragonGlareAlpha
 {
     private void MoveNameCursor(int deltaX, int deltaY)
     {
+        var previousRow = nameCursorRow;
+        var previousColumn = nameCursorColumn;
         var table = GameContent.GetNameTable(selectedLanguage);
         nameCursorRow = Math.Clamp(nameCursorRow + deltaY, 0, table.Length - 1);
         var maxColumn = table[nameCursorRow].Length - 1;
         nameCursorColumn = Math.Clamp(nameCursorColumn + deltaX, 0, maxColumn);
+        if (previousRow != nameCursorRow || previousColumn != nameCursorColumn)
+        {
+            PlaySe(SoundEffect.Cursor);
+        }
     }
 
     private void AddSelectedCharacter()
@@ -51,6 +57,7 @@ public partial class DragonGlareAlpha
         if (playerName.Length > 0)
         {
             playerName.Remove(playerName.Length - 1, 1);
+            PlayCancelSe();
         }
     }
 
@@ -160,4 +167,16 @@ public partial class DragonGlareAlpha
         return WasPrimaryConfirmPressed();
     }
 
+    private void PlayCursorSeIfChanged(int previousValue, int currentValue)
+    {
+        if (previousValue != currentValue)
+        {
+            PlaySe(SoundEffect.Cursor);
+        }
+    }
+
+    private void PlayCancelSe()
+    {
+        PlaySe(SoundEffect.Cancel);
+    }
 }

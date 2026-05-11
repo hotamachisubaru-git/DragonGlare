@@ -119,9 +119,8 @@ public partial class DragonGlareAlpha
         encounterTransitionFrames = 0;
         ResetBattleSelectionState();
         battleMessage = message ?? GetDefaultBattleMessage();
-        battleMessageLines = [];
-        battleMessageVisibleLines = 0;
-        battleMessageLineTimer = 0;
+        ResetBattleResolutionState();
+        battleReturnFlowState = BattleFlowState.CommandSelection;
         battleIntroFramesRemaining = 0;
     }
 

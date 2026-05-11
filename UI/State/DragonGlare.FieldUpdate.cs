@@ -17,6 +17,7 @@ public partial class DragonGlareAlpha
             }
             else if (WasPressed(Keys.Escape))
             {
+                PlayCancelSe();
                 CloseFieldDialog();
             }
 

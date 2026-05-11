@@ -5,7 +5,7 @@
 ## 概要
 
 DragonGlareAlpha は、Windows 向けの MonoGame / DesktopGL 製 RPG 風プロトタイプです。
-メインプロジェクトは `DragonGlareAlpha.csproj` に統一されており、アプリ表示名は `DragonGlare Alpha`、現在の `AppVersion` は `1.4.0` です。
+メインプロジェクトは `DragonGlareAlpha.csproj` に統一されており、アプリ表示名は `DragonGlare Alpha`、現在の `AppVersion` は `1.4.1` です。
 
 プレイヤーは起動設定を選択したあと、モード選択、言語選択、名前入力、フィールド探索へ進みます。
 フィールドからはランダムエンカウントによるバトル、ショップ、銀行、NPC 会話、宝箱、マップ遷移などの基本的な RPG 体験を確認できます。
