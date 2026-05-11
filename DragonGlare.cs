@@ -2,7 +2,6 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Drawing.Text;
-using System.Reflection;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -528,9 +527,7 @@ public partial class DragonGlareAlpha : Game
         launchSettingsService.Save(launchSettings);
     }
 
-    public static string WindowTitle => 
-        typeof(DragonGlareAlpha).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion 
-        ?? "DragonGlare Alpha";
+    public static string WindowTitle => AppMetadata.WindowTitle;
 
     private void ToggleFullscreen()
     {

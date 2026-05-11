@@ -275,7 +275,7 @@ public sealed class PlayerProgress
         Level = Math.Clamp(Level, 1, MaxLevelValue);
         Experience = Math.Max(0, Experience);
         MaxHp = MaxHp <= 0 ? 20 : Math.Min(MaxHp, MaxVitalValue);
-        CurrentHp = CurrentHp <= 0 ? MaxHp : Math.Min(CurrentHp, MaxHp);
+        CurrentHp = Math.Clamp(CurrentHp, 0, MaxHp);
         MaxMp = MaxMp <= 0 ? 2 : Math.Min(MaxMp, MaxVitalValue);
         CurrentMp = Math.Clamp(CurrentMp, 0, MaxMp);
         BaseAttack = BaseAttack <= 0 ? 5 : BaseAttack;

@@ -12,12 +12,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>DragonGlare Alpha</AssemblyName>
-    <AppVersion>1.4.5</AppVersion>
+    <AppVersion>1.4.7</AppVersion>
     <AppDisplayVersion>DragonGlare Alpha $(AppVersion)</AppDisplayVersion>
     <Version>$(AppVersion)</Version>
     <AssemblyVersion>$(AppVersion)</AssemblyVersion>
     <FileVersion>$(AppVersion)</FileVersion>
-    <InformationalVersion>$(AppDisplayVersion)</InformationalVersion>
+    <InformationalVersion>$(AppVersion)</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <AssemblyTitle>$(AppDisplayVersion)</AssemblyTitle>
