@@ -173,6 +173,9 @@ public static class FieldContent
             RecoverMp: 999)
     ];
 
+    private static readonly Dictionary<string, FieldEventDefinition> FieldEventById =
+        FieldEvents.ToDictionary(e => e.Id, StringComparer.Ordinal);
+
     public static FieldEventDefinition? GetFieldEventById(string? eventId)
     {
         if (string.IsNullOrWhiteSpace(eventId))
@@ -180,6 +183,6 @@ public static class FieldContent
             return null;
         }
 
-        return FieldEvents.FirstOrDefault(fieldEvent => string.Equals(fieldEvent.Id, eventId, StringComparison.Ordinal));
+        return FieldEventById.TryGetValue(eventId, out var fieldEvent) ? fieldEvent : null;
     }
 }

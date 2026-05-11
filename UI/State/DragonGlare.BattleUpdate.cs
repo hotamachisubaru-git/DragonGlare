@@ -178,6 +178,8 @@ public partial class DragonGlareAlpha
         {
             battleListScroll = battleListCursor - BattleSelectionVisibleRows + 1;
         }
+
+        battleMessage = GetBattleSelectionMessage(battleFlowState);
     }
 
     private void OpenBattleSelectionMenu(BattleFlowState nextState)
@@ -193,7 +195,7 @@ public partial class DragonGlareAlpha
             return;
         }
 
-        battleMessage = GetBattleSelectionPromptMessage(nextState);
+        battleMessage = GetBattleSelectionMessage(nextState);
     }
 
     private void CloseBattleSelectionMenu(string? message = null)
@@ -419,7 +421,7 @@ public partial class DragonGlareAlpha
                     ? BattleFlowState.CommandSelection
                     : battleReturnFlowState;
                 battleMessage = battleFlowState is BattleFlowState.SpellSelection or BattleFlowState.ItemSelection or BattleFlowState.EquipmentSelection
-                    ? GetBattleSelectionPromptMessage(battleFlowState)
+                    ? GetBattleSelectionMessage(battleFlowState)
                     : GetBattleCommandPromptMessage();
                 break;
             default:

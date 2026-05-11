@@ -13,7 +13,7 @@ public static class Constants
     public const int VirtualWidth = 640;
     public const int VirtualHeight = 480;
     public const int TileSize = 32;
-    public const int FieldMovementAnimationDuration = 6;
+    public const int FieldMovementAnimationDuration = 9;
     public const int EncounterTransitionDuration = 26;
     public const int OpeningSourceViewportHeight = 240;
     public const int OpeningScreenFrames = 2978;

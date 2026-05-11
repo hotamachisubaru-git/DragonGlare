@@ -37,7 +37,7 @@ public partial class DragonGlareAlpha : Game
     private const int FieldSidebarEquipmentHeightTiles = 6;
     private const int ExpandedFieldViewportHorizontalMargin = 19;
     private const int ExpandedFieldViewportVerticalTrim = 16;
-    private const int FieldMovementAnimationDuration = 6;
+    private const int FieldMovementAnimationDuration = 9;
     private const int EncounterTransitionDuration = 26;
     private const int BattleSelectionVisibleRows = 4;
     private const int MaxPlayerNameLength = 6;

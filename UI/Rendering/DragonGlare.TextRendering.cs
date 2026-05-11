@@ -23,10 +23,10 @@ public partial class DragonGlareAlpha
         DrawText(g, text, x, y);
     }
 
-    private void DrawText(Graphics g, string text, int x, int y, Font? fontOverride = null)
+    private void DrawText(Graphics g, string text, int x, int y, Font? fontOverride = null, Color? color = null)
     {
         var font = fontOverride ?? uiFont;
-        using var brush = new SolidBrush(Color.White);
+        using var brush = new SolidBrush(color ?? Color.White);
         var lines = NormalizeTextLines(text);
         var textOffsetY = Math.Max(0f, (UiTypography.LineHeight - font.Height) / 2f);
         for (var index = 0; index < lines.Count; index++)
@@ -42,7 +42,8 @@ public partial class DragonGlareAlpha
         Font? fontOverride = null,
         StringAlignment alignment = StringAlignment.Near,
         StringAlignment lineAlignment = StringAlignment.Near,
-        bool wrap = false)
+        bool wrap = false,
+        Color? color = null)
     {
         var font = fontOverride ?? uiFont;
         var maxLines = Math.Max(1, bounds.Height / UiTypography.LineHeight);
@@ -57,7 +58,7 @@ public partial class DragonGlareAlpha
 
         var clipState = g.Save();
         g.SetClip(bounds);
-        using var brush = new SolidBrush(Color.White);
+        using var brush = new SolidBrush(color ?? Color.White);
         var textOffsetY = Math.Max(0f, (UiTypography.LineHeight - font.Height) / 2f);
 
         for (var index = 0; index < lines.Count; index++)

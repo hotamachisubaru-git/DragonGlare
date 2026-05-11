@@ -700,7 +700,7 @@ public partial class DragonGlareAlpha
     {
         return selectedLanguage == UiLanguage.English
             ? "Choose a spell."
-            : "どの じゅもん？";
+            : "どのじゅもんをつかう？";
     }
 
     private string GetBattleItemPromptMessage()
@@ -726,6 +726,33 @@ public partial class DragonGlareAlpha
             BattleFlowState.EquipmentSelection => GetBattleEquipmentPromptMessage(),
             _ => GetBattleCommandPromptMessage()
         };
+    }
+
+    private string GetBattleSelectionMessage(BattleFlowState selectionState)
+    {
+        var prompt = GetBattleSelectionPromptMessage(selectionState);
+        if (selectionState != BattleFlowState.SpellSelection)
+        {
+            return prompt;
+        }
+
+        var entries = GetBattleSpellEntries();
+        if (entries.Count == 0)
+        {
+            return prompt;
+        }
+
+        var selectedIndex = Math.Clamp(battleListCursor, 0, entries.Count - 1);
+        var selectedSpell = entries[selectedIndex].Spell;
+        if (selectedSpell is null)
+        {
+            return prompt;
+        }
+
+        var description = GameContent.GetSpellDescription(selectedSpell, selectedLanguage);
+        return string.IsNullOrWhiteSpace(description)
+            ? prompt
+            : $"{prompt}\n{description}";
     }
 
     private string GetBattleNoSpellsMessage()

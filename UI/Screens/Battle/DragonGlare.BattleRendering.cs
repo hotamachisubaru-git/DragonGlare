@@ -8,6 +8,7 @@ public partial class DragonGlareAlpha
     private static readonly Color BattleTopWindowBackgroundColor = Color.FromArgb(35, 33, 50);
     private static readonly Color BattleMessageWindowFallbackColor = Color.FromArgb(10, 28, 36);
     private static readonly Color BattleMessageWindowTintColor = Color.FromArgb(150, 8, 24, 34);
+    private static readonly Color BattleStatusTextColor = Color.FromArgb(255, 82, 82);
     private static readonly Rectangle BattleMessageWindowBackdropSourceRect = new(0, 160, 256, 64);
 
     private void DrawBattle(Graphics g)
@@ -373,13 +374,18 @@ public partial class DragonGlareAlpha
             ? string.Empty
             : GetBattleStatusEffectLabel(currentEncounter.PlayerStatusEffect);
 
-        DrawText(g, $"{GetDisplayPlayerName()}  :  {classLabel}", new Rectangle(statX, rect.Y + 2, rect.Width - 16, 24), smallFont);
+        DrawText(g, $"{GetDisplayPlayerName()}  {classLabel}", new Rectangle(statX, rect.Y + 2, rect.Width - 16, 24), smallFont);
         DrawText(g, $"HP:{player.CurrentHp}", new Rectangle(statX, rect.Y + lineHeight + 6, leftColumnWidth, 24), smallFont);
         DrawText(g, mpText, new Rectangle(statX, mpY, leftColumnWidth, 24), smallFont);
         DrawText(g, exText, new Rectangle(exX, mpY, exColumnWidth, 24), smallFont);
         if (!string.IsNullOrWhiteSpace(playerStatusLabel))
         {
-            DrawText(g, playerStatusLabel, new Rectangle(exX, rect.Y + lineHeight + 6, exColumnWidth, 24), smallFont);
+            DrawText(
+                g,
+                playerStatusLabel,
+                new Rectangle(exX, rect.Y + lineHeight + 6, exColumnWidth, 24),
+                smallFont,
+                color: BattleStatusTextColor);
         }
     }
 
@@ -504,8 +510,7 @@ public partial class DragonGlareAlpha
         var statusLabel = currentEncounter is null
             ? string.Empty
             : GetBattleStatusEffectLabel(currentEncounter.EnemyStatusEffect);
-        var nameText = string.IsNullOrWhiteSpace(statusLabel) ? targetName : $"{targetName} [{statusLabel}]";
-        DrawText(g, nameText, new Rectangle(rect.X, rect.Y, rect.Width - 176, rect.Height), smallFont);
+        DrawBattleEnemyName(g, targetName, statusLabel, new Rectangle(rect.X, rect.Y, rect.Width - 176, rect.Height));
         DrawText(g, countLabel, new Rectangle(rect.Right - 204, rect.Y, 44, rect.Height), smallFont, StringAlignment.Far);
         if (currentEncounter is null)
         {
@@ -513,6 +518,28 @@ public partial class DragonGlareAlpha
         }
 
         DrawText(g, $"HP {currentEncounter.CurrentHp}/{currentEncounter.Enemy.MaxHp}", new Rectangle(rect.Right - 150, rect.Y, 150, rect.Height), smallFont, StringAlignment.Far);
+    }
+
+    private void DrawBattleEnemyName(Graphics g, string targetName, string statusLabel, Rectangle rect)
+    {
+        if (string.IsNullOrWhiteSpace(statusLabel))
+        {
+            DrawText(g, targetName, rect, smallFont);
+            return;
+        }
+
+        var statusText = $" [{statusLabel}]";
+        var statusWidth = MeasureTextWidth(g, statusText, smallFont);
+        var nameWidth = Math.Max(1, rect.Width - statusWidth);
+        var trimmedTargetName = TrimLineToWidth(g, targetName, smallFont, nameWidth);
+
+        DrawText(g, trimmedTargetName, new Rectangle(rect.X, rect.Y, nameWidth, rect.Height), smallFont);
+        DrawText(
+            g,
+            statusText,
+            new Rectangle(rect.X + MeasureTextWidth(g, trimmedTargetName, smallFont), rect.Y, statusWidth, rect.Height),
+            smallFont,
+            color: BattleStatusTextColor);
     }
 
     private void DrawBattleMessagePane(Graphics g, Rectangle rect, string footer)

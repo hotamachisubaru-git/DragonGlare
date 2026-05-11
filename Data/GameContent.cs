@@ -5,7 +5,6 @@ using DragonGlareAlpha.Domain.Field;
 using DragonGlareAlpha.Domain.Items;
 using DragonGlareAlpha.Domain.Player;
 
-
 namespace DragonGlareAlpha.Data;
 
 public static class GameContent
@@ -107,14 +106,17 @@ public static class GameContent
         new("royal_jelly", "おうじょのミツ", "HPを 60かいふく", ConsumableEffectType.HealHp, 60, 88, "Royal Jelly", "Restores 60 HP")
     ];
 
-    public static readonly ShopProductDefinition[] ShopCatalog =
+    private static readonly Lazy<ShopProductDefinition[]> _shopCatalog = new(() =>
         ConsumableCatalog
             .Select(item => new ShopProductDefinition(Consumable: item))
             .Concat(WeaponCatalog.Select(item => new ShopProductDefinition(Equipment: item)))
             .Concat(ArmorCatalog.Select(item => new ShopProductDefinition(Equipment: item)))
             .OrderBy(item => item.Price)
             .ThenBy(item => item.Name, StringComparer.Ordinal)
-            .ToArray();
+            .ToArray()
+    );
+
+    public static ShopProductDefinition[] ShopCatalog => _shopCatalog.Value;
 
     public static readonly EnemyDefinition[] EnemyCatalog =
     [
@@ -135,6 +137,18 @@ public static class GameContent
     public static FieldTransitionDefinition[] FieldTransitions => FieldContent.FieldTransitions;
 
     public static FieldEventDefinition[] FieldEvents => FieldContent.FieldEvents;
+
+    private static readonly Dictionary<string, WeaponDefinition> WeaponById =
+        WeaponCatalog.ToDictionary(item => item.Id, StringComparer.Ordinal);
+
+    private static readonly Dictionary<string, ArmorDefinition> ArmorById =
+        ArmorCatalog.ToDictionary(item => item.Id, StringComparer.Ordinal);
+
+    private static readonly Dictionary<string, ConsumableDefinition> ConsumableById =
+        ConsumableCatalog.ToDictionary(item => item.Id, StringComparer.Ordinal);
+
+    private static readonly Lazy<Dictionary<string, ShopProductDefinition>> ShopProductById =
+        new(() => ShopCatalog.ToDictionary(item => item.Id, StringComparer.Ordinal));
 
     public static string[][] GetNameTable(UiLanguage language)
     {
@@ -221,7 +235,7 @@ public static class GameContent
             return null;
         }
 
-        return WeaponCatalog.FirstOrDefault(item => string.Equals(item.Id, itemId, StringComparison.Ordinal));
+        return WeaponById.TryGetValue(itemId, out var item) ? item : null;
     }
 
     public static ArmorDefinition? GetArmorById(string? itemId)
@@ -231,7 +245,7 @@ public static class GameContent
             return null;
         }
 
-        return ArmorCatalog.FirstOrDefault(item => string.Equals(item.Id, itemId, StringComparison.Ordinal));
+        return ArmorById.TryGetValue(itemId, out var item) ? item : null;
     }
 
     public static ConsumableDefinition? GetConsumableById(string? itemId)
@@ -241,7 +255,7 @@ public static class GameContent
             return null;
         }
 
-        return ConsumableCatalog.FirstOrDefault(item => string.Equals(item.Id, itemId, StringComparison.Ordinal));
+        return ConsumableById.TryGetValue(itemId, out var item) ? item : null;
     }
 
     public static FieldEventDefinition? GetFieldEventById(string? eventId)
@@ -261,7 +275,7 @@ public static class GameContent
             return null;
         }
 
-        return ShopCatalog.FirstOrDefault(item => string.Equals(item.Id, itemId, StringComparison.Ordinal));
+        return ShopProductById.Value.TryGetValue(itemId, out var item) ? item : null;
     }
 
     public static string GetItemName(string? itemId)
