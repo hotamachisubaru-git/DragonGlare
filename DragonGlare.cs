@@ -517,7 +517,8 @@ public partial class DragonGlareAlpha : Game
         launchSettings = new LaunchSettings
         {
             DisplayMode = displayMode,
-            PromptOnStartup = promptOnStartup
+            PromptOnStartup = promptOnStartup,
+            Volume = GetApplicationVolume() ?? launchSettings.Volume
         };
     }
 
@@ -556,6 +557,8 @@ public partial class DragonGlareAlpha : Game
 
     protected override void OnExiting(object sender, EventArgs args)
     {
+        SaveLaunchSettings();
+
         if (!skipSaveOnClose)
         {
             try

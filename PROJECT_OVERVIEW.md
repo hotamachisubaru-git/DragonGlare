@@ -145,8 +145,6 @@ dotnet test DragonGlareAlpha.Tests\DragonGlareAlpha.Tests.csproj
 
 ## 今後の作業候補
 
-- ブラッシュアップ
-- バグ修正
 - リファクタリング
 - リリース
 

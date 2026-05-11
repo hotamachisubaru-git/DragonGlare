@@ -7,6 +7,15 @@ using DragonGlareAlpha.Domain.Player;
 
 namespace DragonGlareAlpha.Data;
 
+/// <summary>
+/// Central access point for all game content.
+/// Catalogue data lives in the dedicated files:
+///   Data/Enemies.cs       – EnemyDefinition[]  (Enemies.EnemyCatalog)
+///   Data/Spells.cs        – SpellDefinition[]  (Spells.SpellCatalog)
+///   Data/Equipment.cs     – WeaponDefinition[] / ArmorDefinition[]
+///   Data/Consumables.cs   – ConsumableDefinition[]
+///   Data/FieldContent.cs  – FieldTransitionDefinition[] / FieldEventDefinition[]
+/// </summary>
 public static class GameContent
 {
     public static readonly string[][] JapaneseNameTable =
@@ -47,70 +56,18 @@ public static class GameContent
         { BattleActionType.Spell, BattleActionType.Run }
     };
 
-    public static readonly SpellDefinition[] SpellCatalog =
-    [
-        new("flare", "メラ", "FLARE", "てきに 火のダメージ", "Fire damage to one enemy.", 2, 1, SpellEffectType.DamageEnemy, 12),
-        new("heal", "ホイミ", "HEAL", "HPを 18かいふく", "Restore 18 HP.", 3, 2, SpellEffectType.HealPlayer, 18),
-        new("venom", "ポイズン", "VENOM", "てきを どくにする", "Poison one enemy.", 4, 3, SpellEffectType.PoisonEnemy, 4, 78, 4),
-        new("spark", "ライデン", "SPARK", "てきに 雷の大ダメージ", "Heavy lightning damage.", 5, 4, SpellEffectType.DamageEnemy, 24),
-        new("cleanse", "キュア", "CLEANSE", "状態異常を なおす", "Remove your status effect.", 3, 4, SpellEffectType.CurePlayerStatus, 0),
-        new("sleep", "ラリホー", "SLEEP", "てきを ねむらせる", "Put one enemy to sleep.", 5, 5, SpellEffectType.SleepEnemy, 0, 70, 2)
-    ];
-
-    public static readonly WeaponDefinition[] WeaponCatalog =
-    [
-        new("stick", "ぼう", 16, 2, "Stick"),
-        new("club", "こんぼう", 32, 4, "Club"),
-        new("bamboo_spear", "たけやり", 52, 6, "Bamboo Spear"),
-        new("thorn_club", "とげのぼう", 64, 7, "Thorn Club"),
-        new("wood_blade", "ぼくとう", 82, 8, "Wood Blade"),
-        new("stone_axe", "いしのおの", 128, 11, "Stone Axe"),
-        new("bronze_sword", "どうのつるぎ", 196, 14, "Bronze Sword"),
-        new("iron_sword", "てつのけん", 288, 17, "Iron Sword"),
-        new("steel_blade", "はがねけん", 416, 20, "Steel Blade"),
-        new("dragon_lance", "りゅうのやり", 580, 24, "Dragon Lance")
-    ];
-
-    public static readonly ArmorDefinition[] ArmorCatalog =
-    [
-        new("cloth_tunic", "ぬののふく", 18, 1, EnglishName: "Cloth Tunic"),
-        new("leather_armor", "かわのよろい", 48, 3, EnglishName: "Leather Armor"),
-        new("scale_vest", "うろこふく", 72, 4, EnglishName: "Scale Vest"),
-        new("bronze_mail", "どうよろい", 108, 6, EnglishName: "Bronze Mail"),
-        new("iron_armor", "てつよろい", 152, 8, EnglishName: "Iron Armor"),
-        new("steel_armor", "はがねよろい", 224, 10, EnglishName: "Steel Armor"),
-        new("silver_mail", "ぎんむねあて", 336, 13, EnglishName: "Silver Mail"),
-        new("dragon_mail", "りゅうよろい", 492, 16, EnglishName: "Dragon Mail"),
-        new("leather_cap", "かわぼうし", 38, 1, EquipmentSlot.Head, "Leather Cap"),
-        new("bronze_helm", "どうのかぶと", 112, 2, EquipmentSlot.Head, "Bronze Helm"),
-        new("steel_helm", "はがねかぶと", 238, 4, EquipmentSlot.Head, "Steel Helm"),
-        new("leather_bracers", "かわのこて", 34, 1, EquipmentSlot.Arms, "Leather Bracers"),
-        new("bronze_gauntlets", "どうのこて", 104, 2, EquipmentSlot.Arms, "Bronze Gauntlets"),
-        new("steel_gauntlets", "はがねのこて", 226, 4, EquipmentSlot.Arms, "Steel Gauntlets"),
-        new("leather_leggings", "かわレギンス", 42, 1, EquipmentSlot.Legs, "Leather Leggings"),
-        new("bronze_greaves", "どうレギンス", 116, 2, EquipmentSlot.Legs, "Bronze Greaves"),
-        new("steel_greaves", "はがねレギンス", 232, 4, EquipmentSlot.Legs, "Steel Greaves"),
-        new("travel_boots", "たびのブーツ", 28, 1, EquipmentSlot.Feet, "Travel Boots"),
-        new("bronze_boots", "どうのブーツ", 96, 2, EquipmentSlot.Feet, "Bronze Boots"),
-        new("steel_boots", "はがねブーツ", 212, 3, EquipmentSlot.Feet, "Steel Boots")
-    ];
-
-    public static readonly ConsumableDefinition[] ConsumableCatalog =
-    [
-        new("healing_herb", "やくそう", "HPを 12かいふく", ConsumableEffectType.HealHp, 12, 10, "Healing Herb", "Restores 12 HP"),
-        new("mana_seed", "まりょくのたね", "MPを 3かいふく", ConsumableEffectType.HealMp, 3, 24, "Mana Seed", "Restores 3 MP"),
-        new("fire_orb", "ひのたま", "てきに 18ダメージ", ConsumableEffectType.DamageEnemy, 18, 36, "Fire Orb", "Deals 18 damage"),
-        new("healing_bloom", "いやしぐさ", "HPを 28かいふく", ConsumableEffectType.HealHp, 28, 26, "Healing Bloom", "Restores 28 HP"),
-        new("ether_drop", "まりょくのみず", "MPを 7かいふく", ConsumableEffectType.HealMp, 7, 44, "Ether Drop", "Restores 7 MP"),
-        new("thunder_orb", "いかずちだま", "てきに 32ダメージ", ConsumableEffectType.DamageEnemy, 32, 64, "Thunder Orb", "Deals 32 damage"),
-        new("royal_jelly", "おうじょのミツ", "HPを 60かいふく", ConsumableEffectType.HealHp, 60, 88, "Royal Jelly", "Restores 60 HP")
-    ];
+    // ── Catalogue references (data lives in dedicated files) ─────────────────
+    public static SpellDefinition[]    SpellCatalog    => Spells.SpellCatalog;
+    public static WeaponDefinition[]   WeaponCatalog   => Equipment.WeaponCatalog;
+    public static ArmorDefinition[]    ArmorCatalog    => Equipment.ArmorCatalog;
+    public static ConsumableDefinition[] ConsumableCatalog => Consumables.ConsumableCatalog;
+    public static EnemyDefinition[]    EnemyCatalog    => Enemies.EnemyCatalog;
 
     private static readonly Lazy<ShopProductDefinition[]> _shopCatalog = new(() =>
-        ConsumableCatalog
+        Consumables.ConsumableCatalog
             .Select(item => new ShopProductDefinition(Consumable: item))
-            .Concat(WeaponCatalog.Select(item => new ShopProductDefinition(Equipment: item)))
-            .Concat(ArmorCatalog.Select(item => new ShopProductDefinition(Equipment: item)))
+            .Concat(Equipment.WeaponCatalog.Select(item => new ShopProductDefinition(Equipment: item)))
+            .Concat(Equipment.ArmorCatalog.Select(item => new ShopProductDefinition(Equipment: item)))
             .OrderBy(item => item.Price)
             .ThenBy(item => item.Name, StringComparer.Ordinal)
             .ToArray()
@@ -118,38 +75,24 @@ public static class GameContent
 
     public static ShopProductDefinition[] ShopCatalog => _shopCatalog.Value;
 
-    public static readonly EnemyDefinition[] EnemyCatalog =
-    [
-        new("horn_slime", "ホーンスライム", FieldMapId.Hub, 1, 2, 6, 18, 5, 1, 8, 12, new EnemyDropDefinition("healing_herb", 24), SpriteAssetName: "horn_slime.png", EnglishName: "Horn Slime"),
-        new("moss_toad", "モストード", FieldMapId.Hub, 1, 4, 4, 24, 7, 2, 12, 18, new EnemyDropDefinition("healing_herb", 18), SpriteAssetName: "moss_toad.png", EnglishName: "Moss Toad", AttackStatusEffect: BattleStatusEffect.Poison, AttackStatusChancePercent: 22, AttackStatusTurns: 4),
-        new("ember_bat", "エンバーバット", FieldMapId.Hub, 3, 6, 2, 30, 9, 3, 16, 24, new EnemyDropDefinition("mana_seed", 14), SpriteAssetName: "ember_bat.png", EnglishName: "Ember Bat"),
-        new("iron_mite", "アイアンマイト", FieldMapId.Castle, 1, 4, 5, 26, 8, 3, 13, 20, new EnemyDropDefinition("healing_herb", 18), SpriteAssetName: "iron_mite.png", EnglishName: "Iron Mite"),
-        new("night_shade", "ナイトシェイド", FieldMapId.Castle, 3, 7, 3, 38, 11, 5, 24, 34, new EnemyDropDefinition("mana_seed", 15), SpriteAssetName: "night_shade.png", EnglishName: "Night Shade", AttackStatusEffect: BattleStatusEffect.Sleep, AttackStatusChancePercent: 24, AttackStatusTurns: 1),
-        new("bell_armor", "ベルアーマー", FieldMapId.Castle, 5, 10, 2, 50, 14, 7, 38, 54, new EnemyDropDefinition("fire_orb", 12), SpriteAssetName: "bell_armor.png", EnglishName: "Bell Armor"),
-        new("bog_lizard", "ボグリザード", FieldMapId.Field, 2, 5, 5, 34, 10, 4, 20, 28, new EnemyDropDefinition("healing_herb", 18), SpriteAssetName: "enemy_slime.png", EnglishName: "Bog Lizard", AttackStatusEffect: BattleStatusEffect.Poison, AttackStatusChancePercent: 18, AttackStatusTurns: 4),
-        new("stone_wolf", "ストーンウルフ", FieldMapId.Field, 4, 8, 4, 46, 14, 7, 34, 46, new EnemyDropDefinition("mana_seed", 15), SpriteAssetName: "stone_wolf.png", EnglishName: "Stone Wolf"),
-        new("dragon_pup", "ドラゴンパピー", FieldMapId.Field, 6, 11, 3, 58, 18, 9, 48, 68, new EnemyDropDefinition("fire_orb", 12), SpriteAssetName: "dragon_pup.png", EnglishName: "Dragon Pup"),
-        new("wyvern_scout", "ワイバーンスカウト", FieldMapId.Field, 9, 15, 3, 72, 21, 11, 66, 96, new EnemyDropDefinition("mana_seed", 10), SpriteAssetName: "wyvern_scout.png", EnglishName: "Wyvern Scout", AttackStatusEffect: BattleStatusEffect.Sleep, AttackStatusChancePercent: 18, AttackStatusTurns: 1),
-        new("lava_drake", "ラヴァドレイク", FieldMapId.Field, 13, 99, 2, 90, 25, 13, 88, 132, new EnemyDropDefinition("fire_orb", 15), SpriteAssetName: "lava_drake.png", EnglishName: "Lava Drake"),
-        new("ancient_wyrm", "エンシェントワーム", FieldMapId.Field, 18, 99, 1, 112, 29, 15, 120, 180, new EnemyDropDefinition("mana_seed", 12), SpriteAssetName: "ancient_wyrm.png", EnglishName: "Ancient Wyrm", AttackStatusEffect: BattleStatusEffect.Poison, AttackStatusChancePercent: 30, AttackStatusTurns: 5)
-    ];
-
     public static FieldTransitionDefinition[] FieldTransitions => FieldContent.FieldTransitions;
 
     public static FieldEventDefinition[] FieldEvents => FieldContent.FieldEvents;
 
+    // ── Lookup dictionaries ──────────────────────────────────────────────────
     private static readonly Dictionary<string, WeaponDefinition> WeaponById =
-        WeaponCatalog.ToDictionary(item => item.Id, StringComparer.Ordinal);
+        Equipment.WeaponCatalog.ToDictionary(item => item.Id, StringComparer.Ordinal);
 
     private static readonly Dictionary<string, ArmorDefinition> ArmorById =
-        ArmorCatalog.ToDictionary(item => item.Id, StringComparer.Ordinal);
+        Equipment.ArmorCatalog.ToDictionary(item => item.Id, StringComparer.Ordinal);
 
     private static readonly Dictionary<string, ConsumableDefinition> ConsumableById =
-        ConsumableCatalog.ToDictionary(item => item.Id, StringComparer.Ordinal);
+        Consumables.ConsumableCatalog.ToDictionary(item => item.Id, StringComparer.Ordinal);
 
     private static readonly Lazy<Dictionary<string, ShopProductDefinition>> ShopProductById =
         new(() => ShopCatalog.ToDictionary(item => item.Id, StringComparer.Ordinal));
 
+    // ── Name-table helpers ───────────────────────────────────────────────────
     public static string[][] GetNameTable(UiLanguage language)
     {
         return language == UiLanguage.Japanese ? JapaneseNameTable : EnglishNameTable;
@@ -161,6 +104,7 @@ public static class GameContent
         return labels[row, column];
     }
 
+    // ── Localised name / description helpers ─────────────────────────────────
     public static string GetSpellName(SpellDefinition spell, UiLanguage language)
     {
         return language == UiLanguage.English ? spell.EnglishName : spell.Name;
@@ -228,6 +172,7 @@ public static class GameContent
             : string.Empty;
     }
 
+    // ── By-ID lookups ─────────────────────────────────────────────────────────
     public static WeaponDefinition? GetWeaponById(string? itemId)
     {
         if (string.IsNullOrWhiteSpace(itemId))

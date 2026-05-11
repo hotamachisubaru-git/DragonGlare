@@ -11,9 +11,9 @@
     <TieredCompilation>false</TieredCompilation>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>DragonGlare Alpha</AssemblyName>
-    <AppVersion>1.4.7</AppVersion>
-    <AppDisplayVersion>DragonGlare Alpha $(AppVersion)</AppDisplayVersion>
+    <AssemblyName>DragonGlare Beta</AssemblyName>
+    <AppVersion>1.0.0</AppVersion>
+    <AppDisplayVersion>DragonGlare Beta $(AppVersion)</AppDisplayVersion>
     <Version>$(AppVersion)</Version>
     <AssemblyVersion>$(AppVersion)</AssemblyVersion>
     <FileVersion>$(AppVersion)</FileVersion>
@@ -22,7 +22,7 @@
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <AssemblyTitle>$(AppDisplayVersion)</AssemblyTitle>
     <Title>$(AppDisplayVersion)</Title>
-    <Product>DragonGlare Alpha</Product>
+    <Product>DragonGlare Beta</Product>
     <Company>OnsenStudio</Company>
     <Copyright>OnsenStudio</Copyright>
     <EnableDefaultItems>false</EnableDefaultItems>

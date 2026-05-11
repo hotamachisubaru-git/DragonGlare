@@ -85,7 +85,39 @@ public partial class DragonGlareAlpha
         RegisterSe(SoundEffect.Cancel, "SFC_cancel.mp3");
         RegisterSe(SoundEffect.Escape, "SFC_escape.mp3");
 
+        if (launchSettings.Volume.HasValue)
+        {
+            SetApplicationVolume(launchSettings.Volume.Value);
+        }
+
         UpdateBgm();
+    }
+
+    private float? GetApplicationVolume()
+    {
+        try
+        {
+            using var enumerator = new MMDeviceEnumerator();
+            using var device = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            return device.AudioSessionManager.SimpleAudioVolume.Volume;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private void SetApplicationVolume(float volume)
+    {
+        try
+        {
+            using var enumerator = new MMDeviceEnumerator();
+            using var device = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            device.AudioSessionManager.SimpleAudioVolume.Volume = Math.Clamp(volume, 0f, 1f);
+        }
+        catch
+        {
+        }
     }
 
     private void RegisterBgm(BgmTrack track, string sceneName, params string[] fallbackSceneNames)
