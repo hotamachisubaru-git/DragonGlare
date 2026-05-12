@@ -1,0 +1,11 @@
+atk1=攻撃音
+def=防御音
+magic=風魔法の音
+cure=回復魔法の音
+poison=毒魔法の音
+raiden=雷魔法の音
+fire=火魔法の音
+equip=装備音
+cursor=カーソル音
+cancel=キャンセル音
+escape=逃走音
