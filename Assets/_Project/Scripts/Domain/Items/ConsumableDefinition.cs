@@ -1,0 +1,13 @@
+using DragonGlare.Domain;
+
+namespace DragonGlare.Domain.Items;
+
+public sealed record ConsumableDefinition(
+    string Id,
+    string Name,
+    string Description,
+    ConsumableEffectType EffectType,
+    int Amount,
+    int Price,
+    string EnglishName = "",
+    string EnglishDescription = "");
