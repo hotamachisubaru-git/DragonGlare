@@ -67,13 +67,13 @@ namespace DragonGlare
 
         private Vector2Int GetMovementInput()
         {
-            if (Input.HeldKeys.Contains(KeyCode.Up) || Input.HeldKeys.Contains(KeyCode.W))
+            if (Input.HeldKeys.Contains(KeyCode.UpArrow) || Input.HeldKeys.Contains(KeyCode.W))
                 return new Vector2Int(0, -1);
-            if (Input.HeldKeys.Contains(KeyCode.Down) || Input.HeldKeys.Contains(KeyCode.S))
+            if (Input.HeldKeys.Contains(KeyCode.DownArrow) || Input.HeldKeys.Contains(KeyCode.S))
                 return new Vector2Int(0, 1);
-            if (Input.HeldKeys.Contains(KeyCode.Left) || Input.HeldKeys.Contains(KeyCode.A))
+            if (Input.HeldKeys.Contains(KeyCode.LeftArrow) || Input.HeldKeys.Contains(KeyCode.A))
                 return new Vector2Int(-1, 0);
-            if (Input.HeldKeys.Contains(KeyCode.Right) || Input.HeldKeys.Contains(KeyCode.D))
+            if (Input.HeldKeys.Contains(KeyCode.RightArrow) || Input.HeldKeys.Contains(KeyCode.D))
                 return new Vector2Int(1, 0);
             return Vector2Int.zero;
         }

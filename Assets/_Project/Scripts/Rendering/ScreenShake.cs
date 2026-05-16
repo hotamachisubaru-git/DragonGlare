@@ -36,8 +36,8 @@ namespace DragonGlare
 
             while (elapsed < duration)
             {
-                float x = Random.Range(-1f, 1f) * magnitude;
-                float y = Random.Range(-1f, 1f) * magnitude;
+                float x = UnityEngine.Random.Range(-1f, 1f) * magnitude;
+                float y = UnityEngine.Random.Range(-1f, 1f) * magnitude;
                 cameraTransform.localPosition = originalPosition + new Vector3(x, y, 0f);
                 elapsed += Time.deltaTime;
                 yield return null;

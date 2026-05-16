@@ -15,9 +15,9 @@ namespace DragonGlare
         public override void OnUpdate()
         {
             var previousCursor = Session.ModeCursor;
-            if (Input.WasPressed(KeyCode.Up) || Input.WasPressed(KeyCode.W))
+            if (Input.WasPressed(KeyCode.UpArrow) || Input.WasPressed(KeyCode.W))
                 Session.ModeCursor = Mathf.Max(0, Session.ModeCursor - 1);
-            else if (Input.WasPressed(KeyCode.Down) || Input.WasPressed(KeyCode.S))
+            else if (Input.WasPressed(KeyCode.DownArrow) || Input.WasPressed(KeyCode.S))
                 Session.ModeCursor = Mathf.Min(3, Session.ModeCursor + 1);
 
             if (previousCursor != Session.ModeCursor)

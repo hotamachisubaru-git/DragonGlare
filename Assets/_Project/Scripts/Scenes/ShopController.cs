@@ -29,9 +29,9 @@ namespace DragonGlare
         private void UpdateWelcome()
         {
             var previousCursor = Session.ShopPromptCursor;
-            if (Input.WasPressed(KeyCode.Up) || Input.WasPressed(KeyCode.W))
+            if (Input.WasPressed(KeyCode.UpArrow) || Input.WasPressed(KeyCode.W))
                 Session.ShopPromptCursor = Mathf.Max(0, Session.ShopPromptCursor - 1);
-            else if (Input.WasPressed(KeyCode.Down) || Input.WasPressed(KeyCode.S))
+            else if (Input.WasPressed(KeyCode.DownArrow) || Input.WasPressed(KeyCode.S))
                 Session.ShopPromptCursor = Mathf.Min(2, Session.ShopPromptCursor + 1);
 
             if (previousCursor != Session.ShopPromptCursor)
@@ -71,9 +71,9 @@ namespace DragonGlare
             var visibleEntries = Session.GetShopVisibleEntries();
             var maxIndex = visibleEntries.Count - 1;
             var previousItemCursor = Session.ShopItemCursor;
-            if (Input.WasPressed(KeyCode.Up) || Input.WasPressed(KeyCode.W))
+            if (Input.WasPressed(KeyCode.UpArrow) || Input.WasPressed(KeyCode.W))
                 Session.ShopItemCursor = Mathf.Max(0, Session.ShopItemCursor - 1);
-            else if (Input.WasPressed(KeyCode.Down) || Input.WasPressed(KeyCode.S))
+            else if (Input.WasPressed(KeyCode.DownArrow) || Input.WasPressed(KeyCode.S))
                 Session.ShopItemCursor = Mathf.Min(maxIndex, Session.ShopItemCursor + 1);
 
             if (previousItemCursor != Session.ShopItemCursor)

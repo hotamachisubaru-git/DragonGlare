@@ -25,8 +25,8 @@ namespace DragonGlare.Tests
                 Language = UiLanguage.English
             };
 
-            var json = System.Text.Json.JsonSerializer.Serialize(original);
-            var deserialized = System.Text.Json.JsonSerializer.Deserialize<SaveData>(json);
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(original);
+            var deserialized = Newtonsoft.Json.JsonConvert.DeserializeObject<SaveData>(json);
 
             Assert.AreEqual(original.Name, deserialized.Name);
             Assert.AreEqual(original.Level, deserialized.Level);

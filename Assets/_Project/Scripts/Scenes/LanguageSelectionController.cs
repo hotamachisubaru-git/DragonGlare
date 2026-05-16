@@ -21,9 +21,9 @@ namespace DragonGlare
             }
 
             var previousCursor = Session.LanguageCursor;
-            if (Input.WasPressed(KeyCode.Up) || Input.WasPressed(KeyCode.W))
+            if (Input.WasPressed(KeyCode.UpArrow) || Input.WasPressed(KeyCode.W))
                 Session.LanguageCursor = Mathf.Max(0, Session.LanguageCursor - 1);
-            else if (Input.WasPressed(KeyCode.Down) || Input.WasPressed(KeyCode.S))
+            else if (Input.WasPressed(KeyCode.DownArrow) || Input.WasPressed(KeyCode.S))
                 Session.LanguageCursor = Mathf.Min(1, Session.LanguageCursor + 1);
 
             if (previousCursor != Session.LanguageCursor)

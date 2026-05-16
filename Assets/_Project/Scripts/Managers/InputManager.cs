@@ -8,8 +8,8 @@ namespace DragonGlare
         private readonly HashSet<KeyCode> heldKeys = new();
         private readonly HashSet<KeyCode> pressedKeys = new();
 
-        public IReadOnlySet<KeyCode> HeldKeys => heldKeys;
-        public IReadOnlySet<KeyCode> PressedKeys => pressedKeys;
+        public IReadOnlyCollection<KeyCode> HeldKeys => heldKeys;
+        public IReadOnlyCollection<KeyCode> PressedKeys => pressedKeys;
 
         public void PollInput()
         {

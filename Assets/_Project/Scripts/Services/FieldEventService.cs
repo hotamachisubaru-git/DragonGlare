@@ -7,6 +7,18 @@ namespace DragonGlare.Services;
 
 public sealed class FieldEventService
 {
+    public IReadOnlyList<FieldEventDefinition> GetEventsForMap(FieldMapId mapId)
+    {
+        return FieldContent.FieldEvents
+            .Where(fieldEvent => fieldEvent.MapId == mapId)
+            .ToArray();
+    }
+
+    public FieldInteractionResult Interact(FieldEventDefinition fieldEvent, PlayerProgress player)
+    {
+        return Interact(player, fieldEvent, player.Language);
+    }
+
     public FieldInteractionResult Interact(PlayerProgress player, FieldEventDefinition fieldEvent, UiLanguage language)
     {
         var isCompletedTreasure = fieldEvent.ActionType == FieldEventActionType.Treasure &&
@@ -42,7 +54,9 @@ public sealed class FieldEventService
         return new FieldInteractionResult
         {
             Pages = pages,
-            ShouldPersistProgress = shouldPersistProgress
+            ShouldPersistProgress = shouldPersistProgress,
+            TransitionToShop = false,
+            TransitionToBank = fieldEvent.ActionType == FieldEventActionType.Bank
         };
     }
 

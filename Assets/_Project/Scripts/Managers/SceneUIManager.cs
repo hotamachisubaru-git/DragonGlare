@@ -47,7 +47,7 @@ namespace DragonGlare
         private ShopPhase shopPhase = ShopPhase.Welcome;
         private BankPhase bankPhase = BankPhase.Welcome;
 
-        private readonly Random random = new();
+        private readonly System.Random random = new();
         private readonly BattleService battleService = new();
         private readonly ProgressionService progressionService = new();
         private readonly ShopService shopService = new();
@@ -282,7 +282,7 @@ namespace DragonGlare
             }
         }
 
-        private void ChangeGameState(GameState nextState)
+        public void ChangeGameState(GameState nextState)
         {
             if (nextState == gameState)
                 return;
@@ -298,7 +298,7 @@ namespace DragonGlare
             }
             else
             {
-                SaveGame(refreshSlotSummaries: false);
+                SaveGame(activeSaveSlot, refreshSlotSummaries: false);
             }
         }
 
@@ -306,9 +306,9 @@ namespace DragonGlare
         {
             var input = GameManager.Instance.Input;
             var previousCursor = optionsCursor;
-            if (input.WasPressed(KeyCode.Up) || input.WasPressed(KeyCode.W))
+            if (input.WasPressed(KeyCode.UpArrow) || input.WasPressed(KeyCode.W))
                 optionsCursor = Math.Max(0, optionsCursor - 1);
-            else if (input.WasPressed(KeyCode.Down) || input.WasPressed(KeyCode.S))
+            else if (input.WasPressed(KeyCode.DownArrow) || input.WasPressed(KeyCode.S))
                 optionsCursor = Math.Min(5, optionsCursor + 1);
             PlayCursorSeIfChanged(previousCursor, optionsCursor);
 
@@ -368,9 +368,9 @@ namespace DragonGlare
         {
             var input = GameManager.Instance.Input;
             var previousCursor = modeCursor;
-            if (input.WasPressed(KeyCode.Up) || input.WasPressed(KeyCode.W))
+            if (input.WasPressed(KeyCode.UpArrow) || input.WasPressed(KeyCode.W))
                 modeCursor = Math.Max(0, modeCursor - 1);
-            else if (input.WasPressed(KeyCode.Down) || input.WasPressed(KeyCode.S))
+            else if (input.WasPressed(KeyCode.DownArrow) || input.WasPressed(KeyCode.S))
                 modeCursor = Math.Min(3, modeCursor + 1);
             PlayCursorSeIfChanged(previousCursor, modeCursor);
 
@@ -429,9 +429,9 @@ namespace DragonGlare
             }
 
             var previousCursor = languageCursor;
-            if (input.WasPressed(KeyCode.Up) || input.WasPressed(KeyCode.W))
+            if (input.WasPressed(KeyCode.UpArrow) || input.WasPressed(KeyCode.W))
                 languageCursor = Math.Max(0, languageCursor - 1);
-            else if (input.WasPressed(KeyCode.Down) || input.WasPressed(KeyCode.S))
+            else if (input.WasPressed(KeyCode.DownArrow) || input.WasPressed(KeyCode.S))
                 languageCursor = Math.Min(1, languageCursor + 1);
             PlayCursorSeIfChanged(previousCursor, languageCursor);
 
@@ -453,13 +453,13 @@ namespace DragonGlare
         {
             var input = GameManager.Instance.Input;
             var table = GameContent.GetNameTable(selectedLanguage);
-            if (input.WasPressed(KeyCode.Up) || input.WasPressed(KeyCode.W))
+            if (input.WasPressed(KeyCode.UpArrow) || input.WasPressed(KeyCode.W))
                 MoveNameCursor(0, -1, table);
-            else if (input.WasPressed(KeyCode.Down) || input.WasPressed(KeyCode.S))
+            else if (input.WasPressed(KeyCode.DownArrow) || input.WasPressed(KeyCode.S))
                 MoveNameCursor(0, 1, table);
-            else if (input.WasPressed(KeyCode.Left) || input.WasPressed(KeyCode.A))
+            else if (input.WasPressed(KeyCode.LeftArrow) || input.WasPressed(KeyCode.A))
                 MoveNameCursor(-1, 0, table);
-            else if (input.WasPressed(KeyCode.Right) || input.WasPressed(KeyCode.D))
+            else if (input.WasPressed(KeyCode.RightArrow) || input.WasPressed(KeyCode.D))
                 MoveNameCursor(1, 0, table);
 
             if (input.WasPrimaryConfirmPressed())
@@ -529,9 +529,9 @@ namespace DragonGlare
         {
             var input = GameManager.Instance.Input;
             var previousCursor = saveSlotCursor;
-            if (input.WasPressed(KeyCode.Up) || input.WasPressed(KeyCode.W))
+            if (input.WasPressed(KeyCode.UpArrow) || input.WasPressed(KeyCode.W))
                 saveSlotCursor = Math.Max(0, saveSlotCursor - 1);
-            else if (input.WasPressed(KeyCode.Down) || input.WasPressed(KeyCode.S))
+            else if (input.WasPressed(KeyCode.DownArrow) || input.WasPressed(KeyCode.S))
                 saveSlotCursor = Math.Min(SaveManager.SlotCount - 1, saveSlotCursor + 1);
             PlayCursorSeIfChanged(previousCursor, saveSlotCursor);
 
@@ -653,13 +653,13 @@ namespace DragonGlare
                 movementCooldown--;
 
             var movement = Vector2Int.zero;
-            if (input.HeldKeys.Contains(KeyCode.Up) || input.HeldKeys.Contains(KeyCode.W))
+            if (input.HeldKeys.Contains(KeyCode.UpArrow) || input.HeldKeys.Contains(KeyCode.W))
                 movement = new Vector2Int(0, -1);
-            else if (input.HeldKeys.Contains(KeyCode.Down) || input.HeldKeys.Contains(KeyCode.S))
+            else if (input.HeldKeys.Contains(KeyCode.DownArrow) || input.HeldKeys.Contains(KeyCode.S))
                 movement = new Vector2Int(0, 1);
-            else if (input.HeldKeys.Contains(KeyCode.Left) || input.HeldKeys.Contains(KeyCode.A))
+            else if (input.HeldKeys.Contains(KeyCode.LeftArrow) || input.HeldKeys.Contains(KeyCode.A))
                 movement = new Vector2Int(-1, 0);
-            else if (input.HeldKeys.Contains(KeyCode.Right) || input.HeldKeys.Contains(KeyCode.D))
+            else if (input.HeldKeys.Contains(KeyCode.RightArrow) || input.HeldKeys.Contains(KeyCode.D))
                 movement = new Vector2Int(1, 0);
 
             if (movement != Vector2Int.zero && movementCooldown == 0)
@@ -868,13 +868,13 @@ namespace DragonGlare
             var input = GameManager.Instance.Input;
             var previousRow = battleCursorRow;
             var previousColumn = battleCursorColumn;
-            if (input.WasPressed(KeyCode.Up) || input.WasPressed(KeyCode.W))
+            if (input.WasPressed(KeyCode.UpArrow) || input.WasPressed(KeyCode.W))
                 battleCursorRow = Math.Max(0, battleCursorRow - 1);
-            else if (input.WasPressed(KeyCode.Down) || input.WasPressed(KeyCode.S))
+            else if (input.WasPressed(KeyCode.DownArrow) || input.WasPressed(KeyCode.S))
                 battleCursorRow = Math.Min(GetBattleCommandRowCount() - 1, battleCursorRow + 1);
-            else if (input.WasPressed(KeyCode.Left) || input.WasPressed(KeyCode.A))
+            else if (input.WasPressed(KeyCode.LeftArrow) || input.WasPressed(KeyCode.A))
                 battleCursorColumn = Math.Max(0, battleCursorColumn - 1);
-            else if (input.WasPressed(KeyCode.Right) || input.WasPressed(KeyCode.D))
+            else if (input.WasPressed(KeyCode.RightArrow) || input.WasPressed(KeyCode.D))
                 battleCursorColumn = Math.Min(GetBattleCommandColumnCount() - 1, battleCursorColumn + 1);
 
             if (previousRow != battleCursorRow || previousColumn != battleCursorColumn)
@@ -891,9 +891,9 @@ namespace DragonGlare
                 return;
             }
 
-            if (input.WasPressed(KeyCode.Up) || input.WasPressed(KeyCode.W))
+            if (input.WasPressed(KeyCode.UpArrow) || input.WasPressed(KeyCode.W))
                 MoveBattleSelectionCursor(-1, entries.Count);
-            else if (input.WasPressed(KeyCode.Down) || input.WasPressed(KeyCode.S))
+            else if (input.WasPressed(KeyCode.DownArrow) || input.WasPressed(KeyCode.S))
                 MoveBattleSelectionCursor(1, entries.Count);
 
             if (input.WasBattleSubmenuBackPressed())
@@ -1033,9 +1033,9 @@ namespace DragonGlare
             if (shopPhase == ShopPhase.Welcome)
             {
                 var previousCursor = shopPromptCursor;
-                if (input.WasPressed(KeyCode.Up) || input.WasPressed(KeyCode.W))
+                if (input.WasPressed(KeyCode.UpArrow) || input.WasPressed(KeyCode.W))
                     shopPromptCursor = Math.Max(0, shopPromptCursor - 1);
-                else if (input.WasPressed(KeyCode.Down) || input.WasPressed(KeyCode.S))
+                else if (input.WasPressed(KeyCode.DownArrow) || input.WasPressed(KeyCode.S))
                     shopPromptCursor = Math.Min(2, shopPromptCursor + 1);
                 PlayCursorSeIfChanged(previousCursor, shopPromptCursor);
 
@@ -1072,9 +1072,9 @@ namespace DragonGlare
             var visibleEntries = GetShopVisibleEntries();
             var maxIndex = visibleEntries.Count - 1;
             var previousItemCursor = shopItemCursor;
-            if (input.WasPressed(KeyCode.Up) || input.WasPressed(KeyCode.W))
+            if (input.WasPressed(KeyCode.UpArrow) || input.WasPressed(KeyCode.W))
                 shopItemCursor = Math.Max(0, shopItemCursor - 1);
-            else if (input.WasPressed(KeyCode.Down) || input.WasPressed(KeyCode.S))
+            else if (input.WasPressed(KeyCode.DownArrow) || input.WasPressed(KeyCode.S))
                 shopItemCursor = Math.Min(maxIndex, shopItemCursor + 1);
             PlayCursorSeIfChanged(previousItemCursor, shopItemCursor);
 
@@ -1150,9 +1150,9 @@ namespace DragonGlare
             if (bankPhase == BankPhase.Welcome)
             {
                 var previousCursor = bankPromptCursor;
-                if (input.WasPressed(KeyCode.Up) || input.WasPressed(KeyCode.W))
+                if (input.WasPressed(KeyCode.UpArrow) || input.WasPressed(KeyCode.W))
                     bankPromptCursor = Math.Max(0, bankPromptCursor - 1);
-                else if (input.WasPressed(KeyCode.Down) || input.WasPressed(KeyCode.S))
+                else if (input.WasPressed(KeyCode.DownArrow) || input.WasPressed(KeyCode.S))
                     bankPromptCursor = Math.Min(3, bankPromptCursor + 1);
                 PlayCursorSeIfChanged(previousCursor, bankPromptCursor);
 
@@ -1187,9 +1187,9 @@ namespace DragonGlare
 
             var options = GetBankAmountOptions();
             var previousItemCursor = bankItemCursor;
-            if (input.WasPressed(KeyCode.Up) || input.WasPressed(KeyCode.W))
+            if (input.WasPressed(KeyCode.UpArrow) || input.WasPressed(KeyCode.W))
                 bankItemCursor = Math.Max(0, bankItemCursor - 1);
-            else if (input.WasPressed(KeyCode.Down) || input.WasPressed(KeyCode.S))
+            else if (input.WasPressed(KeyCode.DownArrow) || input.WasPressed(KeyCode.S))
                 bankItemCursor = Math.Min(options.Count - 1, bankItemCursor + 1);
             PlayCursorSeIfChanged(previousItemCursor, bankItemCursor);
 
@@ -1479,6 +1479,7 @@ namespace DragonGlare
         }
 
         private string GetBattleCommandHelpMessage() => selectedLanguage == UiLanguage.English ? "Choose a command." : "こうどうを えらんでください。";
+        private string GetBattleCommandPromptMessage() => GetBattleCommandHelpMessage();
         private string GetBattleSubmenuHelpMessage() => selectedLanguage == UiLanguage.English ? "Choose an item." : "どれを つかいますか？";
         private string GetBattleSelectionTitle() => battleFlowState switch
         {

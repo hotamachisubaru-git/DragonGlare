@@ -19,13 +19,13 @@ namespace DragonGlare
         public static GameSession Instance { get; private set; }
 
         public PlayerProgress Player { get; private set; }
-        public BattleEncounter CurrentEncounter { get; private set; }
-        public BattleFlowState BattleFlowState { get; private set; } = BattleFlowState.CommandSelection;
-        public ShopPhase ShopPhase { get; private set; } = ShopPhase.Welcome;
-        public BankPhase BankPhase { get; private set; } = BankPhase.Welcome;
+        public BattleEncounter CurrentEncounter { get; set; }
+        public BattleFlowState BattleFlowState { get; set; } = BattleFlowState.CommandSelection;
+        public ShopPhase ShopPhase { get; set; } = ShopPhase.Welcome;
+        public BankPhase BankPhase { get; set; } = BankPhase.Welcome;
         public FieldMapId CurrentFieldMap { get; private set; } = FieldMapId.Hub;
-        public UiLanguage SelectedLanguage { get; private set; } = UiLanguage.Japanese;
-        public GameState CurrentGameState { get; private set; } = GameState.ModeSelect;
+        public UiLanguage SelectedLanguage { get; set; } = UiLanguage.Japanese;
+        public GameState CurrentGameState { get; set; } = GameState.ModeSelect;
         public GameState? PendingGameState { get; private set; }
         public bool CanSave { get; private set; }
 
@@ -107,7 +107,7 @@ namespace DragonGlare
         public int[,] Map { get; private set; }
         public StringBuilder PlayerName { get; } = new();
 
-        public readonly Random Random = new();
+        public readonly System.Random Random = new();
         public readonly BattleService BattleService = new();
         public readonly ProgressionService ProgressionService = new();
         public readonly ShopService ShopService = new();
@@ -195,14 +195,27 @@ namespace DragonGlare
             if (slotNumber < 1 || slotNumber > SaveManager.SlotCount)
                 return;
             var saveData = SaveDataMapper.ToSaveData(Player, SelectedLanguage, CurrentFieldMap);
-            GameManager.Instance.Save.SaveSlot(slotNumber, saveData);
+            var saveManager = ResolveSaveManager();
+            if (saveManager == null)
+                return;
+
+            saveManager.SaveSlot(slotNumber, saveData);
             ActiveSaveSlot = slotNumber;
             CanSave = true;
         }
 
         public void RefreshSaveSlotSummaries()
         {
-            SaveSlotSummaries = GameManager.Instance.Save.GetSlotSummaries();
+            var saveManager = ResolveSaveManager();
+            SaveSlotSummaries = saveManager != null ? saveManager.GetSlotSummaries() : Array.Empty<SaveSlotSummary>();
+        }
+
+        private SaveManager ResolveSaveManager()
+        {
+            if (GameManager.Instance != null && GameManager.Instance.Save != null)
+                return GameManager.Instance.Save;
+
+            return FindAnyObjectByType<SaveManager>();
         }
 
         public void ResetBattleSelectionState()

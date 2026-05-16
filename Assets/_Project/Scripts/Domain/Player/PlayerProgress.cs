@@ -122,6 +122,55 @@ public sealed class PlayerProgress
         CompletedFieldEventIds.Add(eventId);
     }
 
+    public IEnumerable<string> GetEquippedItemIds()
+    {
+        foreach (var itemId in new[]
+        {
+            EquippedWeaponId,
+            EquippedArmorId,
+            EquippedHeadId,
+            EquippedArmsId,
+            EquippedLegsId,
+            EquippedFeetId
+        })
+        {
+            if (!string.IsNullOrWhiteSpace(itemId))
+            {
+                yield return itemId;
+            }
+        }
+    }
+
+    public void Normalize()
+    {
+        Level = Clamp(Level, 1, MaxLevelValue);
+        Experience = Clamp(Experience, 0, GetExperienceThreshold(MaxLevelValue));
+        MaxHp = Clamp(MaxHp, 1, MaxVitalValue);
+        MaxMp = Clamp(MaxMp, 0, MaxVitalValue);
+        CurrentHp = Clamp(CurrentHp, 0, MaxHp);
+        CurrentMp = Clamp(CurrentMp, 0, MaxMp);
+        Gold = Clamp(Gold, 0, MaxGoldValue);
+        BankGold = Clamp(BankGold, 0, MaxGoldValue);
+        LoanBalance = Clamp(LoanBalance, 0, MaxGoldValue);
+    }
+
+    private static int Clamp(int value, int min, int max)
+    {
+        return System.Math.Min(max, System.Math.Max(min, value));
+    }
+
+    private static int GetExperienceThreshold(int level)
+    {
+        if (level <= 1)
+        {
+            return 0;
+        }
+
+        var cappedLevel = System.Math.Min(level, MaxLevelValue);
+        var completedLevels = cappedLevel - 1;
+        return completedLevels * (24 + ((completedLevels - 1) * 10)) / 2;
+    }
+
     public void TakeDamage(int damage)
     {
         CurrentHp = System.Math.Max(0, CurrentHp - damage);

@@ -7,6 +7,11 @@ namespace DragonGlare.Services;
 
 public sealed class ShopService
 {
+    public IReadOnlyList<ShopProductDefinition> GetProductsForField(FieldMapId fieldMapId)
+    {
+        return GameContent.ShopCatalog;
+    }
+
     public ShopTransactionResult PurchaseProduct(PlayerProgress player, ShopProductDefinition product)
     {
         var language = player.Language;

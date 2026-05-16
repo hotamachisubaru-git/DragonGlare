@@ -87,11 +87,14 @@ namespace DragonGlare.Tests
             var player = PlayerProgress.CreateDefault(new Vector2Int(3, 12));
             player.Gold = 0;
 
-            var product = new DragonGlare.Domain.Commerce.ShopProductDefinition
-            {
-                Price = 100,
-                Name = "TestItem"
-            };
+            var consumable = new ConsumableDefinition(
+                "test_item",
+                "TestItem",
+                "Test item",
+                ConsumableEffectType.HealHp,
+                1,
+                100);
+            var product = new ShopProductDefinition(Consumable: consumable);
 
             var result = shopService.PurchaseProduct(player, product);
 

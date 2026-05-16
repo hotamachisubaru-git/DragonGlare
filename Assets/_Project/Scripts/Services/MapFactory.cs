@@ -59,6 +59,18 @@ public static class MapFactory
         return CreateMap(FieldMapId.Hub);
     }
 
+    public static int[,] GetMap(FieldMapId mapId)
+    {
+        return CreateMap(mapId);
+    }
+
+    public static int[,] GetMapForCurrentField()
+    {
+        return GameSession.Instance != null
+            ? CreateMap(GameSession.Instance.CurrentFieldMap)
+            : CreateDefaultMap();
+    }
+
     public static int[,] CreateMap(FieldMapId mapId)
     {
         return mapId switch

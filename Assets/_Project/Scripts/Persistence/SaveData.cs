@@ -18,6 +18,7 @@ namespace DragonGlare.Persistence
         public int SlotNumber { get; set; }
         public FieldMapId CurrentFieldMap { get; set; } = FieldMapId.Hub;
         public Vector2Int TilePosition { get; set; }
+        public PlayerFacingDirection FacingDirection { get; set; } = PlayerFacingDirection.Down;
         public int Level { get; set; }
         public int Experience { get; set; }
         public int MaxHp { get; set; }

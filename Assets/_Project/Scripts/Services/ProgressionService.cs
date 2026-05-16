@@ -98,6 +98,16 @@ public sealed partial class ProgressionService
         return GetExperienceThreshold(player.Level + 1) - GetExperienceThreshold(player.Level);
     }
 
+    public int GetExperienceForNextLevel(int level)
+    {
+        if (level >= PlayerProgress.MaxLevelValue)
+        {
+            return MaxLevelExperience;
+        }
+
+        return GetExperienceThreshold(level + 1);
+    }
+
     public void GrantPrototypeStarterItems(PlayerProgress player)
     {
         if (player.GetItemCount("healing_herb") == 0)

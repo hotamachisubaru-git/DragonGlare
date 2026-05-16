@@ -18,6 +18,8 @@ namespace DragonGlare.Tests
             session.SelectedLanguage = UiLanguage.Japanese;
             session.Player.Name = "Test";
             session.ApplyExplorationSession(session.Player, FieldMapId.Hub);
+            session.ChangeGameState(GameState.Field);
+            session.ApplyPendingState();
 
             // Verify
             Assert.AreEqual(GameState.Field, session.CurrentGameState);

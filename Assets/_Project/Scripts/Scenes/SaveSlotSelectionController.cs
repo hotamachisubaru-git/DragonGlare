@@ -16,9 +16,9 @@ namespace DragonGlare
         public override void OnUpdate()
         {
             var previousCursor = Session.SaveSlotCursor;
-            if (Input.WasPressed(KeyCode.Up) || Input.WasPressed(KeyCode.W))
+            if (Input.WasPressed(KeyCode.UpArrow) || Input.WasPressed(KeyCode.W))
                 Session.SaveSlotCursor = Mathf.Max(0, Session.SaveSlotCursor - 1);
-            else if (Input.WasPressed(KeyCode.Down) || Input.WasPressed(KeyCode.S))
+            else if (Input.WasPressed(KeyCode.DownArrow) || Input.WasPressed(KeyCode.S))
                 Session.SaveSlotCursor = Mathf.Min(SaveManager.SlotCount - 1, Session.SaveSlotCursor + 1);
 
             if (previousCursor != Session.SaveSlotCursor)

@@ -38,7 +38,7 @@ namespace DragonGlare.Security
 
         private static int CalculateChecksum(int value)
         {
-            return value * 0x12345678 + 0x9ABCDEF0;
+            return unchecked((int)((value * 0x12345678L) + 0x9ABCDEF0L));
         }
 
         public static implicit operator int(ProtectedInt protectedInt) => protectedInt.Value;

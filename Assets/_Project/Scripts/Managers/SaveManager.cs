@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
+using Newtonsoft.Json;
 
 namespace DragonGlare.Persistence
 {
@@ -13,22 +13,22 @@ namespace DragonGlare.Persistence
         private const int SignedSaveVersion = 5;
         private const string SignatureSecret = "DragonGlareAlpha::SaveSeal::2026-04-09";
 
-        private static readonly JsonSerializerOptions SerializerOptions = new()
+        private static readonly JsonSerializerSettings SerializerSettings = new()
         {
-            WriteIndented = true
+            Formatting = Formatting.Indented
         };
 
-        private string saveRootDirectory;
+        private string saveRootDirectory = string.Empty;
 
         private void Awake()
         {
-            saveRootDirectory = Path.Combine(Application.persistentDataPath, "Saves");
+            EnsureSaveRootDirectory();
         }
 
         public string GetSlotPath(int slotNumber)
         {
             ValidateSlotNumber(slotNumber);
-            return Path.Combine(saveRootDirectory, $"slot{slotNumber}.sav");
+            return Path.Combine(EnsureSaveRootDirectory(), $"slot{slotNumber}.sav");
         }
 
         public bool TryLoadSlot(int slotNumber, out SaveData saveData)
@@ -46,7 +46,7 @@ namespace DragonGlare.Persistence
 
                 var encrypted = File.ReadAllBytes(path);
                 var json = Decrypt(encrypted, slotNumber);
-                saveData = JsonSerializer.Deserialize<SaveData>(json, SerializerOptions);
+                saveData = JsonConvert.DeserializeObject<SaveData>(json, SerializerSettings);
 
                 if (saveData == null) return false;
                 if (saveData.SlotNumber != 0 && saveData.SlotNumber != slotNumber) return false;
@@ -63,19 +63,23 @@ namespace DragonGlare.Persistence
         public void SaveSlot(int slotNumber, SaveData saveData)
         {
             ValidateSlotNumber(slotNumber);
-            Directory.CreateDirectory(saveRootDirectory);
+            Directory.CreateDirectory(EnsureSaveRootDirectory());
 
             saveData.Version = SaveData.CurrentVersion;
             saveData.SlotNumber = slotNumber;
             saveData.Signature = ComputeSignature(saveData);
 
-            var json = JsonSerializer.Serialize(saveData, SerializerOptions);
+            var json = JsonConvert.SerializeObject(saveData, SerializerSettings);
             var encrypted = Encrypt(json, slotNumber);
 
             var path = GetSlotPath(slotNumber);
             var tempPath = $"{path}.tmp";
             File.WriteAllBytes(tempPath, encrypted);
-            File.Move(tempPath, path, overwrite: true);
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+            File.Move(tempPath, path);
         }
 
         public bool CopySlot(int sourceSlotNumber, int destinationSlotNumber)
@@ -175,7 +179,7 @@ namespace DragonGlare.Persistence
         private static byte[] DeriveKey(int slotNumber)
         {
             var password = $"DragonGlareAlpha::UnitySave::{slotNumber}";
-            return SHA256.HashData(Encoding.UTF8.GetBytes(password));
+            return ComputeSha256(Encoding.UTF8.GetBytes(password));
         }
 
         private static bool HasValidSignature(SaveData saveData)
@@ -187,21 +191,70 @@ namespace DragonGlare.Persistence
 
             var expected = Convert.FromBase64String(ComputeSignature(saveData));
             var actual = Convert.FromBase64String(saveData.Signature);
-            return CryptographicOperations.FixedTimeEquals(actual, expected);
+            return FixedTimeEquals(actual, expected);
         }
 
         private static string ComputeSignature(SaveData saveData)
         {
-            var payload = JsonSerializer.Serialize(saveData, SerializerOptions);
-            var key = SHA256.HashData(Encoding.UTF8.GetBytes(SignatureSecret));
-            var hash = HMACSHA256.HashData(key, Encoding.UTF8.GetBytes(payload));
+            var originalSignature = saveData.Signature;
+            string payload;
+            try
+            {
+                saveData.Signature = string.Empty;
+                payload = JsonConvert.SerializeObject(saveData, SerializerSettings);
+            }
+            finally
+            {
+                saveData.Signature = originalSignature;
+            }
+
+            var key = ComputeSha256(Encoding.UTF8.GetBytes(SignatureSecret));
+            var hash = ComputeHmacSha256(key, Encoding.UTF8.GetBytes(payload));
             return Convert.ToBase64String(hash);
+        }
+
+        private static byte[] ComputeSha256(byte[] data)
+        {
+            using var sha256 = SHA256.Create();
+            return sha256.ComputeHash(data);
+        }
+
+        private static byte[] ComputeHmacSha256(byte[] key, byte[] data)
+        {
+            using var hmac = new HMACSHA256(key);
+            return hmac.ComputeHash(data);
+        }
+
+        private static bool FixedTimeEquals(byte[] left, byte[] right)
+        {
+            if (left == null || right == null || left.Length != right.Length)
+            {
+                return false;
+            }
+
+            var difference = 0;
+            for (var i = 0; i < left.Length; i++)
+            {
+                difference |= left[i] ^ right[i];
+            }
+
+            return difference == 0;
         }
 
         private static void ValidateSlotNumber(int slotNumber)
         {
             if (slotNumber < 1 || slotNumber > SlotCount)
                 throw new ArgumentOutOfRangeException(nameof(slotNumber));
+        }
+
+        private string EnsureSaveRootDirectory()
+        {
+            if (string.IsNullOrEmpty(saveRootDirectory))
+            {
+                saveRootDirectory = Path.Combine(Application.persistentDataPath, "Saves");
+            }
+
+            return saveRootDirectory;
         }
     }
 }

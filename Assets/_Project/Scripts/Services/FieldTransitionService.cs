@@ -7,6 +7,13 @@ namespace DragonGlare.Services;
 
 public sealed class FieldTransitionService
 {
+    public FieldTransitionDefinition? GetTransition(FieldMapId mapId, Point tile)
+    {
+        return TryGetTransition(mapId, tile, out var transition)
+            ? transition
+            : null;
+    }
+
     public bool TryGetTransition(FieldMapId mapId, Point tile, [NotNullWhen(true)] out FieldTransitionDefinition? transition)
     {
         transition = FieldContent.FieldTransitions

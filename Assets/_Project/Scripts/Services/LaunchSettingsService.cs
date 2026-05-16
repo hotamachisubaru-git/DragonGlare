@@ -1,14 +1,14 @@
 using System.IO;
-using System.Text.Json;
 using DragonGlare.Domain.Startup;
+using Newtonsoft.Json;
 
 namespace DragonGlare.Services;
 
 public sealed class LaunchSettingsService
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
+    private static readonly JsonSerializerSettings SerializerSettings = new()
     {
-        WriteIndented = true
+        Formatting = Formatting.Indented
     };
 
     private readonly string settingsPath = Path.Combine(
@@ -26,7 +26,7 @@ public sealed class LaunchSettingsService
             }
 
             var json = File.ReadAllText(settingsPath);
-            var settings = JsonSerializer.Deserialize<LaunchSettings>(json, SerializerOptions);
+            var settings = JsonConvert.DeserializeObject<LaunchSettings>(json, SerializerSettings);
             return settings ?? new LaunchSettings();
         }
         catch
@@ -45,7 +45,7 @@ public sealed class LaunchSettingsService
                 Directory.CreateDirectory(directory);
             }
 
-            var json = JsonSerializer.Serialize(settings, SerializerOptions);
+            var json = JsonConvert.SerializeObject(settings, SerializerSettings);
             File.WriteAllText(settingsPath, json);
         }
         catch

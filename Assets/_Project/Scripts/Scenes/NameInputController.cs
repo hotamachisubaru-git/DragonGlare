@@ -15,13 +15,13 @@ namespace DragonGlare
         public override void OnUpdate()
         {
             var table = GameContent.GetNameTable(Session.SelectedLanguage);
-            if (Input.WasPressed(KeyCode.Up) || Input.WasPressed(KeyCode.W))
+            if (Input.WasPressed(KeyCode.UpArrow) || Input.WasPressed(KeyCode.W))
                 MoveNameCursor(0, -1, table);
-            else if (Input.WasPressed(KeyCode.Down) || Input.WasPressed(KeyCode.S))
+            else if (Input.WasPressed(KeyCode.DownArrow) || Input.WasPressed(KeyCode.S))
                 MoveNameCursor(0, 1, table);
-            else if (Input.WasPressed(KeyCode.Left) || Input.WasPressed(KeyCode.A))
+            else if (Input.WasPressed(KeyCode.LeftArrow) || Input.WasPressed(KeyCode.A))
                 MoveNameCursor(-1, 0, table);
-            else if (Input.WasPressed(KeyCode.Right) || Input.WasPressed(KeyCode.D))
+            else if (Input.WasPressed(KeyCode.RightArrow) || Input.WasPressed(KeyCode.D))
                 MoveNameCursor(1, 0, table);
 
             if (Input.WasPrimaryConfirmPressed())

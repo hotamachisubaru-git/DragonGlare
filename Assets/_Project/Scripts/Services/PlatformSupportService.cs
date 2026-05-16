@@ -9,7 +9,7 @@ public sealed class PlatformSupportService
     public bool TryDetectUnsupportedPlatform(out string message)
     {
         return TryDetectUnsupportedPlatform(
-            OperatingSystem.IsWindows(),
+            RuntimeInformation.IsOSPlatform(OSPlatform.Windows),
             Environment.OSVersion.Version,
             RuntimeInformation.OSArchitecture,
             RuntimeInformation.OSDescription,

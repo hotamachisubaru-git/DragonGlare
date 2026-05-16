@@ -28,9 +28,9 @@ namespace DragonGlare
         private void UpdateWelcome()
         {
             var previousCursor = Session.BankPromptCursor;
-            if (Input.WasPressed(KeyCode.Up) || Input.WasPressed(KeyCode.W))
+            if (Input.WasPressed(KeyCode.UpArrow) || Input.WasPressed(KeyCode.W))
                 Session.BankPromptCursor = Mathf.Max(0, Session.BankPromptCursor - 1);
-            else if (Input.WasPressed(KeyCode.Down) || Input.WasPressed(KeyCode.S))
+            else if (Input.WasPressed(KeyCode.DownArrow) || Input.WasPressed(KeyCode.S))
                 Session.BankPromptCursor = Mathf.Min(3, Session.BankPromptCursor + 1);
 
             if (previousCursor != Session.BankPromptCursor)
@@ -68,9 +68,9 @@ namespace DragonGlare
         {
             var options = Session.GetBankAmountOptions();
             var previousItemCursor = Session.BankItemCursor;
-            if (Input.WasPressed(KeyCode.Up) || Input.WasPressed(KeyCode.W))
+            if (Input.WasPressed(KeyCode.UpArrow) || Input.WasPressed(KeyCode.W))
                 Session.BankItemCursor = Mathf.Max(0, Session.BankItemCursor - 1);
-            else if (Input.WasPressed(KeyCode.Down) || Input.WasPressed(KeyCode.S))
+            else if (Input.WasPressed(KeyCode.DownArrow) || Input.WasPressed(KeyCode.S))
                 Session.BankItemCursor = Mathf.Min(options.Count - 1, Session.BankItemCursor + 1);
 
             if (previousItemCursor != Session.BankItemCursor)

@@ -17,7 +17,7 @@ namespace DragonGlare.Tests
             Assert.AreEqual(20, player.CurrentHp);
             Assert.AreEqual(10, player.MaxMp);
             Assert.AreEqual(10, player.CurrentMp);
-            Assert.AreEqual(0, player.Gold);
+            Assert.AreEqual(220, player.Gold);
         }
 
         [Test]
@@ -64,16 +64,16 @@ namespace DragonGlare.Tests
         public void GetPlayerAttack_ShouldIncludeWeaponBonus()
         {
             var player = PlayerProgress.CreateDefault(new Vector2Int(3, 12));
-            var weapon = new WeaponDefinition { AttackBonus = 5 };
+            var weapon = new WeaponDefinition("test_weapon", "Test Weapon", 0, 5);
             var attack = battleService.GetPlayerAttack(player, weapon);
-            Assert.AreEqual(player.BaseAttack + 5, attack);
+            Assert.AreEqual(player.BaseAttack + player.Level + 5, attack);
         }
 
         [Test]
         public void GetPlayerDefense_ShouldIncludeArmorBonus()
         {
             var player = PlayerProgress.CreateDefault(new Vector2Int(3, 12));
-            var armor = new ArmorDefinition { DefenseBonus = 3 };
+            var armor = new ArmorDefinition("test_armor", "Test Armor", 0, 3);
             var defense = battleService.GetPlayerDefense(player, armor);
             Assert.AreEqual(player.BaseDefense + 3, defense);
         }

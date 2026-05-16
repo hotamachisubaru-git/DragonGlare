@@ -68,13 +68,21 @@ namespace DragonGlare
 
         public void ClearAll()
         {
-            slashImage.gameObject.SetActive(false);
-            spellBurstImage.gameObject.SetActive(false);
-            statusCloudImage.gameObject.SetActive(false);
-            healImage.gameObject.SetActive(false);
-            guardImage.gameObject.SetActive(false);
-            itemSparkleImage.gameObject.SetActive(false);
-            enemyDefeatImage.gameObject.SetActive(false);
+            SetEffectActive(slashImage, false);
+            SetEffectActive(spellBurstImage, false);
+            SetEffectActive(statusCloudImage, false);
+            SetEffectActive(healImage, false);
+            SetEffectActive(guardImage, false);
+            SetEffectActive(itemSparkleImage, false);
+            SetEffectActive(enemyDefeatImage, false);
+        }
+
+        private static void SetEffectActive(Image image, bool active)
+        {
+            if (image != null)
+            {
+                image.gameObject.SetActive(active);
+            }
         }
     }
 }

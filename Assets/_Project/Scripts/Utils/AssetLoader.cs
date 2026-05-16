@@ -4,12 +4,12 @@ namespace DragonGlare
 {
     public class AssetLoader : MonoBehaviour
     {
-        public static T Load<T>(string path) where T : Object
+        public static T Load<T>(string path) where T : UnityEngine.Object
         {
             return Resources.Load<T>(path);
         }
 
-        public static T[] LoadAll<T>(string path) where T : Object
+        public static T[] LoadAll<T>(string path) where T : UnityEngine.Object
         {
             return Resources.LoadAll<T>(path);
         }

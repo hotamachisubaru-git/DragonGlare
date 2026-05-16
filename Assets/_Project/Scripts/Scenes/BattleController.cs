@@ -92,13 +92,13 @@ namespace DragonGlare
         {
             var previousRow = Session.BattleCursorRow;
             var previousColumn = Session.BattleCursorColumn;
-            if (Input.WasPressed(KeyCode.Up) || Input.WasPressed(KeyCode.W))
+            if (Input.WasPressed(KeyCode.UpArrow) || Input.WasPressed(KeyCode.W))
                 Session.BattleCursorRow = Mathf.Max(0, Session.BattleCursorRow - 1);
-            else if (Input.WasPressed(KeyCode.Down) || Input.WasPressed(KeyCode.S))
+            else if (Input.WasPressed(KeyCode.DownArrow) || Input.WasPressed(KeyCode.S))
                 Session.BattleCursorRow = Mathf.Min(Session.GetBattleCommandRowCount() - 1, Session.BattleCursorRow + 1);
-            else if (Input.WasPressed(KeyCode.Left) || Input.WasPressed(KeyCode.A))
+            else if (Input.WasPressed(KeyCode.LeftArrow) || Input.WasPressed(KeyCode.A))
                 Session.BattleCursorColumn = Mathf.Max(0, Session.BattleCursorColumn - 1);
-            else if (Input.WasPressed(KeyCode.Right) || Input.WasPressed(KeyCode.D))
+            else if (Input.WasPressed(KeyCode.RightArrow) || Input.WasPressed(KeyCode.D))
                 Session.BattleCursorColumn = Mathf.Min(Session.GetBattleCommandColumnCount() - 1, Session.BattleCursorColumn + 1);
 
             if (previousRow != Session.BattleCursorRow || previousColumn != Session.BattleCursorColumn)
@@ -114,9 +114,9 @@ namespace DragonGlare
                 return;
             }
 
-            if (Input.WasPressed(KeyCode.Up) || Input.WasPressed(KeyCode.W))
+            if (Input.WasPressed(KeyCode.UpArrow) || Input.WasPressed(KeyCode.W))
                 MoveBattleSelectionCursor(-1, entries.Count);
-            else if (Input.WasPressed(KeyCode.Down) || Input.WasPressed(KeyCode.S))
+            else if (Input.WasPressed(KeyCode.DownArrow) || Input.WasPressed(KeyCode.S))
                 MoveBattleSelectionCursor(1, entries.Count);
 
             if (Input.WasBattleSubmenuBackPressed())

@@ -4,7 +4,7 @@ using DragonGlare.Domain.Player;
 
 namespace DragonGlare
 {
-    public struct ShopMenuEntry
+    public sealed class ShopMenuEntry
     {
         public ShopMenuEntryType Type;
         public ShopProductDefinition Product;
@@ -33,21 +33,5 @@ namespace DragonGlare
         public string Label;
         public int Amount;
         public bool Quit;
-    }
-
-    public struct BankTransactionResult
-    {
-        public bool Success;
-        public int Amount;
-        public int Fee;
-        public string Message;
-
-        public BankTransactionResult(bool success, int amount, int fee, string message)
-        {
-            Success = success;
-            Amount = amount;
-            Fee = fee;
-            Message = message;
-        }
     }
 }

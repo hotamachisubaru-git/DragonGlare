@@ -100,7 +100,8 @@ public enum BattleFlowState
     Resolving,
     Victory,
     Defeat,
-    Escaped
+    Escaped,
+    Escape = Escaped
 }
 
 public enum BattleActionType
@@ -137,7 +138,11 @@ public enum BattleVisualCue
     ItemUse,
     EnemyStatus,
     PlayerStatus,
-    PoisonTick
+    PoisonTick,
+    SpellBurst = SpellCast,
+    StatusCloud = EnemyStatus,
+    EnemyHitFlash = EnemyHit,
+    PlayerHitFlash = PlayerHit
 }
 
 public enum ConsumableEffectType
