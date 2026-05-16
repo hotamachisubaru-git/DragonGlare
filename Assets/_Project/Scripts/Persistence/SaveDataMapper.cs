@@ -60,8 +60,9 @@ namespace DragonGlare.Persistence
                 EquippedArmsId = saveData.EquippedArmsId,
                 EquippedLegsId = saveData.EquippedLegsId,
                 EquippedFeetId = saveData.EquippedFeetId,
-                Spells = new List<DragonGlare.Domain.Battle.SpellDefinition>(saveData.Spells ?? []),
-                Inventory = new List<InventoryEntry>(saveData.Inventory ?? [])
+                Spells = new List<DragonGlare.Domain.Battle.SpellDefinition>(
+                    saveData.Spells ?? Enumerable.Empty<DragonGlare.Domain.Battle.SpellDefinition>()),
+                Inventory = new List<InventoryEntry>(saveData.Inventory ?? Enumerable.Empty<InventoryEntry>())
             };
 
             // Ensure equipped items exist in inventory

@@ -2,7 +2,7 @@ namespace DragonGlare.Domain.Field;
 
 public sealed class FieldInteractionResult
 {
-    public List<string> Pages { get; init; } = [];
+    public List<string> Pages { get; init; } = new();
 
     public bool ShouldPersistProgress { get; init; }
 

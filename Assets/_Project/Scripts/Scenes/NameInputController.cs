@@ -50,7 +50,7 @@ namespace DragonGlare
         {
             var selected = table[Session.NameCursorRow][Session.NameCursorColumn];
             var deleteToken = Session.SelectedLanguage == UiLanguage.Japanese ? "けす" : "DEL";
-            var endToken = Session.SelectedLanguage == UiLanguage.Japanese ? "おわめE : "END";
+            var endToken = Session.SelectedLanguage == UiLanguage.Japanese ? "おわり" : "END";
 
             if (selected == deleteToken)
             {

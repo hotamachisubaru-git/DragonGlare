@@ -6,7 +6,7 @@ public sealed class BattleTurnResolution
 
     public bool ActionAccepted { get; init; } = true;
 
-    public List<BattleSequenceStep> Steps { get; init; } = [];
+    public List<BattleSequenceStep> Steps { get; init; } = new();
 
     public bool PlayerWon => Outcome == BattleOutcome.Victory;
 

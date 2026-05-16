@@ -10,11 +10,11 @@ namespace DragonGlare.Data;
 /// <summary>
 /// Central access point for all game content.
 /// Catalogue data lives in the dedicated files:
-///   Data/Enemies.cs       âEEnemyDefinition[]  (Enemies.EnemyCatalog)
-///   Data/Spells.cs        âESpellDefinition[]  (Spells.SpellCatalog)
-///   Data/Equipment.cs     âEWeaponDefinition[] / ArmorDefinition[]
-///   Data/Consumables.cs   âEConsumableDefinition[]
-///   Data/FieldContent.cs  âEFieldTransitionDefinition[] / FieldEventDefinition[]
+///   Data/Enemies.cs       - EnemyDefinition[]  (Enemies.EnemyCatalog)
+///   Data/Spells.cs        - SpellDefinition[]  (Spells.SpellCatalog)
+///   Data/Equipment.cs     - WeaponDefinition[] / ArmorDefinition[]
+///   Data/Consumables.cs   - ConsumableDefinition[]
+///   Data/FieldContent.cs  - FieldTransitionDefinition[] / FieldEventDefinition[]
 /// </summary>
 public static class GameContent
 {
@@ -44,9 +44,9 @@ public static class GameContent
 
     public static readonly string[,] JapaneseBattleCommandLabels =
     {
-        { "ãããã", "ã©ãE" },
-        { "ã¾ãã", "ããã³" },
-        { "ãããã", "ã«ãã" }
+        { "たたかう", "どうぐ" },
+        { "まもる", "そうび" },
+        { "じゅもん", "にげる" }
     };
 
     public static readonly string[,] EnglishBattleCommandLabels =
@@ -63,7 +63,7 @@ public static class GameContent
         { BattleActionType.Spell, BattleActionType.Run }
     };
 
-    // ââ Catalogue references (data lives in dedicated files) âââââââââââââââââ
+    // Catalogue references (data lives in dedicated files)
     public static SpellDefinition[]    SpellCatalog    => Spells.SpellCatalog;
     public static WeaponDefinition[]   WeaponCatalog   => Equipment.WeaponCatalog;
     public static ArmorDefinition[]    ArmorCatalog    => Equipment.ArmorCatalog;
@@ -86,7 +86,7 @@ public static class GameContent
 
     public static FieldEventDefinition[] FieldEvents => FieldContent.FieldEvents;
 
-    // ââ Lookup dictionaries ââââââââââââââââââââââââââââââââââââââââââââââââââ
+    // Lookup dictionaries
     private static readonly Dictionary<string, WeaponDefinition> WeaponById =
         Equipment.WeaponCatalog.ToDictionary(item => item.Id, StringComparer.Ordinal);
 
@@ -99,7 +99,7 @@ public static class GameContent
     private static readonly Lazy<Dictionary<string, ShopProductDefinition>> ShopProductById =
         new(() => ShopCatalog.ToDictionary(item => item.Id, StringComparer.Ordinal));
 
-    // ââ Name-table helpers âââââââââââââââââââââââââââââââââââââââââââââââââââ
+    // Name-table helpers
     public static string[][] GetNameTable(UiLanguage language)
     {
         return language == UiLanguage.Japanese ? JapaneseNameTable : EnglishNameTable;
@@ -111,7 +111,7 @@ public static class GameContent
         return labels[row, column];
     }
 
-    // ââ Localised name / description helpers âââââââââââââââââââââââââââââââââ
+    // Localised name / description helpers
     public static string GetSpellName(SpellDefinition spell, UiLanguage language)
     {
         return language == UiLanguage.English ? spell.EnglishName : spell.Name;
@@ -179,7 +179,7 @@ public static class GameContent
             : string.Empty;
     }
 
-    // ââ By-ID lookups âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    // By-ID lookups
     public static WeaponDefinition? GetWeaponById(string? itemId)
     {
         if (string.IsNullOrWhiteSpace(itemId))

@@ -23,7 +23,7 @@ public sealed partial class ProgressionService
 
     public BattleRewardResult ApplyBattleRewardsDetailed(PlayerProgress player, EnemyDefinition enemy, Random random)
     {
-        return ApplyPartyBattleRewardsDetailed(player, [player], enemy, random);
+        return ApplyPartyBattleRewardsDetailed(player, new[] { player }, enemy, random);
     }
 
     public BattleRewardResult ApplyPartyBattleRewardsDetailed(
@@ -45,7 +45,7 @@ public sealed partial class ProgressionService
             : memberRewardResults.Max(result => result.GainedExperience);
 
         var rewardMessage = Text(language,
-            $"{gainedExperience}けいけんちと{gainedGold}Gをえた！E,
+            $"{gainedExperience}けいけんちと{gainedGold}Gをえた！",
             $"Gained {gainedExperience} EXP and {gainedGold}G!");
 
         TryAwardBattleDrop(partyInventoryOwner, enemy, random, out var dropMessage);
@@ -69,13 +69,13 @@ public sealed partial class ProgressionService
         if (goldLoss == 0)
         {
             return string.IsNullOrWhiteSpace(debtPenaltyMessage)
-                ? Text(language, "HPとMPめEとりもどし\nスタートちてんに もどった、E, "Recovered HP and MP\nand returned to the start.")
-                : $"{Text(language, "HPとMPめEとりもどし\nスタートちてんに もどった、E, "Recovered HP and MP\nand returned to the start.")}\n{debtPenaltyMessage}";
+                ? Text(language, "HPとMPを とりもどし\nスタートちてんに もどった。", "Recovered HP and MP\nand returned to the start.")
+                : $"{Text(language, "HPとMPを とりもどし\nスタートちてんに もどった。", "Recovered HP and MP\nand returned to the start.")}\n{debtPenaltyMessage}";
         }
 
         return string.IsNullOrWhiteSpace(debtPenaltyMessage)
-            ? Text(language, $"{goldLoss}GめEおとして\nスタートちてんに もどった、E, $"Lost {goldLoss}G\nand returned to the start.")
-            : $"{Text(language, $"{goldLoss}GめEおとして\nスタートちてんに もどった、E, $"Lost {goldLoss}G\nand returned to the start.")}\n{debtPenaltyMessage}";
+            ? Text(language, $"{goldLoss}Gを おとして\nスタートちてんに もどった。", $"Lost {goldLoss}G\nand returned to the start.")
+            : $"{Text(language, $"{goldLoss}Gを おとして\nスタートちてんに もどった。", $"Lost {goldLoss}G\nand returned to the start.")}\n{debtPenaltyMessage}";
     }
 
     public int GetExperienceIntoCurrentLevel(PlayerProgress player)
@@ -231,7 +231,7 @@ public sealed record BattleLevelUpResult(
     {
         return Language == UiLanguage.English
             ? $"{MemberName} reached Lv {NewLevel}!\nHP+{HpGain} MP+{MpGain} ATK+{AttackGain} DEF+{DefenseGain}"
-            : $"{MemberName}は Lv {NewLevel} にあがった！\nHPが{HpGain} MPが{MpGain} ATKが{AttackGain} DEFが{DefenseGain} あがった！E;
+            : $"{MemberName}は Lv {NewLevel} にあがった！\nHPが{HpGain} MPが{MpGain} ATKが{AttackGain} DEFが{DefenseGain} あがった！";
     }
 }
 

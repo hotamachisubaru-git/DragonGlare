@@ -49,7 +49,7 @@ namespace DragonGlare
                     }
                     else
                     {
-                        Session.ShowMenuNotice(Session.SelectedLanguage == UiLanguage.English ? "Could not load data." : "よみこめませんでした、E);
+                        Session.ShowMenuNotice(Session.SelectedLanguage == UiLanguage.English ? "Could not load data." : "よみこめませんでした。");
                     }
                     break;
                 case SaveSlotSelectionMode.CopySource:
@@ -62,11 +62,11 @@ namespace DragonGlare
                         if (GameManager.Instance.Save.CopySlot(Session.DataOperationSourceSlot, slotNumber))
                         {
                             Session.RefreshSaveSlotSummaries();
-                            Session.ShowMenuNotice(Session.SelectedLanguage == UiLanguage.English ? "Copy complete." : "コピ�Eしました、E);
+                            Session.ShowMenuNotice(Session.SelectedLanguage == UiLanguage.English ? "Copy complete." : "コピーしました。");
                         }
                         else
                         {
-                            Session.ShowMenuNotice(Session.SelectedLanguage == UiLanguage.English ? "Copy failed." : "コピ�Eできませんでした、E);
+                            Session.ShowMenuNotice(Session.SelectedLanguage == UiLanguage.English ? "Copy failed." : "コピーできませんでした。");
                         }
                     }
                     Session.SaveSlotSelectionMode = SaveSlotSelectionMode.CopySource;
@@ -79,7 +79,7 @@ namespace DragonGlare
                 case SaveSlotSelectionMode.DeleteConfirm:
                     GameManager.Instance.Save.DeleteSlot(slotNumber);
                     Session.RefreshSaveSlotSummaries();
-                    Session.ShowMenuNotice(Session.SelectedLanguage == UiLanguage.English ? "Deleted." : "けしました、E);
+                    Session.ShowMenuNotice(Session.SelectedLanguage == UiLanguage.English ? "Deleted." : "けしました。");
                     Session.SaveSlotSelectionMode = SaveSlotSelectionMode.DeleteSelect;
                     Session.DataOperationSourceSlot = 0;
                     break;

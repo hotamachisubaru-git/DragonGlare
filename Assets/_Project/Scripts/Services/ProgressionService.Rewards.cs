@@ -79,10 +79,10 @@ public sealed partial class ProgressionService
 
         dropMessage = enemy.Drop.Quantity > 1
             ? Text(player.Language,
-                $"{GameContent.GetEnemyName(enemy, player.Language)}は {itemName} x{enemy.Drop.Quantity}をおとした�E�E,
+                $"{GameContent.GetEnemyName(enemy, player.Language)}は {itemName} x{enemy.Drop.Quantity}をおとした！",
                 $"{GameContent.GetEnemyName(enemy, player.Language)} dropped {itemName} x{enemy.Drop.Quantity}!")
             : Text(player.Language,
-                $"{GameContent.GetEnemyName(enemy, player.Language)}は {itemName}をおとした�E�E,
+                $"{GameContent.GetEnemyName(enemy, player.Language)}は {itemName}をおとした！",
                 $"{GameContent.GetEnemyName(enemy, player.Language)} dropped {itemName}!");
         return true;
     }
@@ -121,13 +121,13 @@ public sealed partial class ProgressionService
         if (seizedItems.Count == 0)
         {
             return Text(language,
-                $"しゃっきん {player.LoanBalance}GぁEのこったままだ、E,
+                $"しゃっきん {player.LoanBalance}Gが のこったままだ。",
                 $"Your {player.LoanBalance}G loan remains.");
         }
 
         var seizedList = string.Join(language == UiLanguage.English ? " and " : " と ", seizedItems);
         return Text(language,
-            $"しゃっきんの かたに\n{seizedList}めEさしおさえられた、E,
+            $"しゃっきんの かたに\n{seizedList}を さしおさえられた。",
             $"{seizedList} was seized\nto repay your loan.");
     }
 

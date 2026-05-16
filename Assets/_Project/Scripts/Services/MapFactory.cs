@@ -23,8 +23,7 @@ public static class MapFactory
     public const int CastleTextExitTile = 'r';
 
     private const string CastleMapFileName = "map(mycas2).txt";
-    private const string EmbeddedCastleMap = """
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    private const string EmbeddedCastleMap = @"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -53,7 +52,7 @@ public static class MapFactory
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-""";
+";
 
     public static int[,] CreateDefaultMap()
     {
@@ -174,7 +173,7 @@ public static class MapFactory
 
         return TryNormalizeMapLines(EmbeddedCastleMap, out var embeddedLines)
             ? embeddedLines
-            : ["@"];
+            : new[] { "@" };
     }
 
     private static string? TryReadCastleMapAsset()

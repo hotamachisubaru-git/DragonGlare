@@ -9,14 +9,14 @@ namespace DragonGlare.Services;
 public sealed partial class BattleService
 {
     private const int MinimumEncounterPoolSize = 2;
-    private static readonly EquipmentSlot[] ArmorSlots =
-    [
+    private static readonly EquipmentSlot[] ArmorSlots = new EquipmentSlot[]
+    {
         EquipmentSlot.Armor,
         EquipmentSlot.Head,
         EquipmentSlot.Arms,
         EquipmentSlot.Legs,
         EquipmentSlot.Feet
-    ];
+    };
 
     public BattleEncounter CreateEncounter(Random random, FieldMapId encounterMap, int playerLevel)
     {
@@ -100,7 +100,7 @@ public sealed partial class BattleService
             BattleActionType.Item => ResolveItem(player, encounter, selectedConsumable, random),
             BattleActionType.Equip => ResolveEquip(player, encounter, selectedEquipment, random),
             BattleActionType.Run => ResolveEscape(player),
-            _ => Reject(player.Language, "こうどぁE��きなぁE��E, "You cannot act.")
+            _ => Reject(player.Language, "こうどうできない。", "You cannot act.")
         };
     }
 

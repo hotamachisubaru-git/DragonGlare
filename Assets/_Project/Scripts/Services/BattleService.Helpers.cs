@@ -12,16 +12,16 @@ public sealed partial class BattleService
     {
         var language = player.Language;
         var spellName = GameContent.GetSpellName(spell, language);
-        return
-        [
+        return new List<BattleSequenceStep>
+        {
             new BattleSequenceStep
             {
-                Message = Text(language, $"{GetPlayerName(player)}は {spellName}めEとなえた�E�E, $"{GetPlayerName(player)} casts {spellName}!"),
+                Message = Text(language, $"{GetPlayerName(player)}は {spellName}を となえた！", $"{GetPlayerName(player)} casts {spellName}!"),
                 VisualCue = BattleVisualCue.SpellCast,
                 AnimationFrames = 16,
                 SoundEffect = GetSpellSoundEffect(spell)
             }
-        ];
+        };
     }
 
     private static SoundEffect GetSpellSoundEffect(SpellDefinition spell)
@@ -79,10 +79,10 @@ public sealed partial class BattleService
     {
         if (enemyDefeated)
         {
-            return Text(language, $"{damage}ダメージ�E�E, $"{damage} damage!");
+            return Text(language, $"{damage}ダメージ！", $"{damage} damage!");
         }
 
-        return Text(language, $"{enemyName}に{damage}ダメージ�E�E, $"{enemyName} takes {damage} damage!");
+        return Text(language, $"{enemyName}に{damage}ダメージ！", $"{enemyName} takes {damage} damage!");
     }
 
     private static BattleTurnResolution Victory(List<BattleSequenceStep> steps)
@@ -109,13 +109,13 @@ public sealed partial class BattleService
         {
             Outcome = BattleOutcome.Invalid,
             ActionAccepted = false,
-            Steps =
-            [
+            Steps = new List<BattleSequenceStep>
+            {
                 new BattleSequenceStep
                 {
                     Message = Text(language, japaneseMessage, englishMessage)
                 }
-            ]
+            }
         };
     }
 
@@ -126,7 +126,7 @@ public sealed partial class BattleService
             return player.Name;
         }
 
-        return player.Language == UiLanguage.English ? "Adventurer" : "ぼぁE��んしめE;
+        return player.Language == UiLanguage.English ? "Adventurer" : "ぼうけんしゃ";
     }
 
     private static string GetEnemyName(BattleEncounter encounter, UiLanguage language)

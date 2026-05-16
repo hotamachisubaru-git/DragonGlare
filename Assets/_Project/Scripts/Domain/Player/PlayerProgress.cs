@@ -40,9 +40,9 @@ public sealed class PlayerProgress
     public ArmorDefinition? EquippedArms => GameContent.GetArmorById(EquippedArmsId);
     public ArmorDefinition? EquippedLegs => GameContent.GetArmorById(EquippedLegsId);
     public ArmorDefinition? EquippedFeet => GameContent.GetArmorById(EquippedFeetId);
-    public List<InventoryEntry> Inventory { get; set; } = [];
-    public List<string> CompletedFieldEventIds { get; set; } = [];
-    public List<SpellDefinition> Spells { get; set; } = [];
+    public List<InventoryEntry> Inventory { get; set; } = new();
+    public List<string> CompletedFieldEventIds { get; set; } = new();
+    public List<SpellDefinition> Spells { get; set; } = new();
     public PlayerFacingDirection FacingDirection { get; set; } = PlayerFacingDirection.Down;
 
     public static PlayerProgress CreateDefault(Point startTile, UiLanguage language = UiLanguage.Japanese)
